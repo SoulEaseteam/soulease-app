@@ -1988,20 +1988,33 @@ const TherapistDetailPage: React.FC = () => {
           scrollMarginTop: { xs: "24px", md: "24px" },
         }}
       >
-        <Typography
-          component="h2"
-          sx={{
-            fontFamily: SANS,
-            fontSize: 11,
-            fontWeight: 800,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: "var(--sr-body)",
-            marginBottom: "14px",
-          }}
-        >
-          {t("detail.gallery.title", "Photos")}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1, marginBottom: "14px" }}>
+          <Typography
+            component="h2"
+            sx={{
+              fontFamily: SANS,
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "var(--sr-body)",
+            }}
+          >
+            {t("detail.gallery.title", "Photos")}
+          </Typography>
+          {/* 🆕 Round 28x.117 (founder: after the per-photo rebuild, chose to
+              keep the whole-profile total visible too) — the OLD viewCount
+              badge used to sit under every photo (28t.12), which is what she
+              caught as misleading (28x.113). It's still real, still growing
+              in the background (recordTherapistView) — just relocated here
+              as its own honest "profile opened N times" line instead of
+              being duplicated under every image. */}
+          {(realRecord?.viewCount ?? 0) > 0 && (
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", whiteSpace: "nowrap" }}>
+              เปิดดูโปรไฟล์ทั้งหมด {formatViews(realRecord?.viewCount ?? 0)} ครั้ง
+            </Typography>
+          )}
+        </Box>
 
         {(therapist.images ?? []).length === 0 ? (
           <Box
