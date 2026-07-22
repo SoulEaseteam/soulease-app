@@ -3789,6 +3789,46 @@ export const advanceJobStatus = onCall(
   }
 );
 
+// 🆕 Round 28x.110 (founder: "ถ้ามีสมาชิกให้ใส่ตามเลเวล แต่ไม่บอกชื่อจริง
+//   ลูกค้า") — her Jobs list should flag when a guest is an enrolled member
+//   (by tier), without ever exposing the guest's real name. A therapist can
+//   only read her OWN bookings (therapistUid rule) and can't read a guest's
+//   /users/{uid} doc at all (owner/admin-only) — so resolving the tier has
+//   to happen server-side, same reasoning as respondToJob/advanceJobStatus.
+//   Returns ONLY the tier, never a name, phone, or the doc itself.
+export const getJobGuestTier = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const uid = request.auth.uid;
+    const data = request.data as { bookingId?: string } | undefined;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    if (!bookingId) {
+      throw new HttpsError("invalid-argument", "bookingId required.");
+    }
+
+    const db = getFirestore();
+    const snap = await db.collection("bookings").doc(bookingId).get();
+    if (!snap.exists) {
+      throw new HttpsError("not-found", "Booking not found.");
+    }
+    const b = snap.data() as { therapistUid?: string; userId?: string };
+    if (b.therapistUid !== uid) {
+      throw new HttpsError("permission-denied", "This job isn't assigned to you.");
+    }
+    if (!b.userId) {
+      return { tier: null };
+    }
+
+    const userSnap = await db.collection("users").doc(b.userId).get();
+    const tier = (userSnap.data() as { membership?: { tier?: string } } | undefined)
+      ?.membership?.tier ?? null;
+    return { tier };
+  }
+);
+
 export const createJobChannelCode = onCall(
   { region: "asia-southeast1" },
   async (request) => {

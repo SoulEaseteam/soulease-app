@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -3044,6 +3044,40 @@ exports.advanceJobStatus = (0, https_1.onCall)({ region: "asia-southeast1", secr
     }
     v2_1.logger.info("[advanceJobStatus] recorded", { bookingId, next, uid });
     return { ok: true, already: false, dispatchState: next };
+});
+// 🆕 Round 28x.110 (founder: "ถ้ามีสมาชิกให้ใส่ตามเลเวล แต่ไม่บอกชื่อจริง
+//   ลูกค้า") — her Jobs list should flag when a guest is an enrolled member
+//   (by tier), without ever exposing the guest's real name. A therapist can
+//   only read her OWN bookings (therapistUid rule) and can't read a guest's
+//   /users/{uid} doc at all (owner/admin-only) — so resolving the tier has
+//   to happen server-side, same reasoning as respondToJob/advanceJobStatus.
+//   Returns ONLY the tier, never a name, phone, or the doc itself.
+exports.getJobGuestTier = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const uid = request.auth.uid;
+    const data = request.data;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    if (!bookingId) {
+        throw new https_1.HttpsError("invalid-argument", "bookingId required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const snap = await db.collection("bookings").doc(bookingId).get();
+    if (!snap.exists) {
+        throw new https_1.HttpsError("not-found", "Booking not found.");
+    }
+    const b = snap.data();
+    if (b.therapistUid !== uid) {
+        throw new https_1.HttpsError("permission-denied", "This job isn't assigned to you.");
+    }
+    if (!b.userId) {
+        return { tier: null };
+    }
+    const userSnap = await db.collection("users").doc(b.userId).get();
+    const tier = userSnap.data()
+        ?.membership?.tier ?? null;
+    return { tier };
 });
 exports.createJobChannelCode = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
     if (!request.auth) {

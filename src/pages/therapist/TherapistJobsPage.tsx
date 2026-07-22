@@ -50,6 +50,7 @@ import {
 import { app, auth, db } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { formatTHB } from "@/utils/servicePricing";
+import { MEMBERSHIP_COLORS, MEMBERSHIP_LABELS_TH, type MembershipTier } from "@/utils/membership";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
@@ -93,6 +94,7 @@ interface Job {
   mapUrl?: string;
   phone?: string;
   contactName?: string;
+  userId?: string;
   status?: string;
   totalPrice?: number;
   therapistResponse?: "accepted" | "declined";
@@ -183,6 +185,7 @@ const TherapistJobsPage: React.FC = () => {
             mapUrl: b.mapUrl as string | undefined,
             phone: b.phone as string | undefined,
             contactName: (b.contactName ?? b.customerName ?? b.userName) as string | undefined,
+            userId: b.userId as string | undefined,
             status: b.status as string | undefined,
             totalPrice: b.totalPrice as number | undefined,
             therapistResponse: b.therapistResponse as Job["therapistResponse"],
@@ -430,17 +433,52 @@ const JobCard: React.FC<{
 }> = ({ job, tab, busy, onRespond, onAdvance }) => {
   const answered = job.therapistResponse;
   const accepted = answered === "accepted";
-  // 🆕 28x.69/74 — unchanged rule, just restyled: identity + address + phone
-  // stay hidden until she has accepted. A declined or unanswered job must
-  // never leave a guest's contact details on her screen.
-  const revealed = accepted;
+  // 🆕 28x.69/74 — identity + address + phone stay hidden until she has
+  // accepted, for a job still awaiting her decision. A declined or
+  // unanswered job must never leave a guest's contact details on her screen.
+  //
+  // 🆕 Round 28x.110 (founder: "ดูออเดอได้ทั้งหมด" — screenshot of the
+  // Completed tab showing no address at all) — that masking rule was
+  // silently hiding COMPLETED jobs too: most historical bookings were
+  // dispatched via Telegram/admin, before the in-app accept/decline flow
+  // existed, so `therapistResponse` was never set on them and `accepted`
+  // reads false forever. The job already happened — there's no longer a
+  // reason to mask it. Completed jobs are always revealed regardless of
+  // whether they went through the in-app accept step.
+  const revealed = accepted || tab === "completed";
 
   // 🆕 Round 28x.105 (founder: "เปลี่ยนชื่อลูกค้าเป็น Booking ID") — the
-  // guest's real name used to show here once she accepted; a reference
-  // code identifies the same job without keeping a stranger's name sitting
-  // on her phone screen after the fact. Same "SR-XXXXXXXX" format the
+  // guest's real name used to show here once revealed; a reference code
+  // identifies the same job without keeping a stranger's name sitting on
+  // her phone screen after the fact. Same "SR-XXXXXXXX" format the
   // Telegram dispatch card already uses (formatBookingForTherapist).
   const refCode = `SR-${job.id.slice(0, 8).toUpperCase()}`;
+
+  // 🆕 Round 28x.110 (founder: "ถ้ามีสมาชิกให้ใส่ตามเลเวล แต่ไม่บอกชื่อจริง
+  // ลูกค้า") — if the guest is an enrolled member, show her tier alongside
+  // the booking code instead of just the code — never the real name. A
+  // therapist can't read a guest's /users/{uid} doc herself (owner/admin-
+  // only in firestore.rules), so the tier comes from a callable that
+  // checks she owns this job first and returns ONLY the tier (see
+  // getJobGuestTier in functions/src/index.ts). Most bookings are admin-
+  // booked with no linked account (`userId` unset) — those simply have no
+  // tier to show, which is the common case, not an error.
+  const [tier, setTier] = useState<MembershipTier | null>(null);
+  useEffect(() => {
+    if (!revealed || !job.userId) {
+      setTier(null);
+      return;
+    }
+    let cancelled = false;
+    const fn = httpsCallable<{ bookingId: string }, { tier: MembershipTier | null }>(
+      getFunctions(app, "asia-southeast1"),
+      "getJobGuestTier",
+    );
+    fn({ bookingId: job.id })
+      .then((res) => { if (!cancelled) setTier(res.data.tier); })
+      .catch(() => { if (!cancelled) setTier(null); });
+    return () => { cancelled = true; };
+  }, [revealed, job.userId, job.id]);
 
   const mapHref =
     job.mapUrl ||
@@ -472,9 +510,18 @@ const JobCard: React.FC<{
             </Avatar>
           </Box>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 14.5, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2 }}>
-              {revealed ? refCode : "ลูกค้าใหม่"}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, flexWrap: "wrap" }}>
+              <Typography sx={{ fontFamily: SERIF, fontSize: 14.5, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2 }}>
+                {revealed ? refCode : "ลูกค้าใหม่"}
+              </Typography>
+              {revealed && tier && (
+                <Box sx={{ px: "7px", py: "1px", borderRadius: 999, background: `${MEMBERSHIP_COLORS[tier]}22`, border: `1px solid ${MEMBERSHIP_COLORS[tier]}55` }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 800, letterSpacing: "0.04em", color: MEMBERSHIP_COLORS[tier] }}>
+                    {MEMBERSHIP_LABELS_TH[tier]}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
             <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", mt: 0.15 }}>
               {job.date || "—"} · {job.time || "—"}
             </Typography>
