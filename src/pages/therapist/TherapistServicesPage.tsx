@@ -78,6 +78,11 @@ const TherapistServiceList: React.FC<{ value: string[]; onChange: (next: string[
 // a real booking). Shows the FULL catalog, not just the services she has
 // switched on above — she can see what every menu item pays before
 // deciding what to offer.
+//
+// 🆕 Round 28x.116 (founder: "บอกราคาจ่ายร้านด้วย") — added the shop's own
+// cut as a 4th column, computed the same way shopShareFor() does (price
+// − her fixed cut, floored at 0) so the row always reconciles: her cut +
+// the shop's cut always adds back up to the full price.
 const ServiceSplitTable: React.FC = () => (
   <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
     {services.map((svc) => (
@@ -86,33 +91,40 @@ const ServiceSplitTable: React.FC = () => (
           {svc.name}
         </Typography>
         <Box sx={{ borderRadius: "12px", border: "1px solid var(--sr-hairline)", overflow: "hidden" }}>
-          <Box sx={{ display: "flex", px: "12px", py: "8px", background: "var(--sr-panel-2)" }}>
-            <Typography sx={{ flex: 1, fontFamily: SANS, fontSize: 10, fontWeight: 800, color: "var(--sr-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <Box sx={{ display: "flex", px: "10px", py: "8px", background: "var(--sr-panel-2)" }}>
+            <Typography sx={{ flex: 1, fontFamily: SANS, fontSize: 9.5, fontWeight: 800, color: "var(--sr-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               ระยะเวลา
             </Typography>
-            <Typography sx={{ width: 76, textAlign: "right", fontFamily: SANS, fontSize: 10, fontWeight: 800, color: "var(--sr-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <Typography sx={{ width: 60, textAlign: "right", fontFamily: SANS, fontSize: 9.5, fontWeight: 800, color: "var(--sr-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               ราคา
             </Typography>
-            <Typography sx={{ width: 84, textAlign: "right", fontFamily: SANS, fontSize: 10, fontWeight: 800, color: "var(--sr-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <Typography sx={{ width: 66, textAlign: "right", fontFamily: SANS, fontSize: 9.5, fontWeight: 800, color: "var(--sr-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               คุณได้
+            </Typography>
+            <Typography sx={{ width: 60, textAlign: "right", fontFamily: SANS, fontSize: 9.5, fontWeight: 800, color: "var(--sr-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              ร้านได้
             </Typography>
           </Box>
           {durationsFor(svc).map((d, i) => {
             const price = priceForDuration(svc, d);
             const cut = therapistFixedFor(svc.id, d) ?? Math.round(price * therapistPctFor(svc.id));
+            const shopCut = Math.max(0, price - cut);
             return (
               <Box
                 key={d}
-                sx={{ display: "flex", alignItems: "center", px: "12px", py: "9px", borderTop: i > 0 ? "1px solid var(--sr-hairline)" : "none" }}
+                sx={{ display: "flex", alignItems: "center", px: "10px", py: "9px", borderTop: i > 0 ? "1px solid var(--sr-hairline)" : "none" }}
               >
-                <Typography sx={{ flex: 1, fontFamily: SANS, fontSize: 13, color: "var(--sr-body)" }}>
+                <Typography sx={{ flex: 1, fontFamily: SANS, fontSize: 12.5, color: "var(--sr-body)" }}>
                   {d} นาที
                 </Typography>
-                <Typography sx={{ width: 76, textAlign: "right", fontFamily: SANS, fontSize: 13, color: "var(--sr-muted)" }}>
+                <Typography sx={{ width: 60, textAlign: "right", fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)" }}>
                   {formatTHB(price)}
                 </Typography>
-                <Typography sx={{ width: 84, textAlign: "right", fontFamily: SERIF, fontWeight: 700, fontSize: 14, color: ROSE_DEEP }}>
+                <Typography sx={{ width: 66, textAlign: "right", fontFamily: SERIF, fontWeight: 700, fontSize: 13.5, color: ROSE_DEEP }}>
                   {formatTHB(cut)}
+                </Typography>
+                <Typography sx={{ width: 60, textAlign: "right", fontFamily: SANS, fontSize: 12, color: "var(--sr-dim)" }}>
+                  {formatTHB(shopCut)}
                 </Typography>
               </Box>
             );
