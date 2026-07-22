@@ -167,6 +167,10 @@ const TherapistJobsPage = React.lazy(
 const TherapistSettingsPage = React.lazy(
   () => import("@/pages/therapist/TherapistSettingsPage")
 );
+// 🆕 28x.121 — in-app manual for practitioners, reached from Settings.
+const TherapistGuidePage = React.lazy(
+  () => import("@/pages/therapist/TherapistGuidePage")
+);
 // 🆕 28x.87 — customer "report an issue" alerts, filed on BookingHistoryPage.
 const TherapistReportsPage = React.lazy(
   () => import("@/pages/therapist/TherapistReportsPage")
@@ -426,6 +430,7 @@ export default function App() {
           />
           <Route path="/therapist/jobs" element={<TherapistJobsPage />} />
           <Route path="/therapist/settings" element={<TherapistSettingsPage />} />
+          <Route path="/therapist/guide" element={<TherapistGuidePage />} />
           <Route path="/therapist/reports" element={<TherapistReportsPage />} />
           <Route path="/therapist/performance" element={<TherapistPerformancePage />} />
           <Route path="/therapist/services" element={<TherapistServicesPage />} />

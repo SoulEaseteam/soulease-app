@@ -13,7 +13,7 @@ import React, { useState } from "react";
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import { Translate, Key, SignOut, CaretLeft, CaretRight, Warning, Sun, Moon, CircleHalf } from "phosphor-react";
+import { Translate, Key, SignOut, CaretLeft, CaretRight, Warning, Sun, Moon, CircleHalf, BookOpen } from "phosphor-react";
 
 import { auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
@@ -120,6 +120,14 @@ const TherapistSettingsPage: React.FC = () => {
           icon={<Key size={20} weight="duotone" />}
           label="Change password · เปลี่ยนรหัสผ่าน"
           onClick={openPassword}
+        />
+        {/* 🆕 Round 28x.121 (founder: "ขอข้อความอธิบายการใช้งานแต่ละฟังก์ชัน") —
+            the in-app manual. Lives here rather than as a 9th Home tile so the
+            quick-menu grid stays the things she uses daily. */}
+        <Row
+          icon={<BookOpen size={20} weight="duotone" />}
+          label="วิธีใช้งาน · How to use"
+          onClick={() => navigate("/therapist/guide")}
         />
       </Box>
 
