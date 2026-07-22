@@ -312,6 +312,38 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           <TextField label="ระยะทางสูงสุดก่อนต้องยืนยันกับแอดมิน (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
             helperText="เกินระยะนี้ระบบให้ติดต่อผู้ช่วยส่วนตัวแทนคิดราคาอัตโนมัติ"
             value={rules.maxDistance} onChange={(e) => setRules((p) => ({ ...p, maxDistance: Math.max(1, Number(e.target.value)) }))} />
+
+          {/* 🆕 28x.99u (audit follow-up) — these four were genuinely LIVE
+              (calcTaxiFare uses them for the car/rain-day path + surge on
+              every fare) but lost their editors in the 28x.6 rewrite, back
+              when the checkpoint model hadn't replaced flat bands yet and
+              they briefly WERE dead. They came back to life in 28s308/
+              28x.48/28x.99m without anyone restoring a UI for them. */}
+          <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.dim, mt: 2, mb: 0.75 }}>
+            รถยนต์ (วันฝนตก)
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            <TextField label="Round-trip multiplier" type="number" margin="dense" sx={{ ...fieldSx, flex: 1, minWidth: 160 }}
+              helperText="2.0 = ไป-กลับเต็มมิเตอร์ทั้งสองเที่ยว"
+              value={rules.roundTripMultiplier}
+              onChange={(e) => setRules((p) => ({ ...p, roundTripMultiplier: Math.max(1, Number(e.target.value)) }))} />
+            <TextField label="ค่าเรียกรถ Grab ต่อเที่ยว (฿)" type="number" margin="dense" sx={{ ...fieldSx, flex: 1, minWidth: 160 }}
+              helperText="คิด 2 เที่ยว (ไป-กลับ)"
+              value={rules.grabBookingFee}
+              onChange={(e) => setRules((p) => ({ ...p, grabBookingFee: Math.max(0, Number(e.target.value)) }))} />
+          </Box>
+
+          <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.dim, mt: 2, mb: 0.75 }}>
+            Surge ตามช่วงเวลา (ใช้ทั้งมอเตอร์ไซค์และรถยนต์)
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            <TextField label="ช่วงเร่งด่วน 07-09, 17-20 น. (%)" type="number" margin="dense" sx={{ ...fieldSx, flex: 1, minWidth: 160 }}
+              value={rules.rushSurgePct}
+              onChange={(e) => setRules((p) => ({ ...p, rushSurgePct: Math.max(0, Math.min(200, Number(e.target.value))) }))} />
+            <TextField label="ช่วงดึก 21-02 น. (%)" type="number" margin="dense" sx={{ ...fieldSx, flex: 1, minWidth: 160 }}
+              value={rules.peakSurgePct}
+              onChange={(e) => setRules((p) => ({ ...p, peakSurgePct: Math.max(0, Math.min(200, Number(e.target.value))) }))} />
+          </Box>
         </SectionCard>
 
         {/* 💳 Payment Methods — NOT YET CONNECTED */}
