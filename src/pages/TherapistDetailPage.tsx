@@ -767,9 +767,26 @@ const TherapistDetailPage: React.FC = () => {
       //   customers), matching the loyalty panel headline ("14 of 90
       //   customers booked again → 16%"). Reverts the 28s340 total-bookings
       //   formula so the top StatsCard and the Reviews-tab panel agree.
+      //
+      // 🆕 Round 28x.130 (founder: "3 sessions ของพนักงาน ไม่ตรงกันสักยอด") —
+      //   `totalSessions` is NO LONGER overridden here. This line was the
+      //   mismatch: the browse card renders the doc's `totalSessions`, this
+      //   page then replaced it with a live count, so Nicky read "5 เซสชัน"
+      //   on the card and "3 sessions" one tap later.
+      //
+      //   The doc value is also the only one that can be RIGHT, because
+      //   `totalSessions` deliberately includes admin-credited cancellations
+      //   (countsAsSession, 28x.118) — a live `bookings` count can't see that
+      //   intent and silently erased it: Nicky's 9 credited cancellations
+      //   vanished on this page.
+      //
+      //   This is the same bug, and the same fix, as 28x.1 five lines below
+      //   for `reviewCount` ("Overriding the count here is what made the card
+      //   say 7 and this page say 6"). One field got fixed then; this one
+      //   didn't. rebookRate stays live — it's a ratio the loyalty panel
+      //   below computes from the same snapshot, so those two can't disagree.
       t = {
         ...t,
-        totalSessions: loyaltyStats.totalCompleted,
         rebookRate:
           loyaltyStats.uniqueCustomers > 0
             ? `${loyaltyStats.repeatPct}%`

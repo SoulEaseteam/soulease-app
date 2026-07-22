@@ -4715,3 +4715,115 @@ export const onBookingDispatchChange = onDocumentUpdated(
     });
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.130 (founder: "3 sessions ของพนักงาน ไม่ตรงกันสักยอด")
+//
+// `therapists/{id}.totalSessions` is the number every PUBLIC surface shows —
+// the browse card, the profile hero, the stats chips. Until now the only thing
+// that ever wrote it was an admin tapping "Sync Stats" on one practitioner's
+// page. Nobody taps that after every booking, so it drifted: an audit of all 14
+// live docs found 6 wrong, from -7 (Nicky) to +12 (Vivian).
+//
+// A denormalized counter that only a human keeps up to date is not a cache,
+// it's a second source of truth — so it recomputes itself here instead, on
+// every write to a booking. The manual button stays (harmless, same formula).
+//
+// The count is deliberately NOT just "completed". It is
+//   completed/done  +  cancelled bookings the admin flagged countsAsSession
+// per 28x.118: a cancelled job can still credit the practitioner publicly
+// ("ถ้าไม่มียอดจองเลยพนักงานจะขายไม่ได้") while staying ฿0 in every money total.
+// That intent lives only in the flag, which is exactly why a naive live count
+// of the bookings collection cannot replace this field.
+// ─────────────────────────────────────────────────────────────────────────────
+const SERVED_STATUSES = new Set(["completed", "done"]);
+
+async function recomputeTherapistSessionStats(therapistId: string): Promise<void> {
+  const db = getFirestore();
+  const snap = await db
+    .collection("bookings")
+    .where("therapistId", "==", therapistId)
+    .get();
+
+  let served = 0;
+  let credited = 0;
+  const byCustomer = new Map<string, number>();
+
+  snap.forEach((d) => {
+    const b = d.data() as {
+      status?: string;
+      countsAsSession?: boolean;
+      userId?: string | null;
+      phone?: string | null;
+    };
+    const status = (b.status ?? "").toLowerCase();
+
+    if (SERVED_STATUSES.has(status)) {
+      served++;
+    } else if (status.startsWith("cancel") && b.countsAsSession === true) {
+      credited++;
+      return; // credited-but-cancelled is a headline count only, never a customer
+    } else {
+      return;
+    }
+
+    // Rebook rate counts PEOPLE, so guests (no uid) key on their phone —
+    // same identity rule the client-side computeBookingStats uses.
+    const phone = typeof b.phone === "string" ? b.phone.replace(/[^\d+]/g, "") : "";
+    const key = b.userId && b.userId.length > 0 ? b.userId : phone.length >= 6 ? phone : null;
+    if (!key) return;
+    byCustomer.set(key, (byCustomer.get(key) ?? 0) + 1);
+  });
+
+  const uniqueCustomers = byCustomer.size;
+  let repeatCustomers = 0;
+  byCustomer.forEach((n) => { if (n >= 2) repeatCustomers++; });
+  const rebookRate =
+    uniqueCustomers > 0 ? Math.round((repeatCustomers / uniqueCustomers) * 100) : 0;
+
+  await db.collection("therapists").doc(therapistId).update({
+    totalSessions: served + credited,
+    rebookRate,
+    statsUpdatedAt: FieldValue.serverTimestamp(),
+  });
+}
+
+export const onBookingWriteSyncStats = onDocumentWritten(
+  {
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const before = event.data?.before.data() as
+      | { therapistId?: string; status?: string; countsAsSession?: boolean }
+      | undefined;
+    const after = event.data?.after.data() as
+      | { therapistId?: string; status?: string; countsAsSession?: boolean }
+      | undefined;
+
+    // Cheap guards BEFORE any read — a booking's price, address, time and phone
+    // all change often and none of them can move a session count.
+    const statusChanged = (before?.status ?? null) !== (after?.status ?? null);
+    const creditChanged =
+      (before?.countsAsSession ?? null) !== (after?.countsAsSession ?? null);
+    const created = !before && !!after;
+    const deleted = !!before && !after;
+    const reassigned = (before?.therapistId ?? null) !== (after?.therapistId ?? null);
+    if (!created && !deleted && !statusChanged && !creditChanged && !reassigned) return;
+
+    // A reassignment moves the count off one practitioner AND onto another, so
+    // both docs have to be recomputed, not just the current owner.
+    const targets = new Set<string>();
+    if (before?.therapistId) targets.add(before.therapistId);
+    if (after?.therapistId) targets.add(after.therapistId);
+
+    for (const id of targets) {
+      try {
+        await recomputeTherapistSessionStats(id);
+      } catch (err) {
+        // A therapist doc that no longer exists must not fail the whole write.
+        logger.warn("[onBookingWriteSyncStats] recompute failed", { therapistId: id, err });
+      }
+    }
+  }
+);
