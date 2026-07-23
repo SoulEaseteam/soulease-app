@@ -84,6 +84,10 @@ export interface Therapist {
 
   /** bookings counting */
   todayBookings?: number;
+  /** 🆕 28x.100 — business-day stamp (rolls 06:00 BKK) written by the
+   *  syncTherapistDailyCount Cloud Function next to todayBookings; the
+   *  badge engine ignores counts stamped with any other day. */
+  todayBookingsDate?: string | null;
   totalBookings?: number;
 
   /** 🆕 28x.81 (founder: "บัญชียังไม่เปิดใช้งาน") — admin-only gate on the

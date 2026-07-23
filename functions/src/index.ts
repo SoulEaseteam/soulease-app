@@ -5092,3 +5092,91 @@ export const onTherapistBonusChange = onDocumentUpdated(
     }
   }
 );
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 28x.100 (founder "เปลี่ยนอัตโนมัติตามยอดจองรายวัน 2 งานHOT VIP 3
+//   TOP_RATED 4") — the ONLY writer of therapists.todayBookings.
+//
+//   The badge engine (src/utils/getTherapistBadge.ts) has read
+//   todayBookings since 28s153, but nothing ever wrote it — every card
+//   read 0 forever, so auto-badges never fired. This trigger recomputes
+//   the affected therapist's daily count on EVERY booking write (create,
+//   status change, cancel, therapist reassignment — both old and new
+//   therapist are refreshed on a swap).
+//
+//   "วันจอง" uses the BUSINESS day, not the calendar day: the shop's
+//   night runs 22:00–05:00, so the day rolls at 06:00 BKK — a 01:30
+//   job counts toward the same night as the 23:00 job before it.
+//   Implementation: shift epoch by (+7h BKK −6h boundary) = +1h, then
+//   take the UTC date string. The client engine uses the SAME formula
+//   (businessDayBKK) and ignores counts stamped with any other day, so
+//   stale counts expire at 06:00 with no midnight cron needed.
+//
+//   Statuses counted = real accepted work (confirmed/paid/in_progress/
+//   completed/done). pending (unconfirmed hold) and cancelled/no-show
+//   earn nothing — a badge must never be inflatable by spam holds.
+// ─────────────────────────────────────────────────────────────
+const DAILY_COUNTED_STATUSES = new Set([
+  "confirmed",
+  "paid",
+  "in_progress",
+  "completed",
+  "done",
+]);
+
+function businessDayBKKServer(ms: number): string {
+  return new Date(ms + 3600_000).toISOString().slice(0, 10);
+}
+
+function bookingTimeMs(v: unknown): number {
+  if (v == null) return 0;
+  const o = v as { toMillis?: () => number; seconds?: number; _seconds?: number };
+  if (typeof o.toMillis === "function") return o.toMillis();
+  if (typeof o.seconds === "number") return o.seconds * 1000;
+  if (typeof o._seconds === "number") return o._seconds * 1000;
+  return 0;
+}
+
+export const syncTherapistDailyCount = onDocumentWritten(
+  {
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const before = event.data?.before?.exists ? event.data.before.data() : undefined;
+    const after = event.data?.after?.exists ? event.data.after.data() : undefined;
+    const tids = new Set<string>();
+    const beforeTid = before?.therapistId;
+    const afterTid = after?.therapistId;
+    if (typeof beforeTid === "string" && beforeTid) tids.add(beforeTid);
+    if (typeof afterTid === "string" && afterTid) tids.add(afterTid);
+    if (tids.size === 0) return;
+
+    const db = getFirestore();
+    const dayKey = businessDayBKKServer(Date.now());
+
+    for (const tid of tids) {
+      try {
+        const snap = await db
+          .collection("bookings")
+          .where("therapistId", "==", tid)
+          .get();
+        let n = 0;
+        snap.forEach((d) => {
+          const b = d.data();
+          if (!DAILY_COUNTED_STATUSES.has(String(b.status ?? ""))) return;
+          const ms = bookingTimeMs(b.startAt ?? b.createdAt);
+          if (!ms) return;
+          if (businessDayBKKServer(ms) === dayKey) n++;
+        });
+        await db
+          .collection("therapists")
+          .doc(tid)
+          .set({ todayBookings: n, todayBookingsDate: dayKey }, { merge: true });
+        logger.info("[syncTherapistDailyCount] updated", { tid, n, dayKey });
+      } catch (err) {
+        logger.warn("[syncTherapistDailyCount] failed", { tid, err });
+      }
+    }
+  }
+);

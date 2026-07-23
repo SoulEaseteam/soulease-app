@@ -67,8 +67,22 @@ function toMs(v: unknown): number {
   return 0;
 }
 
+/**
+ * 🆕 28x.100 — SunRed's business day: rolls at 06:00 BKK, not midnight,
+ * so the 22:00–05:00 night counts as ONE day (a 01:30 job belongs to the
+ * same night as the 23:00 job before it). Same formula as the Cloud
+ * Function writer (functions/src/index.ts syncTherapistDailyCount):
+ * epoch + (7h BKK − 6h boundary) = +1h, then the UTC date string.
+ */
+export function businessDayBKK(nowMs: number = Date.now()): string {
+  return new Date(nowMs + 3600_000).toISOString().slice(0, 10);
+}
+
 export function getBadgeForTherapist(t: {
   todayBookings?: number;
+  /** 🆕 28x.100 — business-day stamp written next to the count; counts
+   *  from any other day are ignored (auto-expiry, no midnight cron). */
+  todayBookingsDate?: string | null;
   totalBookings?: number;
   /** 🆕 28s349 — Firestore createdAt (Timestamp/Date/string/number). Drives
    *  the NEW badge by roster age instead of booking count. */
@@ -76,14 +90,29 @@ export function getBadgeForTherapist(t: {
   badgeKey?: string | null;
   badgeUpdatedAt?: number | null;
 }): BadgeConfig {
-  const today = t.todayBookings ?? 0;
+  // 🆕 28x.100 — only trust a count that (a) carries a day stamp (the
+  //   Cloud Function writer always stamps one; unstamped legacy values
+  //   were never maintained) and (b) is stamped with TODAY's business
+  //   day. Anything else reads as 0.
+  const dayFresh = !!t.todayBookingsDate && t.todayBookingsDate === businessDayBKK();
+  const today = dayFresh ? (t.todayBookings ?? 0) : 0;
 
   const storedKey = (t.badgeKey ?? null) as BadgeKey | null;
   const storedAt = t.badgeUpdatedAt ?? null;
   const now = Date.now();
 
-  // 1) ถ้ามี badge เดิม + ยังไม่หมดอายุ → ใช้อันเดิม
-  //    (TOP_RATED ไม่ cache เพราะถูก override นอกฟังก์ชันรายวัน)
+  // 1) 🆕 28x.100 (founder "เปลี่ยนอัตโนมัติตามยอดจองรายวัน 2 งานHOT
+  //    VIP 3 TOP_RATED 4") — live daily-count badge wins over everything:
+  //      4+ jobs today → TOP_RATED · 3 → VIP · 2 → HOT
+  //    Absolute thresholds per the founder's spec — several practitioners
+  //    can hold TOP_RATED on a strong night (this replaces the old
+  //    single-winner pickTopRatedTherapistId comparison, and the old
+  //    5→VIP/3→HOT ladder).
+  if (today >= 4) return pack("TOP_RATED");
+  if (today >= 3) return pack("VIP");
+  if (today >= 2) return pack("HOT");
+
+  // 2) ถ้ามี badge เดิม (แอดมินตั้งมือ) + ยังไม่หมดอายุ → ใช้อันเดิม
   if (
     storedKey &&
     storedKey !== "TOP_RATED" &&
@@ -96,23 +125,11 @@ export function getBadgeForTherapist(t: {
     };
   }
 
-  // 2) คำนวณ badge ใหม่ (สำหรับเงื่อนไข lifetime/threshold)
-  //    TOP_RATED ไม่ตัดสินใจที่นี่ — assignTopRated() จัดการ
-  //    เพราะต้องเทียบทั้ง roster.
-  // 🆕 28s349 — NEW = "recently added to the roster" (createdAt within
-  //   NEW_WINDOW), NOT "totalBookings < 50". The old rule tagged EVERY
-  //   therapist NEW because totalBookings is usually 0/absent for this new
-  //   business — so NEW was meaningless (founder: "ทำไม new ทุกคน"). Now only
-  //   genuinely-new practitioners wear it; established ones (or any without a
-  //   createdAt) get no NEW badge.
+  // 3) NEW โดยอายุ roster (28s349) — คงเดิม: เฉพาะคนที่เพิ่งเข้ามาจริงๆ
   const NEW_WINDOW_MS = 21 * BADGE_TTL; // 21 days (BADGE_TTL = 1 day in ms)
   let newKey: BadgeKey | null = null;
-  if (today >= 5) newKey = "VIP";
-  else if (today >= 3) newKey = "HOT";
-  else {
-    const createdMs = toMs(t.createdAt);
-    if (createdMs > 0 && now - createdMs < NEW_WINDOW_MS) newKey = "NEW";
-  }
+  const createdMs = toMs(t.createdAt);
+  if (createdMs > 0 && now - createdMs < NEW_WINDOW_MS) newKey = "NEW";
 
   return pack(newKey);
 }

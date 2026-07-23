@@ -7,7 +7,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Therapist as TherapistType, Avail } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
-import { getBadgeForTherapist, pickTopRatedTherapistId } from "@/utils/getTherapistBadge";
+import { getBadgeForTherapist } from "@/utils/getTherapistBadge";
 import { haversineKm } from "@/utils/taxiFare";
 
 import TherapistProfileCard from "@/components/TherapistProfileCard";
@@ -247,8 +247,11 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
   //   ticks (statusTick), so displayed status always tracks the working
   //   schedule / booking window in real time.
   const therapists = useMemo<Therapist[]>(() => {
-    // TOP RATED is the daily bestseller — one practitioner per day.
-    const topRatedId = pickTopRatedTherapistId(rawTherapists);
+    // 🆕 28x.100 — TOP_RATED is now an ABSOLUTE daily threshold inside
+    //   getBadgeForTherapist (4+ jobs today), per founder spec "2 งานHOT
+    //   VIP 3 TOP_RATED 4". The old single-winner pickTopRatedTherapistId
+    //   comparison is retired — several practitioners can hold it on a
+    //   strong night.
     return rawTherapists.map((t) => {
       const { status, nextAvailable } = calculateTherapistStatus(t);
       // Defensive: clamp engine output to the known Avail union — an admin
@@ -262,16 +265,16 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
       const badge = getBadgeForTherapist({
         totalBookings: t.totalBookings ?? 0,
         todayBookings: t.todayBookings ?? 0,
+        todayBookingsDate: (t as { todayBookingsDate?: string | null }).todayBookingsDate ?? null,
         createdAt: (t as { createdAt?: unknown }).createdAt,
         badgeKey: t.badgeKey,
         badgeUpdatedAt: t.badgeUpdatedAt,
       });
-      const badgeKey = t.id === topRatedId ? "TOP_RATED" : badge.key;
       return {
         ...t,
         computedStatus: safeStatus,
         computedNext: nextAvailable ?? null,
-        badgeKey,
+        badgeKey: badge.key,
       };
     });
     // statusTick is an intentional re-compute trigger.
