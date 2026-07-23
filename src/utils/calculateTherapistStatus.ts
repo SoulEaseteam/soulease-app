@@ -114,8 +114,18 @@ export function calculateTherapistStatus(t: Therapist): {
   //
   //   `activeBooking` is typed as boolean but some legacy paths store
   //   an object with `endAt` — support both shapes defensively.
+  //
+  //   🆕 28x.99y (founder "Milo ทำไมขึ้น Bookable ทั้งที่ว่าง") — nothing
+  //   in the current codebase ever writes activeBooking anymore, so a
+  //   leftover `true` from the retired writer pinned Milo + Pare on
+  //   "bookable" for 8 days straight. When the doc carries a busyUntil
+  //   that has ALREADY expired, treat the activeBooking flag as part of
+  //   that same finished job and ignore it (self-heals every stale doc
+  //   with no migration). A flag with NO busyUntil keeps the legacy
+  //   sticky behaviour — there's no window to judge staleness against.
   // ---------------------------------------------------------
-  if (t.activeBooking ?? t.isBooked) {
+  const busyWindowExpired = !!busyUntil && !busyUntil.isAfter(now);
+  if ((t.activeBooking ?? t.isBooked) && !busyWindowExpired) {
     let next: string | null = null;
     const ab = t.activeBooking as unknown;
     if (ab && typeof ab === "object" && "endAt" in ab) {

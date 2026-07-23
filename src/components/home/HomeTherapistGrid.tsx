@@ -209,6 +209,11 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
       const raw: Therapist[] = [];
       snap.forEach((docSnap) => {
         const data = docSnap.data() as Therapist;
+        // 🆕 28x.99y (founder "ซ่อนโปรไฟล์พนักงาน แอดมินหลังบ้าน ไม่ทำงาน")
+        //   — the admin hide toggle has written `hidden: true` all along,
+        //   but this subscription never read it, so a hidden practitioner
+        //   (Richie) kept rendering to customers. Filter at the source.
+        if (data.hidden) return;
         // Keep the mutable `id` field (used for nav / bookings) but always
         // carry the immutable Firestore doc id for the React key.
         raw.push({ ...data, id: data.id || docSnap.id, _docId: docSnap.id });
