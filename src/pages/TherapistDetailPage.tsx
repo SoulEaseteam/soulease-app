@@ -1707,6 +1707,10 @@ const TherapistDetailPage: React.FC = () => {
                 }
                 totalSessions={therapist.totalSessions}
                 loyaltyStats={loyaltyStats}
+                // 🆕 28x.139 — the admin rebook override (from the raw doc) so
+                //   the panel matches the boosted session count instead of the
+                //   live 0% ("ไม่ขึ้น").
+                overrideRebook={(firestoreRow as { rebookRateOverride?: number } | null)?.rebookRateOverride ?? null}
               />
             </Box>
 

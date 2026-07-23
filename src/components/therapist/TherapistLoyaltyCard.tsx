@@ -41,17 +41,31 @@ export const TherapistLoyaltyCard: React.FC<{
   rebookPct: number;
   totalSessions: number;
   loyaltyStats?: LoyaltyStats;
-}> = ({ rebookPct, totalSessions, loyaltyStats }) => {
-  const useReal = Boolean(loyaltyStats) && (loyaltyStats?.uniqueCustomers ?? 0) >= 1;
+  /**
+   * 🆕 Round 28x.139 (founder: "โบนัสรายคน ต้องบาลานซ์กับหน้า rebook rate ... ไม่
+   * ขึ้น") — an admin-set rebook % for a boosted therapist. When present it
+   * OVERRIDES the live figure and forces the coherent synthetic breakdown
+   * (customer mix, timing, est. customers all derive from it + the boosted
+   * session count), so a padded session count no longer sits beside a 0%
+   * rebook. Only the customer-facing surface passes this; the staff card never
+   * does, so practitioners keep seeing their real numbers.
+   */
+  overrideRebook?: number | null;
+}> = ({ rebookPct, totalSessions, loyaltyStats, overrideRebook }) => {
+  const hasOverride = typeof overrideRebook === "number" && overrideRebook >= 0;
+  // The effective rebook % that drives every synthetic figure below.
+  const eff = hasOverride ? Math.min(100, Math.round(overrideRebook)) : rebookPct;
+  // An override always uses the derived (synthetic) story, never the live one.
+  const useReal = !hasOverride && Boolean(loyaltyStats) && (loyaltyStats?.uniqueCustomers ?? 0) >= 1;
 
-  const avgSessionsPerCustomer = useReal ? loyaltyStats!.avgSessions : rebookPct >= 50 ? 2.4 : 1.6;
-  const estCustomers = useReal ? loyaltyStats!.uniqueCustomers : Math.round(totalSessions / avgSessionsPerCustomer);
-  const repeatPct = useReal ? loyaltyStats!.repeatPct : Math.min(100, rebookPct);
+  const avgSessionsPerCustomer = useReal ? loyaltyStats!.avgSessions : eff >= 50 ? 2.4 : 1.6;
+  const estCustomers = useReal ? loyaltyStats!.uniqueCustomers : Math.max(1, Math.round(totalSessions / avgSessionsPerCustomer));
+  const repeatPct = useReal ? loyaltyStats!.repeatPct : Math.min(100, eff);
   const firstTimePct = 100 - repeatPct;
 
   const reliableSample = (useReal && (loyaltyStats?.uniqueCustomers ?? 0) >= 5) || totalSessions >= 10;
-  const isTopTier = reliableSample && (useReal ? repeatPct : rebookPct) >= TOP_5_PCT_THRESHOLD;
-  const headlinePct = useReal ? repeatPct : rebookPct;
+  const isTopTier = reliableSample && (useReal ? repeatPct : eff) >= TOP_5_PCT_THRESHOLD;
+  const headlinePct = useReal ? repeatPct : eff;
 
   const timingBuckets = useReal
     ? [
@@ -60,9 +74,9 @@ export const TherapistLoyaltyCard: React.FC<{
         { label: "Within 90 days", pct: loyaltyStats!.timingBuckets.within90 },
       ]
     : [
-        { label: "Within 7 days", pct: Math.round(rebookPct * 0.46) },
-        { label: "Within 30 days", pct: rebookPct },
-        { label: "Within 90 days", pct: Math.min(100, Math.round(rebookPct * 1.02)) },
+        { label: "Within 7 days", pct: Math.round(eff * 0.46) },
+        { label: "Within 30 days", pct: eff },
+        { label: "Within 90 days", pct: Math.min(100, Math.round(eff * 1.02)) },
       ];
 
   const MIN_SAMPLE = 1;
@@ -107,9 +121,11 @@ export const TherapistLoyaltyCard: React.FC<{
         <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)", lineHeight: 1.5 }}>
           {useReal
             ? `${loyaltyStats!.repeatCustomers} of ${loyaltyStats!.uniqueCustomers} customers booked again within 30 days.`
-            : `${Math.round(rebookPct)} in 100 customers booked again within 30 days.`}
+            : `${Math.round(eff)} in 100 customers booked again within 30 days.`}
         </Typography>
-        {!useReal && (
+        {/* 🆕 28x.139 — the "Estimate" note is for the genuine no-data case; an
+            admin override is a deliberate figure, so it's suppressed there. */}
+        {!useReal && !hasOverride && (
           <Typography sx={{ fontFamily: SANS, fontSize: 10, color: "var(--sr-dim)", fontStyle: "italic", mt: 0.5 }}>
             Estimate — accumulates real data as bookings complete.
           </Typography>

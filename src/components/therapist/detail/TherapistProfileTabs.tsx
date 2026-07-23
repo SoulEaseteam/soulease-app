@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { Box, Typography, Tabs, Tab } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { bayesianRating, formatRating } from "@/utils/rating";
+import { TherapistLoyaltyCard } from "@/components/therapist/TherapistLoyaltyCard";
 // 🆕 Round 28al — Phase 2 emoji → MUI icons.
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
@@ -43,6 +44,8 @@ interface Props {
   todayBookings?: number;
   rebookRate: string;
   hasLicense: boolean;
+  // 🆕 28x.139 — admin rebook % override, threaded to the loyalty card.
+  overrideRebook?: number | null;
 
   creds: Cred[];
   specs: Spec[];
@@ -88,6 +91,7 @@ const TherapistProfileTabs: React.FC<Props> = ({
   todayBookings = 0,
   rebookRate,
   hasLicense,
+  overrideRebook,
   creds,
   specs,
   langs,
@@ -194,6 +198,7 @@ const TherapistProfileTabs: React.FC<Props> = ({
             rebookPct={rebookPct}
             totalSessions={totalSessions}
             loyaltyStats={loyaltyStats}
+            overrideRebook={overrideRebook}
           />
         )}
       </Box>
@@ -726,480 +731,32 @@ const ReviewsTab: React.FC<{
 
 
 // ─────────────────────────────────────────────────────────────────────
-const INDUSTRY_REBOOK_AVG = 35; // Bangkok outcall avg (founder estimate)
-const TOP_5_PCT_THRESHOLD = 75; // ≥ this = top 5% in market
-
-// 🆕 28s344 — exported so the TherapistDetailPage Reviews tab can reuse
-//   this rich rebook/loyalty panel (founder ref: the "16% · 14 of 90 …"
-//   benchmark + customer-mix + rebook-timing card).
+// 🆕 Round 28x.139 (founder: "ปรับสีและธีมหน้าเว็บรูป 1 ให้เข้ากับ ... รูป 2"
+//   + "[rebook override] ไม่ขึ้น") — the public Reviews-tab loyalty panel used
+//   to be a separate, plainer copy of the same data (its own olive/plain
+//   styling, and it read the LIVE rebook so an admin override never showed).
+//   It now delegates to the shared, vivid TherapistLoyaltyCard (28x.106) so the
+//   guest page and the staff Performance page render ONE card that can't drift,
+//   and `overrideRebook` flows straight through.
 export const LoyaltyTab: React.FC<{
   rebookPct: number;
   totalSessions: number;
+  overrideRebook?: number | null;
   loyaltyStats?: {
     totalCompleted: number;
     uniqueCustomers: number;
     repeatCustomers: number;
     repeatPct: number;
     avgSessions: number;
-    timingBuckets: {
-      within7: number;
-      within30: number;
-      within90: number;
-    };
+    timingBuckets: { within7: number; within30: number; within90: number };
   };
-}> = ({ rebookPct, totalSessions, loyaltyStats }) => {
-  // 🆕 Round 28af — prefer real Firestore aggregates as soon as we
-  //    have ANY identifiable customer (userId or phone). Below that,
-  //    fall back to synthetic derivations from the seed rebookRate.
-  //    Sample size is shown in the customer-mix row so users can
-  //    judge the math themselves.
-  const useReal =
-    Boolean(loyaltyStats) && (loyaltyStats?.uniqueCustomers ?? 0) >= 1;
-
-  const avgSessionsPerCustomer = useReal
-    ? loyaltyStats!.avgSessions
-    : rebookPct >= 50
-    ? 2.4
-    : 1.6;
-  const estCustomers = useReal
-    ? loyaltyStats!.uniqueCustomers
-    : Math.round(totalSessions / avgSessionsPerCustomer);
-  const repeatPct = useReal
-    ? loyaltyStats!.repeatPct
-    : Math.min(100, rebookPct);
-  const firstTimePct = 100 - repeatPct;
-
-  // 🆕 28x.30 — a reliable sample for the "Top 5%" badge only. The panel
-  //   itself now shows on tiny samples (founder: "ลด gate — โชว์แม้ข้อมูลน้อย"),
-  //   but the badge stays gated so a 1-of-1 = 100% never wears "Top 5%".
-  const reliableSample =
-    (useReal && (loyaltyStats?.uniqueCustomers ?? 0) >= 5) ||
-    totalSessions >= 10;
-  const isTopTier =
-    reliableSample && (useReal ? repeatPct : rebookPct) >= TOP_5_PCT_THRESHOLD;
-
-  // Headline rebook % — use real if available
-  const headlinePct = useReal ? repeatPct : rebookPct;
-
-  const timingBuckets = useReal
-    ? [
-        {
-          label: "Within 7 days",
-          pct: loyaltyStats!.timingBuckets.within7,
-        },
-        {
-          label: "Within 30 days",
-          pct: loyaltyStats!.timingBuckets.within30,
-        },
-        {
-          label: "Within 90 days",
-          pct: loyaltyStats!.timingBuckets.within90,
-        },
-      ]
-    : [
-        { label: "Within 7 days", pct: Math.round(rebookPct * 0.46) },
-        { label: "Within 30 days", pct: rebookPct },
-        {
-          label: "Within 90 days",
-          pct: Math.min(100, Math.round(rebookPct * 1.02)),
-        },
-      ];
-
-  // Round 28s49 — Empty state. The synthetic fallback rendered
-  // "0%", "0 in 100 customers", "1.6 avg sessions / customer",
-  // "First-time 100%", "Within 7/30/90 days 0%" — a wall of
-  // demoralising zeros when a fresh therapist has no bookings
-  // yet. Founder sent the screenshot without text; the read is
-  // "this looks like the system is broken". Show a single quiet
-  // placeholder instead until at least one real customer is
-  // measurable.
-  // 🆕 28s346 (founder "ทำไมได้ 100 หรอ") — a rebook rate from 1–2 customers
-  //   is misleading (1 of 1 = 100% + a bogus "Top 5%" badge). Require a
-  //   minimum real sample before showing the panel; below it, show the
-  //   "building history" placeholder instead of an inflated number.
-  // 🆕 28x.30 (founder: "ลด gate — โชว์แม้ข้อมูลน้อย") — was 5 / 10 with a
-  //   rebook>0 requirement, which hid the panel for new practitioners (e.g.
-  //   Milo, 2 sessions) behind "Loyalty data coming soon". Lowered so the
-  //   rebook rate shows as soon as there's ANY real activity. The estimate
-  //   mode still carries its "accumulates real data…" disclaimer, and the
-  //   "Top 5%" badge stays gated by reliableSample above.
-  const MIN_SAMPLE = 1;
-  // 🆕 28s375 — also render (in estimate mode, which carries its own
-  //   "Estimate — accumulates real data…" disclaimer below) when the
-  //   therapist doc has a reliable denormalized session count synced by
-  //   admin ("Sync Stats"). Anonymous guests can read that aggregate on the
-  //   world-readable therapists doc but NOT the raw bookings (PII-gated), so
-  //   without this they saw "coming soon" while the hero chips already showed
-  //   "N sessions · X% rebook" — an inconsistency (audit #1). The tiny-live-
-  //   sample real path (the 28s346 "1 of 1 = 100%" concern) stays gated by
-  //   MIN_SAMPLE; this only opens the honest aggregate-estimate path.
-  const MIN_SYNCED_SESSIONS = 1;
-  const enoughData =
-    (useReal && (loyaltyStats?.uniqueCustomers ?? 0) >= MIN_SAMPLE) ||
-    totalSessions >= MIN_SYNCED_SESSIONS;
-  if (!enoughData) {
-    return (
-      <Box
-        sx={{
-          padding: "32px 24px",
-          textAlign: "center",
-          color: "var(--sr-muted)",
-          fontFamily: SANS,
-        }}
-      >
-        <Box
-          sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            // 🆕 28t.19 — soft rose (was var(--sr-body), which resolved to
-            //   dark slate in day mode and read as an off-brand navy glyph).
-            background: "rgba(217, 124, 149, 0.10)",
-            marginBottom: "14px",
-            fontSize: "22px",
-            color: "#D97C95",
-          }}
-        >
-          ✦
-        </Box>
-        <Typography
-          sx={{
-            fontFamily: SERIF,
-            fontSize: "17px",
-            fontWeight: 600,
-            color: "var(--sr-ink)",
-            marginBottom: "6px",
-          }}
-        >
-          Loyalty data coming soon
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "12.5px",
-            color: "var(--sr-muted)",
-            lineHeight: 1.5,
-            maxWidth: 280,
-            margin: "0 auto",
-          }}
-        >
-          Rebook rate, customer mix, and timing appear here once this
-          practitioner has at least 5 unique guests — so the numbers
-          are reliable, not a one-off.
-        </Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* Headline + sub-stat */}
-      <Box
-        sx={{
-          padding: "16px 18px",
-          borderRadius: "16px",
-          background:
-            "var(--sr-bg)",
-          border: "1px solid var(--sr-hairline)",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: "10px",
-            marginBottom: "4px",
-          }}
-        >
-          <Typography
-            sx={{
-              fontFamily: SERIF,
-              fontSize: "36px",
-              fontWeight: 700,
-              color: "var(--sr-body)",
-              letterSpacing: "-0.02em",
-              lineHeight: 1,
-            }}
-          >
-            {headlinePct}%
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "12px",
-              fontWeight: 600,
-              color: "var(--sr-body)",
-            }}
-          >
-            rebook rate
-          </Typography>
-        </Box>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "12px",
-            color: "var(--sr-body)",
-            lineHeight: 1.5,
-          }}
-        >
-          {useReal
-            ? `${loyaltyStats!.repeatCustomers} of ${
-                loyaltyStats!.uniqueCustomers
-              } customers booked again within 30 days.`
-            : `${Math.round(rebookPct)} in 100 customers booked again within 30 days.`}
-        </Typography>
-        {!useReal && (
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "10px",
-              color: "var(--sr-dim)",
-              fontStyle: "italic",
-              marginTop: "4px",
-            }}
-          >
-            Estimate — accumulates real data as bookings complete.
-          </Typography>
-        )}
-        {isTopTier && (
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "11px",
-              fontWeight: 700,
-              color: "#16a34a",
-              marginTop: "8px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              background: "rgba(22, 163, 74, 0.1)",
-              padding: "4px 10px",
-              borderRadius: "999px",
-            }}
-          >
-            ✓ Top 5% in Bangkok
-          </Typography>
-        )}
-      </Box>
-
-      {/* Industry benchmark — comparison bars */}
-      <Box>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "10.5px",
-            fontWeight: 800,
-            color: "var(--sr-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            marginBottom: "10px",
-            paddingLeft: "2px",
-          }}
-        >
-          Industry benchmark
-        </Typography>
-        <BenchmarkBar
-          label="This therapist"
-          pct={headlinePct}
-          color="var(--sr-ink)"
-          highlight
-        />
-        <BenchmarkBar
-          label="Bangkok avg"
-          pct={INDUSTRY_REBOOK_AVG}
-          color="var(--sr-dim)"
-        />
-      </Box>
-
-      {/* Customer mix */}
-      <Box>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "10.5px",
-            fontWeight: 800,
-            color: "var(--sr-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            marginBottom: "10px",
-            paddingLeft: "2px",
-          }}
-        >
-          Customer mix
-        </Typography>
-        <Box
-          sx={{
-            display: "flex",
-            height: 28,
-            borderRadius: "10px",
-            overflow: "hidden",
-            border: "1px solid var(--sr-hairline)",
-          }}
-        >
-          <Box
-            sx={{
-              width: `${repeatPct}%`,
-              background: "#8F8474",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              fontFamily: SANS,
-              fontSize: "11px",
-              fontWeight: 700,
-              transition: "width 0.4s ease",
-            }}
-          >
-            Repeat {repeatPct}%
-          </Box>
-          <Box
-            sx={{
-              width: `${firstTimePct}%`,
-              background: "var(--sr-line)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--sr-body)",
-              fontFamily: SANS,
-              fontSize: "11px",
-              fontWeight: 700,
-              transition: "width 0.4s ease",
-            }}
-          >
-            First-time {firstTimePct}%
-          </Box>
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: "8px",
-            fontFamily: SANS,
-            fontSize: "11px",
-            color: "var(--sr-muted)",
-          }}
-        >
-          <Typography sx={{ fontSize: "11px" }}>
-            ~{estCustomers.toLocaleString()} unique customers
-          </Typography>
-          <Typography sx={{ fontSize: "11px" }}>
-            {avgSessionsPerCustomer.toFixed(1)} avg sessions / customer
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Rebook timing */}
-      <Box>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "10.5px",
-            fontWeight: 800,
-            color: "var(--sr-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            marginBottom: "10px",
-            paddingLeft: "2px",
-          }}
-        >
-          Rebook timing
-        </Typography>
-        {timingBuckets.map((b) => (
-          <BenchmarkBar
-            key={b.label}
-            label={b.label}
-            pct={b.pct}
-            color="var(--sr-ink)"
-          />
-        ))}
-      </Box>
-
-      {/* Methodology footnote — transparency */}
-      <Box
-        sx={{
-          padding: "10px 14px",
-          borderRadius: "10px",
-          background: "var(--sr-panel-2)",
-        }}
-      >
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "10.5px",
-            color: "var(--sr-muted)",
-            lineHeight: 1.5,
-          }}
-        >
-          <Box component="span" sx={{ fontWeight: 700 }}>
-            How we measure:
-          </Box>{" "}
-          Rebook rate counts customers who book the same therapist again
-          within 30 days. Bangkok average is computed across all licensed
-          outcall therapists on SunRed.
-        </Typography>
-      </Box>
-    </Box>
-  );
-};
-
-// Reusable horizontal bar for benchmark / timing rows
-const BenchmarkBar: React.FC<{
-  label: string;
-  pct: number;
-  color: string;
-  highlight?: boolean;
-}> = ({ label, pct, color, highlight }) => (
-  <Box sx={{ marginBottom: "8px" }}>
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "baseline",
-        marginBottom: "3px",
-      }}
-    >
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: "11.5px",
-          fontWeight: highlight ? 700 : 600,
-          color: highlight ? "var(--sr-ink)" : "var(--sr-body)",
-        }}
-      >
-        {label}
-      </Typography>
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: "11.5px",
-          fontWeight: 700,
-          color: highlight ? "var(--sr-ink)" : "var(--sr-body)",
-        }}
-      >
-        {pct}%
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        height: highlight ? 10 : 7,
-        borderRadius: "999px",
-        background: "var(--sr-line)",
-        overflow: "hidden",
-      }}
-    >
-      <Box
-        sx={{
-          width: `${Math.min(100, Math.max(0, pct))}%`,
-          height: "100%",
-          background: color,
-          transition: "width 0.5s ease",
-        }}
-      />
-    </Box>
-  </Box>
+}> = ({ rebookPct, totalSessions, loyaltyStats, overrideRebook }) => (
+  <TherapistLoyaltyCard
+    rebookPct={rebookPct}
+    totalSessions={totalSessions}
+    loyaltyStats={loyaltyStats}
+    overrideRebook={overrideRebook}
+  />
 );
 
 // ─── Section heading ───
