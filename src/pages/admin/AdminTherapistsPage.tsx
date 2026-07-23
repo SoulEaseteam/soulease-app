@@ -43,7 +43,8 @@ import { useNavigate } from "react-router-dom";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
 import type { Therapist } from "@/types/therapist";
 import { logAdminAction } from "@/utils/auditLog";
-import { nowBKK, endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
+// 🆕 28x.106 — overrides expire at 06:00 BKK (business night end), not midnight.
+import { nowBKK, endOfBusinessDayBKK, fmtBKKTimeShort } from "@/utils/time";
 // 🆕 Round 28s267 (audit: "admin sees a different busy status than
 //   customers do") — same live-bookings derivation BookingFlowPage/
 //   TherapistDetailPage already use (28b49), now shared here instead of
@@ -430,7 +431,7 @@ const AdminTherapistsPage: React.FC = () => {
           statusOverride: mode === "all-available" ? "available" : "Auto",
           // 🆕 Round 28s267 — batch-set availability also expires at end of
           //   day, same safety net as the per-row override select below.
-          overrideUntil: mode === "all-available" ? endOfTodayBKK().toDate() : null,
+          overrideUntil: mode === "all-available" ? endOfBusinessDayBKK().toDate() : null,
           updatedAt: serverTimestamp(),
         });
       }
@@ -622,7 +623,7 @@ const AdminTherapistsPage: React.FC = () => {
       // 🆕 Round 28s267 (audit: "Override ไม่หมดอายุอัตโนมัติ") — any
       //   manual override now expires at end of BKK day instead of sticking
       //   forever until someone remembers to clear it.
-      overrideUntil: value && value !== "Auto" ? endOfTodayBKK().toDate() : null,
+      overrideUntil: value && value !== "Auto" ? endOfBusinessDayBKK().toDate() : null,
       ...(value && value !== "Auto" ? { isHoliday: false } : {}),
     });
     void logAdminAction("therapist.update", {

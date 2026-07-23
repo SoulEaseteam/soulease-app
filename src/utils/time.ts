@@ -238,6 +238,23 @@ export function endOfTodayBKK(): Dayjs {
   return nowBKK().endOf("day");
 }
 
+/**
+ * 🆕 28x.106 (founder "สถานะ AVAILABLE ยังไง เธอพักอยู่") — end of the
+ * BUSINESS night, not the calendar day. SunRed's shifts run past midnight
+ * (15:00–03:00, 19:00–05:00…), so a "พักคืนนี้" status override stamped
+ * with endOfTodayBKK() (23:59:59) silently expired MID-SHIFT at midnight
+ * — Nicky was resting, her override evaporated at 00:00, and the engine
+ * flipped her card back to AVAILABLE at 01:00 while she was still on
+ * break. The night belongs to one business day that rolls at 06:00 BKK
+ * (same boundary as the badge engine's businessDayBKK, 28x.100):
+ * before 06:00 → today 06:00 · after → tomorrow 06:00.
+ */
+export function endOfBusinessDayBKK(): Dayjs {
+  const now = nowBKK();
+  const today6 = now.startOf("day").add(6, "hour");
+  return now.isBefore(today6) ? today6 : today6.add(1, "day");
+}
+
 /** Human-friendly "X minutes ago" / "in 2 hours" / "tomorrow at 19:00"
  *  — built on dayjs but anchored to BKK so the relative phrasing
  *  doesn't drift across timezones. Falls back to a plain BKK timestamp. */
