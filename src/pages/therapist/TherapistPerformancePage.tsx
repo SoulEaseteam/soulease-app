@@ -94,8 +94,18 @@ const TherapistPerformancePage: React.FC = () => {
               timingBuckets: stats.timingBuckets,
             }}
           />
+          {/* 🆕 Round 28x.133 (founder: "CC still Show เรา ไม่โชว์ให้พนักงานเห็น
+              ในหน้าหลังบ้าน") — was "ตัวเลขเดียวกับที่ลูกค้าเห็นในหน้าโปรไฟล์
+              สาธารณะของคุณ". That claim of equality is the one thing that must
+              NOT be said here: the public session count can be boosted for
+              social proof (credited cancellations today, an admin bonus soon),
+              so inviting the practitioner to compare her app's real count with
+              her public profile is exactly what exposes the boost. This card's
+              rebook / mix / timing ARE honest and identical to public — but the
+              session COUNT is not, so we describe these as HER real numbers and
+              drop the cross-reference entirely. */}
           <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", mt: 2.5, textAlign: "center", lineHeight: 1.5 }}>
-            ตัวเลขเดียวกับที่ลูกค้าเห็นในหน้าโปรไฟล์สาธารณะของคุณ
+            ยอดจริงของคุณ · นับเฉพาะงานที่ทำเสร็จจริง
           </Typography>
         </Box>
       )}
