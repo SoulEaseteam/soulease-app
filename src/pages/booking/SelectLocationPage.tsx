@@ -38,7 +38,9 @@ import { useGoogleMaps } from "@/context/GoogleMapsContext";
 // 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
 import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
 
-const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
+// 🆕 28x.105 (founder "Confirm Reservation / Select Location ปรับฟอนต์") —
+//   SERIF alias → readable SANS stack (see BookingFlowPage note).
+const SERIF = '"Inter", system-ui, -apple-system, sans-serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 export type MeetingPoint = "lobby" | "lift" | "direct" | "other";

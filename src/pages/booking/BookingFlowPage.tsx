@@ -208,7 +208,10 @@ import {
 //   needing repro steps from the customer.
 import { logBookingError } from "@/utils/bookingError";
 
-const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
+// 🆕 28x.105 (founder "Confirm Reservation / Select Location ปรับฟอนต์") —
+//   the SERIF alias now resolves to the readable SANS stack; const name kept
+//   so all call sites flip at once with no risk of a missed spot.
+const SERIF = '"Inter", system-ui, -apple-system, sans-serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // Round 28s71 (audit) — defensive HH:mm → minutes parse. Returns NaN

@@ -86,7 +86,8 @@ import { db } from "@/lib/firebase";
 // 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
 import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
 
-const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
+// 🆕 28x.105 — SERIF alias → readable SANS stack (founder readability pass).
+const SERIF = '"Inter", system-ui, -apple-system, sans-serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // 30 min prep buffer — shown as 'Will leave for your location at HH:mm'
@@ -262,11 +263,14 @@ const BookingSuccessPage: React.FC = () => {
         //   sit next to the 2×2 action grid instead of stacking on the
         //   whole viewport. Mobile shell unchanged.
         ...responsiveShellNarrow,
+        // 🆕 28x.105 (founder "ปรับให้เป็นสัดส่วน เข้าใจง่าย สวยงาม") —
+        //   back to ONE centered column. 28r56's 900-1100px 2-col split
+        //   left the right column ending at 1/3 height with a huge dark
+        //   void under it on desktop; a receipt page reads best narrow.
         maxWidth: {
           xs: "430px",
           sm: "600px",
-          md: "900px",
-          lg: "1100px",
+          md: "640px",
         },
         minHeight: "100vh",
         background: "var(--sr-bg)",
@@ -323,12 +327,11 @@ const BookingSuccessPage: React.FC = () => {
                 (receipt, prep, CTAs) stays full-width one column. */}
             <Box
               sx={{
+                // 🆕 28x.105 — single column on every breakpoint (see the
+                //   shell maxWidth note above; the md 2-col split is gone).
                 display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  md: "minmax(0, 1fr) minmax(280px, 380px)",
-                },
-                gap: { xs: 0, md: "24px 32px" },
+                gridTemplateColumns: "1fr",
+                gap: 0,
                 alignItems: "start",
               }}
             >
@@ -614,10 +617,20 @@ const BookingSuccessPage: React.FC = () => {
             <Box
               sx={{
                 minWidth: 0,
-                marginTop: { xs: "16px", md: 0 },
+                // 🆕 28x.105 — the confirm cluster (copy code + channels) is
+                //   now a rose-bordered card so the ONE action this page
+                //   exists for reads as a single obvious step instead of
+                //   loose text floating in the void. Channel tiles inside
+                //   stay borderless per 28x.34b.
+                marginTop: "18px",
                 display: "flex",
                 flexDirection: "column",
                 gap: "10px",
+                padding: "16px 16px 12px",
+                borderRadius: "20px",
+                background: "var(--sr-panel)",
+                border: "1px solid rgba(217, 124, 149, 0.35)",
+                boxShadow: "var(--sr-card-shadow)",
               }}
             >
               {/* 🆕 28x.33 (founder "ย้ายไปไว้ด้านบน") — Copy reservation code
