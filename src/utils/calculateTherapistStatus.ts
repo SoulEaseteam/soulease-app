@@ -115,14 +115,17 @@ export function calculateTherapistStatus(t: Therapist): {
   //   `activeBooking` is typed as boolean but some legacy paths store
   //   an object with `endAt` — support both shapes defensively.
   //
-  //   🆕 28x.99y (founder "Milo ทำไมขึ้น Bookable ทั้งที่ว่าง") — nothing
-  //   in the current codebase ever writes activeBooking anymore, so a
-  //   leftover `true` from the retired writer pinned Milo + Pare on
-  //   "bookable" for 8 days straight. When the doc carries a busyUntil
-  //   that has ALREADY expired, treat the activeBooking flag as part of
-  //   that same finished job and ignore it (self-heals every stale doc
-  //   with no migration). A flag with NO busyUntil keeps the legacy
-  //   sticky behaviour — there's no window to judge staleness against.
+  //   🆕 28x.99y (founder "Milo ทำไมขึ้น Bookable ทั้งที่ว่าง") — CORRECTION
+  //   (28x.102): activeBooking/busyUntil DO have a live writer — the
+  //   syncTherapistBusyStatus reconciler (functions/src/index.ts, 28x.31,
+  //   every 2 min). But Milo + Pare still sat with activeBooking:true and
+  //   a busyUntil 8 days expired, so the reconciler's clear branch has a
+  //   real gap for some end-of-job path. This guard is the client-side
+  //   defense: when the doc's busyUntil has ALREADY expired, treat the
+  //   activeBooking flag as part of that same finished job and ignore it
+  //   (self-heals whatever the reconciler misses, no migration). A flag
+  //   with NO busyUntil keeps the legacy sticky behaviour — there's no
+  //   window to judge staleness against.
   // ---------------------------------------------------------
   const busyWindowExpired = !!busyUntil && !busyUntil.isAfter(now);
   if ((t.activeBooking ?? t.isBooked) && !busyWindowExpired) {
