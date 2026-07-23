@@ -45,7 +45,7 @@ import { app, auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { formatTHB } from "@/utils/servicePricing";
 import { useOwnBookingsSnapshot } from "@/hooks/useOwnBookingsSnapshot";
-import { membershipChipSx, MEMBERSHIP_LABELS_TH, type MembershipTier } from "@/utils/membership";
+import { membershipChipSx, MEMBERSHIP_LABELS_TH, isTestLocationBooking, type MembershipTier } from "@/utils/membership";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
@@ -171,7 +171,14 @@ const TherapistJobsPage: React.FC = () => {
   const jobs = useOwnBookingsSnapshot<Job[] | null>(
     uid,
     (snap) => {
-      const rows: Job[] = snap.docs.map((d) => {
+      const rows: Job[] = snap.docs
+        // 🆕 Round 28x.135 (founder: "งานเทสบอท โผล่ น่ายกเลิก") — QA
+        //   booking-flow tests at the fixed Aspire/Soi Prompan address are not
+        //   real jobs; keep them out of her list and its tab counts. Only the
+        //   test-ADDRESS signal, not isReservedShopBooking (admin's phone
+        //   placeholder = 126 REAL bookings per CLAUDE.md).
+        .filter((d) => !isTestLocationBooking(d.data() as Record<string, unknown>))
+        .map((d) => {
         const b = d.data() as Record<string, unknown>;
         return {
           id: d.id,

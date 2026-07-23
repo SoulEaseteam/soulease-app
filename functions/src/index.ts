@@ -4874,15 +4874,23 @@ async function recomputeTherapistSessionStats(therapistId: string): Promise<void
       status?: string;
       userId?: string | null;
       phone?: string | null;
+      locationName?: string | null;
+      address?: string | null;
     };
+
+    // 🆕 Round 28x.135 (founder: "งานเทสบอท โผล่") — QA booking-flow tests at
+    //   the fixed Aspire / Soi Prompan test address are not real sessions, so
+    //   they never count for the customer-facing chip either. Mirrors
+    //   isTestLocationBooking in src/utils/membership.ts (functions can't
+    //   import from the app). Deliberately NOT the phone/name "reserved shop"
+    //   signal — those are 126 REAL bookings (CLAUDE.md).
+    const loc = `${b.locationName ?? ""} ${b.address ?? ""}`.toLowerCase();
+    if (loc.includes("aspire") || loc.includes("ซอย พร้อมพันธ์") || loc.includes("qh86+45p")) return;
+
     const status = (b.status ?? "").toLowerCase();
 
     // 🆕 Round 28x.134 (founder chose "รวมเหลืออันเดียว") — the per-booking
     //   "credit this cancellation" mode (countsAsSession, 28x.118) is retired.
-    //   It did the same job as displaySessionBonus — pad the customer-facing
-    //   count — by a fiddlier route, so two tools boosted one number. Each
-    //   therapist's existing credits were folded into their displaySessionBonus
-    //   (one-off migration), so this only ever needs completed + bonus now.
     //   Old countsAsSession flags on booking docs are dead data, ignored here.
     if (!SERVED_STATUSES.has(status)) return;
     served++;

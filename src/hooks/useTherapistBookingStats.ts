@@ -36,6 +36,10 @@ import {
 import { db } from "@/lib/firebase";
 // 🆕 Round 28an — single source of truth for "today" anchored to BKK.
 import { startOfTodayBKK, endOfTodayBKK } from "@/utils/time";
+// 🆕 Round 28x.135 — exclude QA booking-flow tests (the fixed Aspire/Soi
+//   Prompan test address) from every therapist stat. NOT isReservedShopBooking:
+//   those (admin's phone/name placeholder) are 126 REAL bookings per CLAUDE.md.
+import { isTestLocationBooking } from "@/utils/membership";
 
 export interface TherapistBookingStats {
   /** Total bookings (all valid statuses — excludes cancelled/refunded). */
@@ -65,6 +69,9 @@ interface BookingStatsDoc {
   phone?: string | null;
   startAt?: FirestoreDateLike;
   createdAt?: FirestoreDateLike;
+  // 🆕 Round 28x.135 — for the test-booking filter (isTestLocationBooking).
+  locationName?: string | null;
+  address?: string | null;
 }
 
 /** Normalize a phone string for use as an identity key — strip
@@ -128,6 +135,8 @@ export function computeBookingStats(
 
   snap.forEach((d) => {
     const b = d.data() as BookingStatsDoc;
+    // 🆕 Round 28x.135 — a QA test booking is not a real session for anyone.
+    if (isTestLocationBooking(b)) return;
     const status = (b.status ?? "").toLowerCase();
     if (EXCLUDED.has(status)) return;
     totalCompleted++;
