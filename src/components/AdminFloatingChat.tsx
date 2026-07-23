@@ -118,20 +118,19 @@ const CHAT_OPTIONS: ChatOption[] = [
     tint: "#07C160",
   },
   {
-    // 🆕 Round 28x.80 (founder: "ทั้งหมด ที่ติดต่อแอดมิน") — routed through
-    //   @SunRedGreeterBot instead of the personal DM. The bot answers
-    //   pricing/services/areas/availability/how-to instantly (24/7, no
-    //   wait for View) and its menu's last button still opens a direct
-    //   chat with @SunRedvip_bkk / @YuNiSpaBkk — so nobody who wants a
-    //   human is blocked, they're just FAQ-triaged first. This is safe
-    //   here (general "reach us" widget) but was deliberately NOT applied
-    //   to BookingSuccessPage's post-booking confirm CTA — that one sends
-    //   a prefilled `?text=` message with the booking ref, which bots
-    //   don't support the same way personal DMs do, and losing that ref
-    //   is the exact failure mode that cost 2 weeks of orders on
-    //   2026-06-09 (see CLAUDE-HISTORY.md).
+    // ⚠️ 28x.101 (founder "สลับปุ่ม Telegram บนเว็บให้ชี้ตรงไป
+    //   t.me/SunRedvip_bkk") — REVERSES 28x.80's bot-triage routing.
+    //   Walking the flow as a customer showed why: the widget promises
+    //   "Live · replies in minutes", but t.me/SunRedGreeterBot greets
+    //   with a giant blue "START BOT" gate — the exact opposite of the
+    //   live-human promise, on the audience's #1 channel, with a human
+    //   still 2 more taps away. Privacy-minded guests bail right there.
+    //   The Greeter bot itself is NOT retired — it still serves the TG
+    //   channel/FAQ surfaces — it's just no longer the website widget's
+    //   first touch. Don't route this back through the bot without View
+    //   explicitly reversing again (this has now flipped once each way).
     title: "Telegram",
-    href: "https://t.me/SunRedGreeterBot",
+    href: "https://t.me/SunRedvip_bkk",
     src: "/images/profli/telegram.png",
     tint: "#26A1E0",
   },
