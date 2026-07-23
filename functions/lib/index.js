@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -165,6 +165,71 @@ async function sendTelegramIfEnabled(token, chatId, text, keyboard) {
         return { ok: true, body: "skipped: telegramEnabled=false" };
     }
     return sendTelegram(token, chatId, text, keyboard);
+}
+/**
+ * 🆕 Round 28x.132 — pull the message_id out of a Telegram sendMessage reply.
+ *
+ * `sendTelegram` hands back the raw response body as a string, and until now
+ * nothing read it: the id was written to `telegramLogs` only as part of a
+ * truncated blob. Without the id the bot cannot address a message it sent, so
+ * "mark this order cancelled in the channel" was impossible — not because of
+ * any Telegram limit, but because we never remembered which message it was.
+ */
+function extractMessageId(body) {
+    try {
+        const parsed = JSON.parse(body);
+        return typeof parsed.result?.message_id === "number" ? parsed.result.message_id : null;
+    }
+    catch {
+        // Defensive: a truncated / non-JSON body still usually carries the id.
+        const m = /"message_id"\s*:\s*(\d+)/.exec(body);
+        return m ? Number(m[1]) : null;
+    }
+}
+/** Telegram HTML parse-mode requires exactly these three to be escaped. */
+function escapeTelegramHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+/**
+ * 🆕 Round 28x.132 (founder: "ถ้ายกเลิก แล้วแอดมินกดยกเลิกออเดอร์ บอทจะลบ
+ * ออเดอร์ที่ส่งมาด้วยได้ไหม" → chose strike-through over deletion).
+ *
+ * Rewrites an already-posted message in place as a cancelled one. Deliberately
+ * NOT deleteMessage: the Booking channel is the shop's own record, and a
+ * vanished card loses the fact that the order ever existed — worse if a
+ * practitioner already read it. Telegram also refuses to delete messages past a
+ * certain age, so "cancel three days later" would fail silently, which is the
+ * one failure mode an operator must never be handed.
+ *
+ * Sent messages are plain text, so this switches the message to HTML mode and
+ * escapes the body before wrapping it in <s>.
+ */
+async function markTelegramMessageCancelled(token, chatId, messageId, originalText) {
+    const text = "❌ ยกเลิกแล้ว · CANCELLED\n" +
+        `<s>${escapeTelegramHtml(originalText).slice(0, 3800)}</s>`;
+    try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                message_id: messageId,
+                text,
+                parse_mode: "HTML",
+                disable_web_page_preview: true,
+            }),
+        });
+        const body = await res.text().catch(() => "");
+        if (!res.ok) {
+            v2_1.logger.warn("[markTelegramMessageCancelled] edit rejected", { messageId, body: body.slice(0, 300) });
+            return false;
+        }
+        return true;
+    }
+    catch (err) {
+        v2_1.logger.error("[markTelegramMessageCancelled] fetch failed", { messageId, err });
+        return false;
+    }
 }
 // 🆕 Round 28x.124 (founder: "ถึงแล้ว — ให้พนักงานถ่ายรูปจุดที่รอลูกค้า ... บอท
 //   จะแจ้งเจ้าของว่าพนักงานถึงแล้ว พร้อมรูปจุดรอพบ") — sendPhoto, so the
@@ -1139,9 +1204,23 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
     //   ประเทศอะไร 🌐 Source: อีก 1 ข้อความ") — the source/country line used
     //   to be the last line of the booking card; now a separate follow-up
     //   message, same destination.
+    // 🆕 Round 28x.132 — remember which channel messages belong to this
+    //   booking, WITH their text, so a later cancellation can strike each one
+    //   through as itself. All three go to the SAME channel, so a cancel that
+    //   only touched the card would leave the Source and History follow-ups
+    //   sitting there un-struck, reading as if the job were still on. Storing
+    //   the text (not just the id) means the strike re-wraps the real message
+    //   with no reconstruction or drift.
+    const adminMsgs = [];
+    const adminMsgId = extractMessageId(adminResult.body);
+    if (adminMsgId)
+        adminMsgs.push({ id: adminMsgId, text: adminText });
     const sourceLine = attributionLine(data);
     if (sourceLine) {
-        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, sourceLine);
+        const r = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, sourceLine);
+        const id = extractMessageId(r.body);
+        if (id)
+            adminMsgs.push({ id, text: sourceLine });
     }
     // 🆕 Round 28x.99l (founder: "ส่งข้อความที่3 ไป SunRed Booking ว่าลูกค้า
     //   คนนี้ เป็นลูกค้าใหม่หรือมีประวัติ...ถ้ามีประวัติหรือสมาชิก อยู่เลเวล
@@ -1149,13 +1228,32 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
     try {
         const historyLine = await customerHistoryLine(data.phone, bookingId);
         if (historyLine) {
-            await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, historyLine);
+            const r = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, historyLine);
+            const id = extractMessageId(r.body);
+            if (id)
+                adminMsgs.push({ id, text: historyLine });
         }
     }
     catch (err) {
         // Never let a history-lookup failure block the booking notification
         // flow that already succeeded above.
         v2_1.logger.error("[onBookingCreate] customerHistoryLine failed", err);
+    }
+    // 🆕 28x.132 — persist the messages. Fire-and-forget style error handling:
+    //   a booking that notified successfully must never be failed by a
+    //   bookkeeping write, it just loses the ability to be struck through
+    //   later. `telegramChatId` is stored too so the strike trigger targets
+    //   the same channel this ran in without hardcoding it a second time.
+    if (adminMsgs.length > 0) {
+        try {
+            await (0, firestore_2.getFirestore)().collection("bookings").doc(bookingId).update({
+                telegramAdminMsgs: adminMsgs,
+                telegramChatId: TELEGRAM_CHAT_ID,
+            });
+        }
+        catch (err) {
+            v2_1.logger.error("[onBookingCreate] telegramAdminMsgs write failed", err);
+        }
     }
     // ── 2. Send to THERAPIST personal chat (Round 28b27) ──────────
     //   Each therapist may have a `telegramChatId` field set on their
@@ -3943,5 +4041,76 @@ exports.onBookingWriteSyncStats = (0, firestore_1.onDocumentWritten)({
             v2_1.logger.warn("[onBookingWriteSyncStats] recompute failed", { therapistId: id, err });
         }
     }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.132 (founder: "ถ้ายกเลิก แล้วแอดมินกดยกเลิกออเดอร์ บอทจะลบ
+//   ออเดอร์ที่ส่งมาด้วยได้ไหม ในเทเลแกรม บุค" — chose strike-through, not delete)
+//
+// When a booking's status transitions INTO "cancelled", strike through every
+// channel message onBookingCreate posted for it (card + Source + History),
+// re-titled "❌ ยกเลิกแล้ว · CANCELLED". editMessageText, not deleteMessage:
+// the Booking channel is the shop's record, a vanished card loses that the
+// order ever existed, and Telegram refuses to delete messages past a certain
+// age — so a cancel three days later would fail silently, the one outcome an
+// operator must never be handed. An edit has no such age limit.
+//
+// Only messages captured WITH their text (telegramAdminMsgs, written by
+// onBookingCreate from this round on) can be struck. A booking created before
+// this shipped has no stored messages and is skipped — logged, not errored.
+// ─────────────────────────────────────────────────────────────────────────────
+exports.onBookingCancelledStrikeTelegram = (0, firestore_1.onDocumentUpdated)({
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+}, async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!after)
+        return;
+    const wasCancelled = (before?.status ?? "").toLowerCase() === "cancelled";
+    const isCancelled = (after.status ?? "").toLowerCase() === "cancelled";
+    // Fire only on the transition INTO cancelled, and only once: an already-
+    // struck booking that gets edited again (price fix, note) must not re-edit.
+    if (isCancelled === wasCancelled)
+        return;
+    if (!isCancelled)
+        return;
+    if (after.telegramCancelStruckAt)
+        return;
+    const msgs = Array.isArray(after.telegramAdminMsgs) ? after.telegramAdminMsgs : [];
+    if (msgs.length === 0) {
+        v2_1.logger.info("[onBookingCancelledStrike] no stored messages — skipping", {
+            bookingId: event.params.bookingId,
+        });
+        return;
+    }
+    if (!(await isTelegramEnabled())) {
+        v2_1.logger.info("[onBookingCancelledStrike] telegram disabled — skipping");
+        return;
+    }
+    const token = TELEGRAM_BOT_TOKEN.value().trim();
+    const chatId = after.telegramChatId || TELEGRAM_CHAT_ID;
+    let struck = 0;
+    for (const m of msgs) {
+        if (typeof m?.id !== "number" || typeof m?.text !== "string")
+            continue;
+        const ok = await markTelegramMessageCancelled(token, chatId, m.id, m.text);
+        if (ok)
+            struck++;
+    }
+    // Stamp so this can never run twice for the same booking.
+    try {
+        await (0, firestore_2.getFirestore)().collection("bookings").doc(event.params.bookingId).update({
+            telegramCancelStruckAt: firestore_2.FieldValue.serverTimestamp(),
+        });
+    }
+    catch (err) {
+        v2_1.logger.error("[onBookingCancelledStrike] stamp write failed", err);
+    }
+    v2_1.logger.info("[onBookingCancelledStrike] done", {
+        bookingId: event.params.bookingId,
+        struck,
+        total: msgs.length,
+    });
 });
 //# sourceMappingURL=index.js.map
