@@ -45,7 +45,7 @@ import { app, auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { formatTHB } from "@/utils/servicePricing";
 import { useOwnBookingsSnapshot } from "@/hooks/useOwnBookingsSnapshot";
-import { membershipChipSx, MEMBERSHIP_LABELS_TH, isTestLocationBooking, type MembershipTier } from "@/utils/membership";
+import { membershipChipSx, MEMBERSHIP_LABELS_EN, isTestLocationBooking, type MembershipTier } from "@/utils/membership";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
@@ -562,7 +562,7 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
                 //   the theme-aware --sr-tier-* tokens instead.
                 <Box sx={{ px: "7px", py: "1px", borderRadius: 999, ...membershipChipSx(tier) }}>
                   <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 800, letterSpacing: "0.04em", color: "inherit" }}>
-                    {MEMBERSHIP_LABELS_TH[tier]}
+                    {MEMBERSHIP_LABELS_EN[tier]}
                   </Typography>
                 </Box>
               )}

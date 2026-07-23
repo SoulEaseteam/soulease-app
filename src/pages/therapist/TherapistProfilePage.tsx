@@ -52,7 +52,7 @@ import { responsiveShell } from "@/theme/breakpoints";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
 import { useTherapistIdentityStats } from "@/hooks/useTherapistIdentityStats";
 import TherapistIdentityCard from "@/components/therapist/TherapistIdentityCard";
-import { SUNRED_TZ } from "@/utils/time";
+import { SUNRED_TZ, prettyHHMM } from "@/utils/time";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -451,7 +451,10 @@ const TherapistProfilePage: React.FC = () => {
           ) : (
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
               <Typography sx={{ fontFamily: SANS, fontSize: "12.5px", color: "var(--sr-body)" }}>
-                {therapist.startTime ?? "--:--"} – {therapist.endTime ?? "--:--"}
+                {/* 🆕 Round 28x.138 (founder: "เวลาทำงาน · Working Hours PM – AM")
+                    — was raw 24h. prettyHHMM → "7:00 PM – 5:00 AM", same format
+                    as the identity card (28x.129) and the public profile. */}
+                {prettyHHMM(therapist.startTime) || "—:—"} – {prettyHHMM(therapist.endTime) || "—:—"}
               </Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: "11px", color: "var(--sr-muted)", textAlign: "right" }}>
                 แก้ไขได้เฉพาะวันพุธและวันอาทิตย์

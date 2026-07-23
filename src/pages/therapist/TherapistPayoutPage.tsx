@@ -91,7 +91,7 @@ const TherapistPayoutPage: React.FC = () => {
       onSave={() => void save()}
       saving={saving}
       dirty={dirty}
-      note="บัญชีที่ใช้รับเงินโอนจากแอดมิน — ทุกครั้งที่แก้ไข ระบบจะแจ้งแอดมินอัตโนมัติทาง Telegram เพื่อความปลอดภัย"
+      note="บัญชีที่ใช้รับเงินโอนจากแอดมิน ทุกครั้งที่แก้ไข ระบบจะแจ้งแอดมินอัตโนมัติทาง Telegram เพื่อความปลอดภัย"
       toast={toast}
       onToastClose={() => setToast(null)}
     >

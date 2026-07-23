@@ -61,7 +61,7 @@ const TherapistBioPage: React.FC = () => {
       onSave={() => void save()}
       saving={saving}
       dirty={dirty}
-      note="เขียนแนะนำตัวสั้นๆ ทีละภาษา — ปล่อยว่างภาษาไหนก็ได้ถ้ายังไม่พร้อม"
+      note="เขียนแนะนำตัวสั้นๆ ทีละภาษา ปล่อยว่างภาษาไหนก็ได้ถ้ายังไม่พร้อม"
       toast={toast}
       onToastClose={() => setToast(null)}
     >

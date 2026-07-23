@@ -71,6 +71,7 @@ import {
   getDocs,
   getDoc,
   updateDoc,
+  deleteField,
   doc,
   query,
   where,
@@ -569,19 +570,25 @@ const AdminBookingListPage: React.FC = () => {
       //   reads these stamped fields verbatim, so a later split-table edit
       //   never changes this booking's payout. Un-confirmed / pre-28w.43
       //   bookings have no stamp → payroll falls back to the tier %.
+      // 🆕 28x.99w (founder: "จบงานแล้วแต่ป้ายเทสขึ้น ... กดกลับ completed
+      //   ป้ายเหตุผลยกเลิกก็ไม่หาย") — un-cancelling never removed the
+      //   cancelReason stamped by the cancel, so a booking flipped back to
+      //   completed kept showing the reason box forever. Every non-cancel
+      //   transition now deletes the field (deleteField() is a no-op when
+      //   the field isn't there, so plain status moves are unaffected).
       const patch: Record<string, unknown> =
         status === "confirmed"
           ? (() => {
               const b = bookings.find((x) => x.id === id);
               const split = b ? stampSplit(b) : {};
-              return { status, holdState: "confirmed", holdExpiresAt: null, ...split };
+              return { status, holdState: "confirmed", holdExpiresAt: null, cancelReason: deleteField(), ...split };
             })()
           : status === "cancelled"
           // 🆕 Round 28x.134 — no more countsAsSession reset: the per-booking
           //   credit mode is retired (folded into displaySessionBonus), so a
           //   cancel just sets the status + reason.
           ? { status, ...(reason ? { cancelReason: reason } : {}) }
-          : { status };
+          : { status, cancelReason: deleteField() };
       await updateDoc(doc(db, "bookings", id), patch);
       // 🆕 28s259 — "booking.status_change" is the fallback for transitions
       //   that don't have a dedicated action name (un-cancelling, marking
@@ -2408,7 +2415,13 @@ const DetailPanel: React.FC<{
           </>
         )}
 
-        {b.cancelReason && (
+        {/* 🆕 28x.99w — gate on the CURRENT status too, not just the field:
+            docs un-cancelled before this round still carry a stale
+            cancelReason (setStatus never deleted it), and a completed
+            booking showing "เหตุผลที่ยกเลิก" reads as the system ignoring
+            the un-cancel. Status is the truth; the reason is only context
+            for an ACTUALLY-cancelled booking. */}
+        {b.status === "cancelled" && b.cancelReason && (
           <Box sx={{ mb: 2, borderRadius: "14px", background: `${adminColor.red}0D`, border: `1px solid ${adminColor.red}33`, px: 1.75, py: 1 }}>
             <Row label="Cancel reason · เหตุผลที่ยกเลิก" value={b.cancelReason} />
             {/* 🆕 28x.120 — the session-credit state used to be echoed here as

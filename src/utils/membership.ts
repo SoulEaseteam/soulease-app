@@ -67,6 +67,19 @@ export function membershipChipSx(tier: MembershipTier) {
   } as const;
 }
 
+/**
+ * 🆕 Round 28x.138 (founder: "เลเวลลูกค้าใช้ภาษาอังกฤษรูปแบบเดียวกับหน้าแอดมิน
+ * 'BLACK VIP'") — the admin surfaces render the raw English tier; the staff app
+ * showed Thai (แบล็ค VIP). English labels so the two match. "BLACK VIP" is
+ * spaced + upper per the founder's spelling, nicer than the raw "BlackVIP".
+ */
+export const MEMBERSHIP_LABELS_EN: Record<MembershipTier, string> = {
+  Bronze:   "Bronze",
+  Silver:   "Silver",
+  Gold:     "Gold",
+  BlackVIP: "BLACK VIP",
+};
+
 export const MEMBERSHIP_LABELS_TH: Record<MembershipTier, string> = {
   Bronze:   "บรอนซ์",
   Silver:   "ซิลเวอร์",

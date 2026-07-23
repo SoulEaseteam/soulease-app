@@ -60,7 +60,7 @@ const TherapistLanguagesPage: React.FC = () => {
       onSave={() => void save()}
       saving={saving}
       dirty={dirty}
-      note="ภาษาที่คุณพูดได้ + ระดับความคล่อง — ลูกค้าใช้เลือกนักบำบัดตามภาษา"
+      note="ภาษาที่คุณพูดได้และระดับความคล่อง ลูกค้าใช้เลือกนักบำบัดตามภาษา"
       toast={toast}
       onToastClose={() => setToast(null)}
     >

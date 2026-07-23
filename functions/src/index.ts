@@ -661,6 +661,7 @@ const AUDIT_IGNORE_KEYS = new Set([
   //   write; derived, not a human edit, so they must not spawn audit rows or
   //   staff-activity notices.
   "rebookRate",
+  "rebookRateReal",
   "statsUpdatedAt",
 ]);
 
@@ -4866,6 +4867,18 @@ async function recomputeTherapistSessionStats(therapistId: string): Promise<void
   const displayBonus =
     typeof bonusRaw === "number" && bonusRaw > 0 ? Math.round(bonusRaw) : 0;
 
+  // 🆕 Round 28x.138 (founder: "โบนัสรายคน ต้องบาลานซ์กับหน้า rebook rate ด้วย
+  //   เดี๋ยวไม่เนียน") — when a boosted therapist would otherwise show a high
+  //   session count with a 0% / missing rebook chip, that reads as fake. An
+  //   admin-set rebook override makes the pair look consistent. When set, it
+  //   is what customers see; the real computed rate is still written to
+  //   `rebookRateReal` so the admin can see the truth alongside it.
+  const overrideRaw = tSnap.get("rebookRateOverride");
+  const rebookOverride =
+    typeof overrideRaw === "number" && overrideRaw >= 0
+      ? Math.min(100, Math.round(overrideRaw))
+      : null;
+
   let served = 0;
   const byCustomer = new Map<string, number>();
 
@@ -4906,12 +4919,15 @@ async function recomputeTherapistSessionStats(therapistId: string): Promise<void
   const uniqueCustomers = byCustomer.size;
   let repeatCustomers = 0;
   byCustomer.forEach((n) => { if (n >= 2) repeatCustomers++; });
-  const rebookRate =
+  const rebookReal =
     uniqueCustomers > 0 ? Math.round((repeatCustomers / uniqueCustomers) * 100) : 0;
 
   await tRef.update({
     totalSessions: served + displayBonus,
-    rebookRate,
+    // Customers see the override when set; the true rate is preserved
+    // alongside so the admin page can show "จริง X% · แสดง Y%".
+    rebookRate: rebookOverride ?? rebookReal,
+    rebookRateReal: rebookReal,
     statsUpdatedAt: FieldValue.serverTimestamp(),
   });
 }
@@ -5054,13 +5070,17 @@ export const onTherapistBonusChange = onDocumentUpdated(
     region: "asia-southeast1",
   },
   async (event) => {
-    const before = event.data?.before.data() as { displaySessionBonus?: number } | undefined;
-    const after = event.data?.after.data() as { displaySessionBonus?: number } | undefined;
+    const before = event.data?.before.data() as { displaySessionBonus?: number; rebookRateOverride?: number | null } | undefined;
+    const after = event.data?.after.data() as { displaySessionBonus?: number; rebookRateOverride?: number | null } | undefined;
     if (!after) return;
 
-    const b = typeof before?.displaySessionBonus === "number" ? before.displaySessionBonus : 0;
-    const a = typeof after.displaySessionBonus === "number" ? after.displaySessionBonus : 0;
-    if (a === b) return;
+    // 🆕 28x.138 — fire on EITHER the session bonus or the rebook override
+    //   changing; both feed recomputeTherapistSessionStats' written values.
+    const bonusChanged =
+      (typeof before?.displaySessionBonus === "number" ? before.displaySessionBonus : 0) !==
+      (typeof after.displaySessionBonus === "number" ? after.displaySessionBonus : 0);
+    const overrideChanged = (before?.rebookRateOverride ?? null) !== (after.rebookRateOverride ?? null);
+    if (!bonusChanged && !overrideChanged) return;
 
     try {
       await recomputeTherapistSessionStats(event.params.therapistId);

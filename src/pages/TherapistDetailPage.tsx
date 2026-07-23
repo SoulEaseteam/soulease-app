@@ -785,12 +785,19 @@ const TherapistDetailPage: React.FC = () => {
       //   say 7 and this page say 6"). One field got fixed then; this one
       //   didn't. rebookRate stays live — it's a ratio the loyalty panel
       //   below computes from the same snapshot, so those two can't disagree.
+      // 🆕 Round 28x.138 (founder: "โบนัสรายคน ต้องบาลานซ์กับหน้า rebook rate")
+      //   — if an admin has set a rebook override (to match a boosted session
+      //   count so the pair looks consistent), that wins over the live figure.
+      //   Otherwise the live repeatPct, same as before.
+      const rebookOverride = (firestoreRow as { rebookRateOverride?: number } | null)?.rebookRateOverride;
       t = {
         ...t,
         rebookRate:
-          loyaltyStats.uniqueCustomers > 0
-            ? `${loyaltyStats.repeatPct}%`
-            : t.rebookRate,
+          typeof rebookOverride === "number" && rebookOverride >= 0
+            ? `${Math.round(rebookOverride)}%`
+            : loyaltyStats.uniqueCustomers > 0
+              ? `${loyaltyStats.repeatPct}%`
+              : t.rebookRate,
       };
     }
     if (liveReviews.reviewCount > 0) {
@@ -823,6 +830,8 @@ const TherapistDetailPage: React.FC = () => {
     liveReviews.reviewCount,
     liveReviews.buckets,
     liveReviews.reviews,
+    // 🆕 28x.138 — the rebook override lives on the raw doc, read above.
+    firestoreRow,
   ]);
 
   // Round 28s34 — null-safe useDocumentMeta. Hook must be called

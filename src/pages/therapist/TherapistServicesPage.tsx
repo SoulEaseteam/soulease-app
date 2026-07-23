@@ -264,7 +264,7 @@ const TherapistServicesPage: React.FC = () => {
       onSave={() => void save()}
       saving={saving}
       dirty={dirty}
-      note="เลือกบริการที่คุณเปิดรับตอนนี้ — ลูกค้าจะเห็นตรงนี้บนโปรไฟล์สาธารณะของคุณ"
+      note="เลือกบริการที่คุณเปิดรับตอนนี้ ลูกค้าจะเห็นตรงนี้บนโปรไฟล์สาธารณะของคุณ"
       toast={toast}
       onToastClose={() => setToast(null)}
       footer={

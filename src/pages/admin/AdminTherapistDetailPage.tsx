@@ -197,6 +197,9 @@ const AdminTherapistDetailPage: React.FC = () => {
   // 🆕 Round 28x.133 (founder chose "โบนัสรายคน") — admin-set display boost.
   const [bonusDraft, setBonusDraft] = useState<string>("");
   const [savingBonus, setSavingBonus] = useState(false);
+  // 🆕 Round 28x.138 — admin-set rebook % override (blank = show real).
+  const [rebookDraft, setRebookDraft] = useState<string>("");
+  const [savingRebook, setSavingRebook] = useState(false);
 
   // 🆕 opening the roster's Pencil icon lands here with ?edit=1 pre-armed.
   const [editing, setEditing] = useState(() => searchParams.get("edit") === "1");
@@ -461,6 +464,36 @@ const AdminTherapistDetailPage: React.FC = () => {
   useEffect(() => {
     setBonusDraft(String(displayBonus));
   }, [displayBonus]);
+
+  // 🆕 28x.138 — rebook override (null = none). Draft syncs from the doc.
+  const rebookOverride =
+    typeof rawDoc?.rebookRateOverride === "number" ? rawDoc.rebookRateOverride : null;
+  useEffect(() => {
+    setRebookDraft(rebookOverride == null ? "" : String(rebookOverride));
+  }, [rebookOverride]);
+
+  // 🆕 28x.138 — write the rebook override (or clear it with a blank input).
+  //   The onTherapistBonusChange trigger recomputes rebookRate from it.
+  const saveRebook = async () => {
+    if (!docId) return;
+    const raw = rebookDraft.trim();
+    const next = raw === "" ? null : Math.min(100, Math.max(0, Math.round(Number(raw) || 0)));
+    setSavingRebook(true);
+    try {
+      await updateDoc(doc(db, "therapists", docId), {
+        rebookRateOverride: next,
+        updatedBy: auth.currentUser?.uid ?? "admin",
+      });
+      await logAdminAction("sync_therapist_stats" as Parameters<typeof logAdminAction>[0], {
+        therapistId: docId,
+        rebookRateOverride: next,
+      });
+    } catch (err) {
+      console.error("[AdminTherapistDetailPage] saveRebook failed:", err);
+    } finally {
+      setSavingRebook(false);
+    }
+  };
 
   // 🆕 28x.133 — write ONLY the bonus. The onTherapistBonusChange Cloud
   //   Function recomputes totalSessions from it; the live doc snapshot then
@@ -852,11 +885,70 @@ const AdminTherapistDetailPage: React.FC = () => {
                     <span style={{ color: adminColor.text, fontWeight: 800 }}>ลูกค้าเห็น {shown}</span>
                   </Typography>
                   <Typography sx={{ fontSize: 10.5, color: adminColor.dim, lineHeight: 1.45 }}>
-                    พนักงานเห็นแค่ยอดจริง ({real}) · rebook rate ไม่ถูกกระทบ
+                    พนักงานเห็นแค่ยอดจริง ({real})
                   </Typography>
                 </>
               );
             })()}
+
+            {/* 🆕 Round 28x.138 (founder: "โบนัสรายคน ต้องบาลานซ์กับหน้า rebook
+                rate ด้วย เดี๋ยวไม่เนียน") — a boosted session count next to a
+                0%/blank rebook reads as fake. This sets the rebook % customers
+                see, so the pair looks consistent. Leave BLANK to show the real
+                rate. Staff keep seeing their real rebook. */}
+            <Box sx={{ borderTop: `1px solid ${adminColor.line}`, mt: "2px", pt: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+              <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                rebook ที่โชว์ลูกค้า · Display rebook %
+              </Typography>
+              {(() => {
+                const realRebook = computedStats.repeatPct;
+                const hasOverride = rebookDraft.trim() !== "";
+                const shownRebook = hasOverride ? Math.min(100, Math.max(0, Math.round(Number(rebookDraft) || 0))) : realRebook;
+                const dirty = rebookDraft.trim() !== (rebookOverride == null ? "" : String(rebookOverride));
+                return (
+                  <>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        placeholder={`${realRebook}`}
+                        value={rebookDraft}
+                        onChange={(e) => setRebookDraft(e.target.value)}
+                        style={{
+                          width: 74, padding: "7px 10px", borderRadius: 8,
+                          border: `1px solid ${adminColor.line}`, background: adminColor.panel,
+                          color: adminColor.text, fontSize: 13, fontWeight: 700, textAlign: "center",
+                        }}
+                      />
+                      <Button
+                        onClick={() => void saveRebook()}
+                        disabled={savingRebook || !dirty}
+                        size="small"
+                        sx={{
+                          background: adminColor.accent, color: "#fff", textTransform: "none",
+                          fontWeight: 700, borderRadius: "9px", fontSize: 12, px: "12px", py: "6px",
+                          "&:hover": { background: adminColor.accentDeep },
+                          "&:disabled": { opacity: 0.4 },
+                        }}
+                      >
+                        {savingRebook ? "บันทึก…" : "บันทึก %"}
+                      </Button>
+                    </Box>
+                    <Typography sx={{ fontSize: 11.5, color: adminColor.dim, lineHeight: 1.5 }}>
+                      rebook จริง {realRebook}%
+                      {" · "}
+                      <span style={{ color: adminColor.text, fontWeight: 800 }}>
+                        ลูกค้าเห็น {shownRebook}%{hasOverride ? "" : " (ตามจริง)"}
+                      </span>
+                    </Typography>
+                    <Typography sx={{ fontSize: 10.5, color: adminColor.dim, lineHeight: 1.45 }}>
+                      เว้นว่าง = โชว์ตามจริง · พนักงานเห็น rebook จริงเสมอ
+                    </Typography>
+                  </>
+                );
+              })()}
+            </Box>
           </Box>
         </Box>
 
