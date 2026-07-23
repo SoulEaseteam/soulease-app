@@ -732,16 +732,17 @@ const TherapistMinimalCard: React.FC<Props> = ({
               borderRadius: "999px",
               // 🆕 28x.99x (founder "ปุ่ม จองตอนนี้เลย") — a currently-working
               //   practitioner's CTA gets urgent copy.
-              // 🆕 28x.102 (founder "เขียว ดูไม่เข้ากับร้านเลย") — the green
-              //   #16A34A CTA clashed with the Moko/rose brand; available now
-              //   uses the documented Moko book-button gradient (CLAUDE.md
-              //   palette: #F050A0→#E6197E) — louder than the flat rose
-              //   bookable button, still unmistakably SunRed. Green stays
-              //   only on the small status pill (semantic, not brand).
+              // 🆕 28x.103 (founder "ไม่ใช่สีนี้ ดูสีที่แอดมินกับสีแถบบาร์ล่าง")
+              //   — supersedes 28x.102's Moko magenta (#F050A0→#E6197E, too
+              //   loud): available now wears the SAME dusty-rose gradient as
+              //   the concierge FAB (28w.3) and the bottom-bar active pill —
+              //   #E38EA5→#D97C95→#C96F89 + the FAB's rose glow. Distinct
+              //   from the flat matte #D97C95 bookable button via gradient +
+              //   shadow + urgent label, but one family with the shop.
               background: isOffDuty
                 ? "var(--sr-panel-2)"
                 : status === "available"
-                  ? "linear-gradient(135deg,#F050A0,#E6197E)"
+                  ? "linear-gradient(135deg, #E38EA5 0%, #D97C95 55%, #C96F89 100%)"
                   : "#D97C95",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
@@ -751,13 +752,18 @@ const TherapistMinimalCard: React.FC<Props> = ({
               letterSpacing: "0.04em",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
-              boxShadow: "none",
+              // 🆕 28x.103 — available gets the FAB's rose glow so the CTA
+              //   reads "on" the same way the concierge bubble does.
+              boxShadow:
+                !isOffDuty && status === "available"
+                  ? "0 6px 16px rgba(138, 58, 87, 0.40)"
+                  : "none",
               transition: "transform 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
                 : status === "available"
                   ? {
-                      background: "linear-gradient(135deg,#E6197E 0%,#C2185B 100%)",
+                      background: "linear-gradient(135deg, #D97C95 0%, #C96F89 55%, #B36079 100%)",
                       transform: "translateY(-1px)",
                     }
                   : {
