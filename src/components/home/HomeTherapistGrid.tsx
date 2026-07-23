@@ -749,6 +749,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
                   key={t._docId ?? t.id}
                   therapist={t}
                   computedStatus={t.computedStatus}
+                  nextFreeAt={t.computedNext}
                   distanceKm={liveDistanceKm(t)}
                   // 🆕 Round 28s227 — First card is the LCP element
                   //   on the home page (and the LCP target Search

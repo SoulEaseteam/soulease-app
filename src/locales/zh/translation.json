@@ -508,6 +508,7 @@
   "therapistCard.startingFrom": "起价",
   "therapistCard.bookNow": "立即预约",
   "therapistCard.bookRightNow": "现在就约",
+  "therapistCard.freeAt": "{{time}} 有空",
   "stepdt.rightNowCta": "现在就约",
   "auth.login.title": "登录",
   "auth.login.cta": "登录",

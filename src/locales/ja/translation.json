@@ -413,6 +413,7 @@
   "therapistCard.startingFrom": "料金",
   "therapistCard.bookNow": "予約する",
   "therapistCard.bookRightNow": "今すぐ予約",
+  "therapistCard.freeAt": "{{time}} 空き",
   "stepdt.rightNowCta": "今すぐ予約",
   "auth.login.title": "ログイン",
   "auth.login.cta": "ログイン",

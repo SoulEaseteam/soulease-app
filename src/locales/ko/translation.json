@@ -413,6 +413,7 @@
   "therapistCard.startingFrom": "시작가",
   "therapistCard.bookNow": "지금 예약",
   "therapistCard.bookRightNow": "지금 바로 예약",
+  "therapistCard.freeAt": "{{time}} 가능",
   "stepdt.rightNowCta": "지금 바로 예약",
   "auth.login.title": "로그인",
   "auth.login.cta": "로그인",

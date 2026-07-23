@@ -415,6 +415,7 @@
   "therapistCard.startingFrom": "เริ่มต้นที่",
   "therapistCard.bookNow": "จองเลย",
   "therapistCard.bookRightNow": "จองตอนนี้เลย",
+  "therapistCard.freeAt": "ว่าง {{time}}",
   "stepdt.rightNowCta": "จองตอนนี้เลย",
   "auth.login.title": "เข้าสู่ระบบ",
   "auth.login.cta": "เข้าสู่ระบบ",

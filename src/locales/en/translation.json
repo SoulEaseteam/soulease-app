@@ -413,6 +413,7 @@
   "therapistCard.startingFrom": "Starting from",
   "therapistCard.bookNow": "Book Now",
   "therapistCard.bookRightNow": "Book right now",
+  "therapistCard.freeAt": "Free {{time}}",
   "stepdt.rightNowCta": "Book right now",
   "auth.login.title": "Login",
   "auth.login.cta": "LOGIN",

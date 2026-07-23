@@ -41,6 +41,12 @@ import { formatSessionCount } from "@/utils/formatCount";
 interface Props {
   therapist: Therapist;
   computedStatus?: Avail;
+  /** 🆕 28x.102 (founder "เปลี่ยนสถานะไปตามการจองจนถึงกี่โมง") — the
+   *  engine's nextAvailable ("HH:mm" from busyUntil) — when the
+   *  practitioner is bookable-but-busy the pill reads "ว่าง 23:30"
+   *  instead of a bare "จองได้". Computed in HomeTherapistGrid's
+   *  enrichment pass; null when there's no known free-at time. */
+  nextFreeAt?: string | null;
   /** 🆕 28s392 — live guest↔practitioner distance in km (from the grid's GPS
    *  watcher). Shown as "📍 2.4km" on the meta line; undefined until the guest
    *  grants location. Distance-only by design — the standby area is never
@@ -87,6 +93,7 @@ const STATUS_DOT: Record<
 const TherapistMinimalCard: React.FC<Props> = ({
   therapist,
   computedStatus,
+  nextFreeAt,
   distanceKm,
   onBook,
   eager = false,
@@ -149,7 +156,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
   // 🆕 Round 28s138 — Label flows through i18n so the pill speaks
   //   the visitor's language (EN/TH/ZH/JA/KO). Falls back to English
   //   if the bundle hasn't loaded yet.
-  const statusLabel = t(statusMeta.i18nKey, statusMeta.fallback);
+  // 🆕 28x.102 — a busy practitioner's pill carries her free-at time
+  //   ("ว่าง 23:30") when the engine knows it, so the status genuinely
+  //   tracks the booking instead of a static "จองได้".
+  const statusLabel =
+    status === "bookable" && nextFreeAt
+      ? t("therapistCard.freeAt", "Free {{time}}", { time: nextFreeAt })
+      : t(statusMeta.i18nKey, statusMeta.fallback);
   // 🆕 Round 28s136 — Founder: "ใครหยุดก็เบลอการ์ดไป จองไม่ได้".
   //   Resting / holiday therapists render desaturated + dimmed, the
   //   Book Now button becomes inert, and tapping the card no longer
@@ -384,39 +397,51 @@ const TherapistMinimalCard: React.FC<Props> = ({
               display: "inline-flex",
               alignItems: "center",
               gap: "5px",
-              padding: "5px 14px",
+              padding: status === "available" ? "6px 16px" : "5px 14px",
               borderRadius: "999px",
-              // 🕯️ 28t — unified translucent espresso pill for every state;
-              //   a colour-coded dot (gold=available · rose=bookable) carries
-              //   the meaning while ivory text stays legible over any photo.
-              background: "rgba(22, 24, 30, 0.68)",
+              // 🕯️ 28t — unified translucent espresso pill; colour-coded dot
+              //   carries the meaning while ivory text stays legible.
+              // 🆕 28x.102 (founder "อยากให้สถานะ AVAILABLE เห็นชัด") —
+              //   available breaks out of the espresso treatment: solid brand
+              //   green fill + white text + glow, so the one state that means
+              //   "ได้เลยตอนนี้" reads from across the room. Other states
+              //   keep the quiet translucent look.
+              background:
+                status === "available" ? "#57B88B" : "rgba(22, 24, 30, 0.68)",
               backdropFilter: "blur(3px)",
               WebkitBackdropFilter: "blur(3px)",
               color: "#FFFFFF",
-              border: "1px solid rgba(255,255,255,0.16)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.32)",
+              border:
+                status === "available"
+                  ? "1px solid rgba(255,255,255,0.45)"
+                  : "1px solid rgba(255,255,255,0.16)",
+              boxShadow:
+                status === "available"
+                  ? "0 2px 12px rgba(87,184,139,0.55)"
+                  : "0 2px 8px rgba(0,0,0,0.32)",
               whiteSpace: "nowrap",
             }}
             aria-label={statusLabel}
           >
             <Box
               sx={{
-                width: 5,
-                height: 5,
+                width: status === "available" ? 6 : 5,
+                height: status === "available" ? 6 : 5,
                 borderRadius: "50%",
-                background: statusMeta.color,
+                background:
+                  status === "available" ? "#FFFFFF" : statusMeta.color,
                 boxShadow:
                   status === "available"
-                    ? "0 0 6px rgba(87,184,139,0.9)"
+                    ? "0 0 6px rgba(255,255,255,0.9)"
                     : "none",
               }}
             />
             <Typography
               sx={{
                 fontFamily: fonts.body,
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "#F3E6DB",
+                fontSize: status === "available" ? "10.5px" : "10px",
+                fontWeight: status === "available" ? 800 : 700,
+                color: status === "available" ? "#FFFFFF" : "#F3E6DB",
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
                 lineHeight: 1,
@@ -706,15 +731,17 @@ const TherapistMinimalCard: React.FC<Props> = ({
               fontSize: { xs: "12px", sm: "13.5px" },
               borderRadius: "999px",
               // 🆕 28x.99x (founder "ปุ่ม จองตอนนี้เลย") — a currently-working
-              //   practitioner's CTA goes green + urgent copy. The instant-slot
-              //   machinery (28b45, earliest ≈ now+10 min) has existed for
-              //   months but nothing at the card level ever SAID "right now
-              //   is possible" — the impulse guest had to discover it 3 taps
-              //   deep in the picker.
+              //   practitioner's CTA gets urgent copy.
+              // 🆕 28x.102 (founder "เขียว ดูไม่เข้ากับร้านเลย") — the green
+              //   #16A34A CTA clashed with the Moko/rose brand; available now
+              //   uses the documented Moko book-button gradient (CLAUDE.md
+              //   palette: #F050A0→#E6197E) — louder than the flat rose
+              //   bookable button, still unmistakably SunRed. Green stays
+              //   only on the small status pill (semantic, not brand).
               background: isOffDuty
                 ? "var(--sr-panel-2)"
                 : status === "available"
-                  ? "#16A34A"
+                  ? "linear-gradient(135deg,#F050A0,#E6197E)"
                   : "#D97C95",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
@@ -730,7 +757,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 ? {}
                 : status === "available"
                   ? {
-                      background: "linear-gradient(135deg,#15803D 0%,#166534 100%)",
+                      background: "linear-gradient(135deg,#E6197E 0%,#C2185B 100%)",
                       transform: "translateY(-1px)",
                     }
                   : {
