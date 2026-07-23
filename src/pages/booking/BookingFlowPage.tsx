@@ -2285,21 +2285,10 @@ const BookingFlowPage: React.FC = () => {
                 discount as "SunRed Smart Routing". We no longer compare
                 to Grab anywhere — it's all our brand. */}
             <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-              {/* 🆕 28x.47 — struck standard band fare (the REAL "before" rate,
-                  not a fake anchor) when the online saving actually applies. */}
-              {locationSet && !adminQuoteRequired && taxiFare > 0 && taxiSave > 0 && taxiOriginal != null && (
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    color: "var(--sr-muted)",
-                    textDecoration: "line-through",
-                  }}
-                >
-                  {formatTHB(taxiOriginal)}
-                </Typography>
-              )}
+              {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") — the
+                  28x.47 struck band fare removed with the rest. The routing
+                  saving itself still applies; only the crossed-out number
+                  is gone. */}
               <Typography
                 sx={{
                   fontFamily: SANS,
@@ -2723,23 +2712,9 @@ const BookingFlowPage: React.FC = () => {
                 justifyContent: "flex-end",
               }}
             >
-              {hasSurcharge && (
-                <Typography
-                  aria-hidden
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: "16px",
-                    fontWeight: 500,
-                    color: "var(--sr-muted)",
-                    textDecoration: "line-through",
-                    letterSpacing: "-0.01em",
-                    lineHeight: 1,
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {formatTHB(Math.round(animatedBaseTotal))}
-                </Typography>
-              )}
+              {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") — the
+                  28b46 pre-surcharge struck total removed; the fee still
+                  shows as its own line item above, so nothing is hidden. */}
               {/* 🆕 Round 28r29 — Strikethrough "Original price"
                   next to the Total when there's any saving (Smart
                   Routing or promo). Only renders if the original is

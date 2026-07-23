@@ -654,6 +654,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
             alignItems: "center",
             justifyContent: "space-between",
             gap: "10px",
+            // 🆕 28x.99z (founder "ปุ่มล้น ช่วยปรับด้วย จอมือถือ") — on the
+            //   2-col mobile grid the row is ~190px wide and the uppercase
+            //   "BOOK RIGHT NOW" clipped mid-word. Let the row wrap: on
+            //   narrow cards the button drops to its own full-width line,
+            //   on wide cards nothing changes.
+            flexWrap: "wrap",
           }}
         >
           <Box>
@@ -691,8 +697,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
             onClick={handleBookTap}
             disabled={isOffDuty}
             sx={{
-  
-              padding: "10px 20px",
+              // 🆕 28x.99z — grow to fill the wrapped line on narrow cards;
+              //   tighter type so the label fits without clipping.
+              flex: "1 1 auto",
+              minWidth: 0,
+              textAlign: "center",
+              padding: { xs: "9px 12px", sm: "10px 20px" },
+              fontSize: { xs: "12px", sm: "13.5px" },
               borderRadius: "999px",
               // 🆕 28x.99x (founder "ปุ่ม จองตอนนี้เลย") — a currently-working
               //   practitioner's CTA goes green + urgent copy. The instant-slot
@@ -709,7 +720,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
               fontFamily: fonts.body,
-              fontSize: "13.5px",
               fontWeight: 700,
               letterSpacing: "0.04em",
               textTransform: "uppercase",

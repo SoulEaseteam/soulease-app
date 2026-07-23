@@ -529,29 +529,17 @@ const PricingPage: React.FC = () => {
                     >
                       {d} min
                     </Box>
-                    {/* 🆕 28w.64 (founder "เพิ่มราคาเก่าขีดทับ") — the struck
-                        was-price is back (reverses the 28r117 removal), small,
-                        before the rose current price. */}
+                    {/* ⚠️ 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") —
+                        struck was-price removed AGAIN. History: added 28w.64
+                        ("เพิ่มราคาเก่าขีดทับ") → removed 28r117 → re-added
+                        28w.64 → removed now. This has flip-flopped twice —
+                        don't re-add without View explicitly asking. */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: "7px" }}>
                       {/* 🆕 28w.65 → 28w.69 — the badge sits AT the price, and
                           which badge is decided by the DURATION: 90 min =
                           🔥 BEST VALUE, 70 min = ⭐ BEST SELLER. */}
                       {badgeForDuration(d) && (
                         <PromoBadge badge={badgeForDuration(d)!} size="sm" />
-                      )}
-                      {wasPriceFor(s, d) && (
-                        <Box
-                          component="span"
-                          sx={{
-                            fontFamily: fonts.body,
-                            fontSize: { xs: 12, md: 12.5 },
-                            fontWeight: 500,
-                            color: grays.g500,
-                            textDecoration: "line-through",
-                          }}
-                        >
-                          {formatTHB(wasPriceFor(s, d) as number)}
-                        </Box>
                       )}
                       <Box
                         component="span"

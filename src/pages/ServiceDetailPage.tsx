@@ -563,7 +563,6 @@ const ServiceDetailPage: React.FC = () => {
         >
           {tiers.map((d) => {
             const price = priceForDuration(service, d);
-            const was = wasPriceFor(service, d);
             const isActive = d === duration;
             return (
               <Box
@@ -641,21 +640,8 @@ const ServiceDetailPage: React.FC = () => {
                   )}
                 </Box>
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                  {was && (
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontFamily: fonts.body,
-                        fontSize: "11px",
-                        fontWeight: 500,
-                        textDecoration: "line-through",
-                        color: isActive ? "rgba(255,255,255,0.7)" : "var(--sr-muted)",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {formatTHB(was)}
-                    </Typography>
-                  )}
+                  {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") —
+                      struck was-price removed. */}
                   <Typography
                     component="span"
                     sx={{

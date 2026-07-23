@@ -774,19 +774,16 @@ const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; div
     <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--sr-body)" }}>
       {label}
     </Typography>
-    {/* 🆕 28x.47 — struck "before" price above the discounted fare (Grab-style). */}
-    {strike && (
-      <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: "var(--sr-muted)", textDecoration: "line-through", lineHeight: 1, mt: 0.3 }}>
-        {strike}
-      </Typography>
-    )}
+    {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") — the 28x.47
+        Grab-style struck "before" fare is gone. `strike` prop kept so
+        callers don't break, but it renders nothing now. */}
     <Typography
       sx={{
         fontFamily: SERIF,
         fontSize: 18,
         fontWeight: 700,
         lineHeight: 1.15,
-        mt: strike ? 0.1 : 0.35,
+        mt: 0.35,
         color: accent ? "#D97C95" : "var(--sr-ink)",
       }}
     >
