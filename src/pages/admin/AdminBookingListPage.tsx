@@ -216,7 +216,7 @@ interface Booking {
   reviewed?: boolean;
 }
 
-type TabKey = "all" | "pending" | "confirmed" | "completed" | "cancelled";
+type TabKey = "all" | "pending" | "confirmed" | "completed" | "cancelled" | "test";
 
 const SANS  = adminFont.sans;
 const SERIF = adminFont.serif;
@@ -252,6 +252,13 @@ const TABS: { key: TabKey; label: string; labelTh: string }[] = [
   { key: "confirmed", label: "Confirmed", labelTh: "ยืนยันแล้ว" },
   { key: "completed", label: "Completed", labelTh: "เสร็จสิ้น"  },
   { key: "cancelled", label: "Cancelled", labelTh: "ยกเลิก"    },
+  // 🆕 Round 28x.137 (founder: "admin/bookings เพิ่มตัวกรองเป็นงานเทส และดึงยอด
+  //   กลับมาไปไว้ที่นั้น") — QA test bookings (the Aspire/Soi Prompan address)
+  //   were excluded from every therapist stat in 28x.135 but still live in the
+  //   DB. This tab pulls them into one place with a count, isolated from real
+  //   work. Filters by isTestLocationBooking, NOT the reserved-shop signal —
+  //   those are 126 REAL bookings, not tests.
+  { key: "test",      label: "Test",      labelTh: "งานเทส"    },
 ];
 
 // 🆕 Round 28s230 — canonical customer name across the two write paths.
@@ -489,9 +496,12 @@ const AdminBookingListPage: React.FC = () => {
 
   // ── counts per bucket ──────────────────────────────────────────────
   const counts = useMemo(() => {
-    const c: Record<TabKey, number> = { all: faceted.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+    const c: Record<TabKey, number> = { all: faceted.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0, test: 0 };
     for (const b of faceted) {
       if (b.status in c) c[b.status as TabKey]++;
+      // 🆕 28x.137 — test is orthogonal to status: a test booking can be any
+      //   status, so it's counted independently, not via b.status.
+      if (isTestLocationBooking(b)) c.test++;
     }
     return c;
   }, [faceted]);
@@ -539,7 +549,10 @@ const AdminBookingListPage: React.FC = () => {
   const visible = useMemo(() => {
     const q = search.toLowerCase();
     return faceted.filter((b) => {
-      const matchTab = tab === "all" || b.status === tab;
+      // 🆕 28x.137 — the Test tab filters by test-address, ignoring status
+      //   (a test booking may be pending/completed/cancelled). Every other tab
+      //   filters by status as before.
+      const matchTab = tab === "all" ? true : tab === "test" ? isTestLocationBooking(b) : b.status === tab;
       const matchQ   = !q || [nameOf(b), b.phone, b.therapistName, b.serviceName, b.address, b.locationName, b.id, b.createdByName, b.createdByEmail, b.createdByPhone]
         .join(" ").toLowerCase().includes(q);
       return matchTab && matchQ;
