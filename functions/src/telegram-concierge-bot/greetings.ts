@@ -65,7 +65,7 @@ const WELCOME: Record<Lang, string> = {
     `For booking, pricing, or availability — tap the button below ` +
     `to chat with our concierge directly.\n` +
     `\n` +
-    `sunred.vip`,
+    `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   th:
     `<b>ยินดีต้อนรับสู่ SunRed 🌙</b>\n` +
     `\n` +
@@ -74,7 +74,7 @@ const WELCOME: Record<Lang, string> = {
     `จอง · ราคา · เวลาว่าง — แตะปุ่มด้านล่างเพื่อคุยกับ concierge ` +
     `โดยตรง\n` +
     `\n` +
-    `sunred.vip`,
+    `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   zh:
     `<b>欢迎来到 SunRed 🌙</b>\n` +
     `\n` +
@@ -82,7 +82,7 @@ const WELCOME: Record<Lang, string> = {
     `\n` +
     `预约 · 价格 · 今夜可预约 — 点击下方按钮直接联系管家\n` +
     `\n` +
-    `sunred.vip`,
+    `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   "zh-TW":
     `<b>歡迎來到 SunRed 🌙</b>\n` +
     `\n` +
@@ -90,7 +90,7 @@ const WELCOME: Record<Lang, string> = {
     `\n` +
     `預約 · 價格 · 今夜可訂 — 點擊下方按鈕直接聯繫管家\n` +
     `\n` +
-    `sunred.vip`,
+    `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   ja:
     `<b>SunRed へようこそ 🌙</b>\n` +
     `\n` +
@@ -99,7 +99,7 @@ const WELCOME: Record<Lang, string> = {
     `ご予約・料金・本日のご対応 — 下のボタンをタップして` +
     `コンシェルジュと直接お話しください\n` +
     `\n` +
-    `sunred.vip`,
+    `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   ko:
     `<b>SunRed에 오신 것을 환영합니다 🌙</b>\n` +
     `\n` +
@@ -108,7 +108,7 @@ const WELCOME: Record<Lang, string> = {
     `예약 · 가격 · 오늘 밤 가능 여부 — 아래 버튼을 눌러 컨시어지와 ` +
     `직접 채팅하세요\n` +
     `\n` +
-    `sunred.vip`,
+    `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
 };
 
 // 🆕 Round 28x.97 — Firestore override layer (botCopy/greeter.welcome.{lang}),

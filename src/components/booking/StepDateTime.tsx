@@ -658,7 +658,13 @@ const StepDateTime: React.FC<Props> = ({
                 lineHeight: 1.2,
               }}
             >
-              {t("stepdt.earliest", "Earliest available")}
+              {/* 🆕 28x.99x (founder "ปุ่ม จองตอนนี้เลย") — when the earliest
+                  slot is within the next hour, say the quiet part out loud:
+                  this is a book-RIGHT-NOW situation, not merely "earliest
+                  available". Matches the green CTA on the home card. */}
+              {earliestSlot.ts - Date.now() <= 60 * 60_000 && !earliestSlot.nextDay
+                ? t("stepdt.rightNowCta", "Book right now")
+                : t("stepdt.earliest", "Earliest available")}
             </Typography>
             <Typography
               sx={{

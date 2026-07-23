@@ -54,7 +54,12 @@ function reserveLine(lang: Lang): string {
 }
 
 function websiteLine(): string {
-  return `<a href="https://${WEBSITE}">${WEBSITE}</a>`;
+  // 🆕 28x.99x (founder "ติดแท็ก") — ?src= attribution tag so channel-post
+  //   clicks stop showing up as "direct" in /admin/analytics. Telegram's
+  //   in-app browser strips document.referrer, so the tag is the ONLY way
+  //   these clicks are attributable (analytics.ts reads ?src=). Display
+  //   text stays the bare domain.
+  return `<a href="https://${WEBSITE}/?src=tg-promo">${WEBSITE}</a>`;
 }
 
 // ─────────────────────────────────────────────────────────────

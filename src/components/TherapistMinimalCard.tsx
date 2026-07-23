@@ -694,9 +694,17 @@ const TherapistMinimalCard: React.FC<Props> = ({
   
               padding: "10px 20px",
               borderRadius: "999px",
+              // 🆕 28x.99x (founder "ปุ่ม จองตอนนี้เลย") — a currently-working
+              //   practitioner's CTA goes green + urgent copy. The instant-slot
+              //   machinery (28b45, earliest ≈ now+10 min) has existed for
+              //   months but nothing at the card level ever SAID "right now
+              //   is possible" — the impulse guest had to discover it 3 taps
+              //   deep in the picker.
               background: isOffDuty
                 ? "var(--sr-panel-2)"
-                : "#D97C95",
+                : status === "available"
+                  ? "#16A34A"
+                  : "#D97C95",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -710,17 +718,24 @@ const TherapistMinimalCard: React.FC<Props> = ({
               transition: "transform 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
-                : {
-                    background: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)",
-                    transform: "translateY(-1px)",
-                  },
+                : status === "available"
+                  ? {
+                      background: "linear-gradient(135deg,#15803D 0%,#166534 100%)",
+                      transform: "translateY(-1px)",
+                    }
+                  : {
+                      background: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)",
+                      transform: "translateY(-1px)",
+                    },
               "&:focus-visible": {
                 outline: "2px solid #F3E6DB",
                 outlineOffset: 2,
               },
             }}
           >
-            {t("therapistCard.bookNow", "Book Now")}
+            {status === "available"
+              ? t("therapistCard.bookRightNow", "Book right now")
+              : t("therapistCard.bookNow", "Book Now")}
           </Box>
         </Box>
       </Box>

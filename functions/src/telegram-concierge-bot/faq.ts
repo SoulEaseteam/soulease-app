@@ -178,7 +178,7 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `💎 Gentleman's Signature — focused aromatic ritual for men\n` +
       `✨ SunRed Therapeutic — signature flowing oil ceremony\n` +
       `\n` +
-      `Browse all therapists at <a href="https://sunred.vip">sunred.vip</a>`,
+      `Browse all therapists at <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   th: {
     title: "📋 บริการ",
@@ -197,7 +197,7 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `💎 Gentleman's Signature — บริการเฉพาะสุภาพบุรุษ\n` +
       `✨ SunRed Therapeutic — ทรีตเมนต์ระดับสูง\n` +
       `\n` +
-      `ดูนักบำบัดทั้งหมด: <a href="https://sunred.vip">sunred.vip</a>`,
+      `ดูนักบำบัดทั้งหมด: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   zh: {
     title: "📋 服务",
@@ -216,7 +216,7 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `💎 绅士尊享 — 男士专属芳香仪式\n` +
       `✨ SunRed Therapeutic — 招牌全身精油仪式\n` +
       `\n` +
-      `查看所有治疗师: <a href="https://sunred.vip">sunred.vip</a>`,
+      `查看所有治疗师: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   "zh-TW": {
     title: "📋 服務",
@@ -235,7 +235,7 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `💎 紳士尊享 — 男士專屬芳香儀式\n` +
       `✨ SunRed Therapeutic — 招牌全身精油儀式\n` +
       `\n` +
-      `查看所有治療師: <a href="https://sunred.vip">sunred.vip</a>`,
+      `查看所有治療師: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   ja: {
     title: "📋 サービス",
@@ -254,7 +254,7 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `💎 ジェントルマンズ — 男性向け専門ケア\n` +
       `✨ SunRed セラピューティック — 究極のオイル儀式\n` +
       `\n` +
-      `全セラピストを見る: <a href="https://sunred.vip">sunred.vip</a>`,
+      `全セラピストを見る: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   ko: {
     title: "📋 서비스",
@@ -273,7 +273,7 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `💎 젠틀맨즈 — 남성 전용 아로마 의식\n` +
       `✨ SunRed 테라퓨틱 — 시그니처 전신 오일 의식\n` +
       `\n` +
-      `전체 치료사 보기: <a href="https://sunred.vip">sunred.vip</a>`,
+      `전체 치료사 보기: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
 };
 
@@ -393,7 +393,7 @@ const HOW_TO_BOOK: Record<Lang, FaqEntry> = {
       `4. Practitioner arrives 30-60 min later\n` +
       `5. Payment after service (cash · PromptPay · etc.)\n` +
       `\n` +
-      `Need to browse therapists first? <a href="https://sunred.vip">sunred.vip</a>`,
+      `Need to browse therapists first? <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   th: {
     title: "📖 ขั้นตอนจอง",
@@ -411,7 +411,7 @@ const HOW_TO_BOOK: Record<Lang, FaqEntry> = {
       `4. นักบำบัดมาภายใน 30-60 นาที\n` +
       `5. ชำระเงินหลังเสร็จ (เงินสด · PromptPay · ฯลฯ)\n` +
       `\n` +
-      `อยากดูนักบำบัดก่อน? <a href="https://sunred.vip">sunred.vip</a>`,
+      `อยากดูนักบำบัดก่อน? <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   zh: {
     title: "📖 预约流程",
@@ -429,7 +429,7 @@ const HOW_TO_BOOK: Record<Lang, FaqEntry> = {
       `4. 治疗师 30-60 分钟内到达\n` +
       `5. 服务后付款 (现金 · 微信支付 等)\n` +
       `\n` +
-      `先浏览治疗师? <a href="https://sunred.vip">sunred.vip</a>`,
+      `先浏览治疗师? <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   "zh-TW": {
     title: "📖 預約流程",
@@ -447,7 +447,7 @@ const HOW_TO_BOOK: Record<Lang, FaqEntry> = {
       `4. 治療師 30-60 分鐘內到達\n` +
       `5. 服務後付款 (現金 · 微信支付 等)\n` +
       `\n` +
-      `先瀏覽治療師? <a href="https://sunred.vip">sunred.vip</a>`,
+      `先瀏覽治療師? <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   ja: {
     title: "📖 予約方法",
@@ -465,7 +465,7 @@ const HOW_TO_BOOK: Record<Lang, FaqEntry> = {
       `4. セラピストが 30-60 分以内に到着\n` +
       `5. 施術後にお支払い (現金 · PromptPay 等)\n` +
       `\n` +
-      `先にセラピストを見る? <a href="https://sunred.vip">sunred.vip</a>`,
+      `先にセラピストを見る? <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
   ko: {
     title: "📖 예약 방법",
@@ -483,7 +483,7 @@ const HOW_TO_BOOK: Record<Lang, FaqEntry> = {
       `4. 치료사 30-60분 내 도착\n` +
       `5. 서비스 후 결제 (현금 · PromptPay 등)\n` +
       `\n` +
-      `먼저 치료사 보기? <a href="https://sunred.vip">sunred.vip</a>`,
+      `먼저 치료사 보기? <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
 };
 
@@ -708,7 +708,10 @@ export function websiteUrlFor(key: FaqKey | "available"): string {
     membership: "/",
     available: "/",
   };
-  return `${base}${paths[key]}`;
+  // 🆕 28x.99x — ?src= attribution (see templates.ts websiteLine). "howto"
+  //   already carries a query string, so join with & there.
+  const path = paths[key];
+  return `${base}${path}${path.includes("?") ? "&" : "?"}src=tg-greeter`;
 }
 
 export function websiteLabel(lang: Lang): string {

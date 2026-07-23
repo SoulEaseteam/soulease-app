@@ -32,6 +32,8 @@ import type { MassageService } from "@/data/services";
 //   header phrase ("On standby · Bangkok Tonight" / "Concierge resumes
 //   09:00") never disagrees with the Live pill above it.
 import { useConciergeMode } from "@/utils/conciergeMode";
+// 🆕 28x.99x — tonight-banner copy is locale-aware (6 langs).
+import { useTranslation } from "react-i18next";
 // 🆕 Round 28r16 — initial roster filter is mode-aware: prime hours
 //   default to "available_now" so late-night guests see actionable
 //   cards first.
@@ -83,6 +85,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
   const [searchQ, setSearchQ] = useState("");
   // 🆕 Round 28r4 — current concierge mode for the grid header phrase.
   const concierge = useConciergeMode();
+  const { t } = useTranslation();
 
   // ── Single GPS watcher — feeds every card with a fresh userLocation.
   //    🆕 Round 28b14 — autoStart removed. Modern browsers silently block
@@ -509,6 +512,35 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
           express: totalExpress,
         }}
       />
+
+      {/* 🆕 28x.99x (founder "ป้ายกลางวัน จองคิวคืนนี้") — during day/evening
+          the grid reads as a wall of "ไม่ว่าง/วันหยุด" pills with nothing
+          saying tonight is bookable RIGHT NOW. 30-day funnel: half of all
+          traffic lands 05:00–21:00 and 85% of its warm sessions are lost.
+          This strip tells the daytime guest the one thing the pills don't:
+          advance reservations for tonight are open. Hidden during prime
+          (cards are live then) and the 04:00 tail (night still winding
+          down — "tonight" would read as the wrong night). */}
+      {concierge.mode !== "prime" && concierge.hourBKK >= 5 && (
+        <Box
+          sx={{
+            margin: "0 14px 12px",
+            padding: "10px 14px",
+            borderRadius: "14px",
+            background: "var(--sr-panel)",
+            border: "1px solid #D97C9555",
+            borderLeft: "3px solid #D97C95",
+            boxShadow: "var(--sr-card-shadow)",
+          }}
+        >
+          <Typography sx={{ fontSize: 13.5, fontWeight: 800, color: "var(--sr-ink)", lineHeight: 1.4 }}>
+            {t("home.tonightBanner.title")}
+          </Typography>
+          <Typography sx={{ fontSize: 11.5, color: "var(--sr-muted)", mt: 0.3, lineHeight: 1.5 }}>
+            {t("home.tonightBanner.sub")}
+          </Typography>
+        </Box>
+      )}
 
       {/* Body */}
       {loading ? (
