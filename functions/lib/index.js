@@ -3992,21 +3992,20 @@ async function recomputeTherapistSessionStats(therapistId) {
     const bonusRaw = tSnap.get("displaySessionBonus");
     const displayBonus = typeof bonusRaw === "number" && bonusRaw > 0 ? Math.round(bonusRaw) : 0;
     let served = 0;
-    let credited = 0;
     const byCustomer = new Map();
     snap.forEach((d) => {
         const b = d.data();
         const status = (b.status ?? "").toLowerCase();
-        if (SERVED_STATUSES.has(status)) {
-            served++;
-        }
-        else if (status.startsWith("cancel") && b.countsAsSession === true) {
-            credited++;
-            return; // credited-but-cancelled is a headline count only, never a customer
-        }
-        else {
+        // 🆕 Round 28x.134 (founder chose "รวมเหลืออันเดียว") — the per-booking
+        //   "credit this cancellation" mode (countsAsSession, 28x.118) is retired.
+        //   It did the same job as displaySessionBonus — pad the customer-facing
+        //   count — by a fiddlier route, so two tools boosted one number. Each
+        //   therapist's existing credits were folded into their displaySessionBonus
+        //   (one-off migration), so this only ever needs completed + bonus now.
+        //   Old countsAsSession flags on booking docs are dead data, ignored here.
+        if (!SERVED_STATUSES.has(status))
             return;
-        }
+        served++;
         // Rebook rate counts PEOPLE, so guests (no uid) key on their phone —
         // same identity rule the client-side computeBookingStats uses.
         const phone = typeof b.phone === "string" ? b.phone.replace(/[^\d+]/g, "") : "";
@@ -4021,7 +4020,7 @@ async function recomputeTherapistSessionStats(therapistId) {
         repeatCustomers++; });
     const rebookRate = uniqueCustomers > 0 ? Math.round((repeatCustomers / uniqueCustomers) * 100) : 0;
     await tRef.update({
-        totalSessions: served + credited + displayBonus,
+        totalSessions: served + displayBonus,
         rebookRate,
         statsUpdatedAt: firestore_2.FieldValue.serverTimestamp(),
     });

@@ -61,7 +61,6 @@ import {
   Divider,
   Select,
   MenuItem,
-  Switch,
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
@@ -565,11 +564,10 @@ const AdminBookingListPage: React.FC = () => {
               return { status, holdState: "confirmed", holdExpiresAt: null, ...split };
             })()
           : status === "cancelled"
-          // 🆕 Round 28x.118/120 — a fresh cancel always resets the public
-          //   session-credit exception to off, so it's never inherited
-          //   silently; the admin turns it back on deliberately from the
-          //   toggle in the detail panel's Status block.
-          ? { status, ...(reason ? { cancelReason: reason } : {}), countsAsSession: false }
+          // 🆕 Round 28x.134 — no more countsAsSession reset: the per-booking
+          //   credit mode is retired (folded into displaySessionBonus), so a
+          //   cancel just sets the status + reason.
+          ? { status, ...(reason ? { cancelReason: reason } : {}) }
           : { status };
       await updateDoc(doc(db, "bookings", id), patch);
       // 🆕 28s259 — "booking.status_change" is the fallback for transitions
@@ -610,22 +608,6 @@ const AdminBookingListPage: React.FC = () => {
     //   cancelling stays one decision and the exception can be set — or
     //   changed, or applied to an already-cancelled booking — whenever.
     void setStatus(id, "cancelled", reason.trim() || undefined);
-  };
-
-  // 🆕 Round 28x.120 — flip the public-session-credit exception on a cancelled
-  //   booking. Money is untouched by design: cancelled pays ฿0 to everyone,
-  //   this only changes the session count customers see on her profile.
-  const toggleCountsAsSession = async (id: string, next: boolean) => {
-    try {
-      await updateDoc(doc(db, "bookings", id), { countsAsSession: next });
-      void logAdminAction("booking.status_change", { bookingId: id, countsAsSession: next });
-      setToast({
-        msg: next ? "นับเป็นยอดจองให้พนักงานแล้ว" : "ไม่นับเป็นยอดจองแล้ว",
-        ok: true,
-      });
-    } catch {
-      setToast({ msg: "Update failed · อัปเดตล้มเหลว", ok: false });
-    }
   };
 
   // 🆕 28s259 — full status-override dropdown (DetailPanel). Routes through
@@ -1154,7 +1136,6 @@ const AdminBookingListPage: React.FC = () => {
             onTogglePaid={() => { void togglePaid(detailBooking.id, isPaid(detailBooking)); }}
             onSaveNote={(note) => { void saveNote(detailBooking.id, note); }}
             onChangeStatus={(status) => changeStatus(detailBooking.id, status)}
-            onToggleCountsAsSession={(next) => { void toggleCountsAsSession(detailBooking.id, next); }}
             onSaveDetails={(patch, auditDetail) => { void saveDetails(detailBooking.id, patch, auditDetail); }}
             countPriorCodeUses={countPriorCodeUses}
           />
@@ -1702,12 +1683,11 @@ const DetailPanel: React.FC<{
   onChangeStatus: (status: string) => void;
   // 🆕 28x.120 — flip the "still counts as a session publicly" exception on a
   //   cancelled booking, any time, not just at the moment of cancelling.
-  onToggleCountsAsSession: (next: boolean) => void;
   onSaveDetails: (patch: Record<string, unknown>, auditDetail?: Record<string, unknown>) => void;
   // 🆕 28x.43 — how many OTHER bookings this phone already has under a code
   //   (the redemption memory made visible on the slip).
   countPriorCodeUses: (phone: string, code: string, excludeId: string) => number;
-}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onToggleCountsAsSession, onSaveDetails, countPriorCodeUses }) => {
+}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails, countPriorCodeUses }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
   const cfg        = cfgFor(b.status);
   const isCancelled = b.status === "cancelled";
@@ -2088,41 +2068,13 @@ const DetailPanel: React.FC<{
           </Select>
         </Box>
 
-        {/* 🆕 Round 28x.120 (founder: "CC still Show ตรงสเตตัส อยู่ตรงไหนหรอ") —
-            28x.118 put this behind a window.confirm() that only fired at the
-            moment of cancelling: invisible afterwards, and unreachable for the
-            bookings already cancelled before the feature existed. It belongs
-            here, attached to Status, exactly where she asked for it — a real
-            toggle she can flip either way at any time. Only rendered for a
-            cancelled booking; no other status has anything to override. */}
-        {isCancelled && (
-          <Box
-            sx={{
-              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
-              borderRadius: "14px",
-              background: b.countsAsSession ? `${adminColor.green}0D` : adminColor.panel,
-              border: `1px solid ${b.countsAsSession ? `${adminColor.green}44` : adminColor.line}`,
-              px: 1.75, py: 1.25, mb: 2,
-            }}
-          >
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: adminColor.text, lineHeight: 1.3 }}>
-                ยังนับเป็นยอดจองให้พนักงาน
-              </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.4, lineHeight: 1.45 }}>
-                สถานะยังเป็น &ldquo;ยกเลิก&rdquo; และเงินยังเป็น ฿0 — แต่ลูกค้าจะเห็นยอดนี้รวมในเซสชันบนโปรไฟล์
-              </Typography>
-            </Box>
-            <Switch
-              checked={Boolean(b.countsAsSession)}
-              onChange={(_, checked) => onToggleCountsAsSession(checked)}
-              sx={{
-                "& .MuiSwitch-switchBase.Mui-checked": { color: adminColor.green },
-                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: `${adminColor.green} !important` },
-              }}
-            />
-          </Box>
-        )}
+        {/* 🆕 Round 28x.134 (founder chose "รวมเหลืออันเดียว") — the per-booking
+            "ยังนับเป็นยอดจองให้พนักงาน" (countsAsSession) switch is REMOVED. It
+            padded the customer-facing session count, which is now the single
+            job of displaySessionBonus on the therapist page — one boost tool,
+            not two. Existing credits were migrated into each therapist's bonus,
+            so no count changed. To credit a future cancellation, bump that
+            therapist's โบนัส by 1 instead. */}
 
         {/* 🆕 28s264 — Edit toggle now lives above the grouped sections,
             not buried inside a "Booking Info" label. */}

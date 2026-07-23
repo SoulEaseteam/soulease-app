@@ -190,7 +190,6 @@ const AdminTherapistDetailPage: React.FC = () => {
   // function also backs the therapist's own private Performance stats and
   // this same page's raw totals, both of which must stay the TRUE count;
   // only the public totalSessions this page syncs should include the bonus.
-  const [bonusSessions, setBonusSessions] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [syncedAt, setSyncedAt] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
@@ -382,12 +381,9 @@ const AdminTherapistDetailPage: React.FC = () => {
           // public listeners). Admin already has full list access via
           // isAdmin(), so this page isn't bound by that same constraint.
           const ratings: number[] = [];
-          // 🆕 Round 28x.118 — cancelled bookings flagged countsAsSession
-          //   (only "cancelled" can carry this flag today — see
-          //   AdminBookingListPage's cancelBooking()) shouldn't double-count
-          //   if computeBookingStats ever changes to include them itself;
-          //   checking the status here keeps this additive and independent.
-          let bonus = 0;
+          // 🆕 Round 28x.134 — the per-booking countsAsSession credit is retired;
+          //   its counts were migrated into displaySessionBonus, so we no longer
+          //   tally it here (doing so would double-count against the bonus).
           snap.forEach((d) => {
             const b = d.data();
             if (b.date === today) todayCount++;
@@ -397,14 +393,12 @@ const AdminTherapistDetailPage: React.FC = () => {
             }
             const text = typeof b.reviewText === "string" ? b.reviewText.trim() : "";
             if (text) ratings.push(typeof b.rating === "number" ? b.rating : 5);
-            if (b.status === "cancelled" && b.countsAsSession === true) bonus++;
           });
           setTodayBookings(todayCount);
           setTotalBookings(snap.size);
           setLastBookingAt(last);
           setReviewCount(ratings.length);
           setAvgRating(ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0);
-          setBonusSessions(bonus);
           // Round 28s372 — derive loyalty stats for the Sync Stats button.
           setComputedStats(computeBookingStats(snap));
         }
@@ -460,8 +454,6 @@ const AdminTherapistDetailPage: React.FC = () => {
 
   // Round 28s372 — Sync computed booking stats to the therapist doc so the
   // public detail page (which can't query bookings directly) can show chips.
-  // 🆕 Round 28x.118 — totalSessions includes bonusSessions (admin-flagged
-  // cancelled bookings that still count publicly) on top of the true count.
   // Current stored bonus (live from the doc snapshot). The draft input syncs
   // to it whenever the doc changes underneath (effect below).
   const displayBonus =
@@ -497,13 +489,12 @@ const AdminTherapistDetailPage: React.FC = () => {
     if (!docId || computedStats.loading) return;
     setSyncing(true);
     try {
-      // 🆕 Round 28x.133 — the public count now has THREE parts, all admin-side:
-      //   completed (real) + credited cancellations (28x.118) + display bonus
-      //   (this round). Sync must include the bonus or clicking it would drop
-      //   the boost the founder just set. The onBooking*/onTherapistBonusChange
-      //   triggers keep this in sync automatically; this button stays as a
-      //   manual "recompute now" that must use the identical formula.
-      const totalSessions = computedStats.totalCompleted + bonusSessions + displayBonus;
+      // 🆕 Round 28x.134 — public count = completed (real) + display bonus.
+      //   The per-booking credit mode was folded into the bonus, so there are
+      //   just two parts now. The onBooking*/onTherapistBonusChange triggers
+      //   keep this in sync automatically; this button stays as a manual
+      //   "recompute now" using the identical formula.
+      const totalSessions = computedStats.totalCompleted + displayBonus;
       await updateDoc(doc(db, "therapists", docId), {
         totalSessions,
         rebookRate: computedStats.repeatPct,
@@ -806,7 +797,7 @@ const AdminTherapistDetailPage: React.FC = () => {
               >
                 {(() => {
                   const draftBonus = Math.max(0, Math.round(Number(bonusDraft) || 0));
-                  const total = computedStats.totalCompleted + bonusSessions + draftBonus;
+                  const total = computedStats.totalCompleted + draftBonus;
                   const label = `${total} sessions · ${computedStats.repeatPct}% rebook`;
                   return syncing ? "Syncing…" : syncedAt ? `Synced ✓ (${label})` : `Sync Stats (${label})`;
                 })()}
@@ -814,10 +805,10 @@ const AdminTherapistDetailPage: React.FC = () => {
             </Box>
           </Tooltip>
 
-          {/* 🆕 Round 28x.133 (founder chose "โบนัสรายคน") — per-practitioner
-              display boost. Customers see completed + credited-cancellations +
-              this bonus; the practitioner's own app shows only completed (real);
-              rebook rate ignores all boosts. Admin-only surface. */}
+          {/* 🆕 Round 28x.133/134 (founder chose "โบนัสรายคน" then "รวมเหลืออันเดียว")
+              — the ONE display-boost tool. Customers see completed + this bonus;
+              the practitioner's own app shows only completed (real); rebook rate
+              ignores the bonus. Admin-only surface. */}
           <Box sx={{ background: adminColor.panel2, borderRadius: "12px", p: "12px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
             <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.04em", textTransform: "uppercase" }}>
               โบนัสยอดโชว์ลูกค้า · Display boost
@@ -825,8 +816,7 @@ const AdminTherapistDetailPage: React.FC = () => {
             {(() => {
               const draftBonus = Math.max(0, Math.round(Number(bonusDraft) || 0));
               const real = computedStats.totalCompleted;
-              const credited = bonusSessions;
-              const shown = real + credited + draftBonus;
+              const shown = real + draftBonus;
               const dirty = draftBonus !== displayBonus;
               return (
                 <>
@@ -857,7 +847,7 @@ const AdminTherapistDetailPage: React.FC = () => {
                     </Button>
                   </Box>
                   <Typography sx={{ fontSize: 11.5, color: adminColor.dim, lineHeight: 1.5 }}>
-                    ทำจริง {real} · เครดิตยกเลิก {credited} · โบนัส {draftBonus}
+                    ทำจริง {real} · โบนัส {draftBonus}
                     {" = "}
                     <span style={{ color: adminColor.text, fontWeight: 800 }}>ลูกค้าเห็น {shown}</span>
                   </Typography>
