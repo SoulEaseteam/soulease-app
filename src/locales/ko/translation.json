@@ -262,6 +262,7 @@
   "sheet.used": "{{count}}회 이용",
   "sheet.duration.standard": "스탠다드",
   "sheet.duration.popular": "인기",
+  "sheet.duration.bestSeller": "베스트셀러",
   "sheet.duration.bestValue": "베스트 밸류",
   "sheet.note.bookingId": "예약 완료 후 예약 ID를 고객센터로 보내주세요.",
   "sheet.note.cashNearby": "가까운 위치라면 현금 결제가 가능합니다.",

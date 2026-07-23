@@ -264,6 +264,7 @@
   "sheet.used": "ใช้บริการแล้ว {{count}}",
   "sheet.duration.standard": "มาตรฐาน",
   "sheet.duration.popular": "ยอดนิยม",
+  "sheet.duration.bestSeller": "ขายดีที่สุด",
   "sheet.duration.bestValue": "คุ้มที่สุด",
   "sheet.note.bookingId": "กรุณาส่งรหัสการจองให้เจ้าหน้าที่หลังทำการจองเสร็จสิ้น",
   "sheet.note.cashNearby": "หากอยู่ในพื้นที่ใกล้เคียง สามารถชำระเงินสดได้",

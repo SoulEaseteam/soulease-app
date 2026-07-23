@@ -262,6 +262,7 @@
   "sheet.used": "{{count}} 回利用",
   "sheet.duration.standard": "スタンダード",
   "sheet.duration.popular": "人気",
+  "sheet.duration.bestSeller": "一番人気",
   "sheet.duration.bestValue": "お得",
   "sheet.note.bookingId": "予約完了後、予約IDをカスタマーサービスへお送りください。",
   "sheet.note.cashNearby": "お近くの場合は現金でのお支払いも可能です。",

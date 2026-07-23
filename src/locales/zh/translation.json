@@ -357,6 +357,7 @@
   "sheet.used": "已预订 {{count}} 次",
   "sheet.duration.standard": "标准",
   "sheet.duration.popular": "最受欢迎",
+  "sheet.duration.bestSeller": "最热销",
   "sheet.duration.bestValue": "超值之选",
   "sheet.note.bookingId": "完成预订后，请将您的预订编号发送给客服。",
   "sheet.note.cashNearby": "如果您所在位置较近，可以现金支付。",

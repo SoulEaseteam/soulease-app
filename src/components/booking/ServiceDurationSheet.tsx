@@ -49,7 +49,6 @@ import {
   priceForDuration,
   durationsFor,
   formatTHB,
-  wasPriceFor,
   badgeForDuration,
 } from "@/utils/servicePricing";
 import PromoBadge from "@/components/common/PromoBadge";
@@ -88,6 +87,11 @@ const DURATION_LABELS: Record<
   { tagKey: string; popular?: boolean }
 > = {
   60: { tagKey: "sheet.duration.standard" },
+  // 🆕 28x.104 (founder "Choose duration ให้มีเคลื่อนไหวตรงเวลาที่ขายดี
+  //   แบบนวดไทย") — 70 min is Gentleman's/Therapeutic's best-selling tier
+  //   but had NO entry here, so it never pulsed the way Thai's 90 does.
+  //   popular:true gives it the same breathe/pulse card + default-select.
+  70: { tagKey: "sheet.duration.bestSeller", popular: true },
   90: { tagKey: "sheet.duration.popular", popular: true },
   120: { tagKey: "sheet.duration.bestValue" },
 };
@@ -244,7 +248,6 @@ const ServiceDurationSheet: React.FC<Props> = ({
           {durations.map((min) => {
             const isActive = selected === min;
             const price = priceForDuration(service, min);
-            const was = wasPriceFor(service, min);
             const meta = DURATION_LABELS[min];
             const tagText = meta
               ? t(meta.tagKey)
@@ -333,9 +336,10 @@ const ServiceDurationSheet: React.FC<Props> = ({
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography
                     sx={{
-                      fontFamily: SERIF,
+                      // 🆕 28x.104 — SERIF→SANS (founder "เปลี่ยนฟ้อนให้อ่านง่ายขึ้น")
+                      fontFamily: SANS,
                       fontSize: "16px",
-                      fontWeight: 600,
+                      fontWeight: 700,
                       color: "var(--sr-ink)",
                       lineHeight: 1.1,
                       marginBottom: "2px",
@@ -378,12 +382,10 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     <PromoBadge badge={badgeForDuration(min)!} size="sm" />
                   )}
                   <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", lineHeight: 1 }}>
-                    {was && (
-                      <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10.5px", fontWeight: 500, textDecoration: "line-through", color: "var(--sr-muted)", lineHeight: 1 }}>
-                        {formatTHB(was)}
-                      </Typography>
-                    )}
-                    <Typography component="span" sx={{ fontFamily: SERIF, fontSize: "17px", fontWeight: 700, color: isActive ? "#D97C95" : "var(--sr-ink)", lineHeight: 1.15 }}>
+                    {/* 🆕 28x.104 — struck was-price removed (founder
+                        "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด"); price switched
+                        SERIF→SANS (founder "เปลี่ยนฟ้อนให้อ่านง่ายขึ้น"). */}
+                    <Typography component="span" sx={{ fontFamily: SANS, fontSize: "17px", fontWeight: 700, color: isActive ? "#D97C95" : "var(--sr-ink)", lineHeight: 1.15 }}>
                       {formatTHB(price)}
                     </Typography>
                   </Box>
@@ -433,7 +435,8 @@ const ServiceDurationSheet: React.FC<Props> = ({
               </Box>
               <Typography
                 sx={{
-                  fontFamily: SERIF,
+                  // 🆕 28x.104 — SERIF→SANS for readability
+                  fontFamily: SANS,
                   fontSize: "16px",
                   fontWeight: 700,
                   color: "var(--sr-ink)",

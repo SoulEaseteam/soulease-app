@@ -262,6 +262,7 @@
   "sheet.used": "{{count}} used",
   "sheet.duration.standard": "Standard",
   "sheet.duration.popular": "Most popular",
+  "sheet.duration.bestSeller": "Best seller",
   "sheet.duration.bestValue": "Best value",
   "sheet.note.bookingId": "Please send your booking ID to customer service after completing the reservation.",
   "sheet.note.cashNearby": "If your location is nearby, you may pay in cash.",

@@ -42,7 +42,6 @@ import {
   getLiveCustomServices,
   getLiveServiceOrder,
   startingPrice,
-  wasPriceFor,
   durationsFor,
   formatTHB,
   badgeFor,
@@ -50,7 +49,6 @@ import {
 import PromoBadge from "@/components/common/PromoBadge";
 import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
-const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // 🆕 28r123 — one-word type tag per service, same map as ServicesPage.tsx.
@@ -128,6 +126,11 @@ function orderIdx(id: string): number {
   //   the SKU that actually sells. Every other service keeps the live /
   //   editorial order below it.
   if (id === BESTSELLER_ID) return -1000;
+  // 🆕 28x.104 (founder "เมนูพิเศษขึ้นก่อน 2 อันดับแรก") — the second
+  //   signature menu (SunRed Therapeutic) is pinned right under the
+  //   best-seller, so the two premium rituals always open the list even
+  //   when the admin live order sorts Thai/Aroma higher.
+  if (id === "SR-B2B3200") return -999;
   // 🆕 Round 28s302 — admin-set order (from /admin/promotions) wins; the
   //   hardcoded editorial order is the fallback for ids it doesn't list.
   const live = getLiveServiceOrder();
@@ -329,7 +332,8 @@ const StepService: React.FC<Props> = ({
               <Typography
                 component="h3"
                 sx={{
-                  fontFamily: SERIF,
+                  // 🆕 28x.104 — SERIF→SANS (founder "เปลี่ยนฟ้อนให้อ่านง่ายขึ้น")
+                  fontFamily: SANS,
                   fontSize: "16px",
                   fontWeight: 700,
                   color: "var(--sr-ink)",
@@ -348,22 +352,23 @@ const StepService: React.FC<Props> = ({
                   letterSpacing: "0.01em",
                 }}
               >
-                60 min · {typeLabel}
+                {/* 🆕 28x.104 (founder "เมนู gentleman ใส่นาทีผิด") — was a
+                    hardcoded "60 min" on every card; Gentleman's/Therapeutic
+                    have no 60-min tier (70/120 only). Show the service's
+                    REAL minimum tier. */}
+                {durationsFor(s)[0] ?? 60} min · {typeLabel}
               </Typography>
               {/* 🆕 28w.63 (founder "ใส่ราคาเริ่มต้น + ป้ายวิบวับ") — starting
                   price (struck-through was + from-price) + shimmering badge. */}
+              {/* 🆕 28x.104 — struck was-price removed (ราคาขีดฆ่า ออกทุกจุด);
+                  price SERIF→SANS for readability. */}
               {(() => {
                 const from = startingPrice(s);
-                const firstDur = durationsFor(s)[0];
-                const was = firstDur != null ? wasPriceFor(s, firstDur) : null;
                 return (
                   <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px", mt: "6px" }}>
                     <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
                       <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10px", color: "var(--sr-muted)", fontWeight: 600 }}>เริ่มต้น</Typography>
-                      {was && (
-                        <Typography component="span" sx={{ fontFamily: SANS, fontSize: "11px", fontWeight: 500, textDecoration: "line-through", color: "var(--sr-muted)" }}>{formatTHB(was)}</Typography>
-                      )}
-                      <Typography component="span" sx={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 700, color: "#D97C95", lineHeight: 1 }}>{formatTHB(from)}</Typography>
+                      <Typography component="span" sx={{ fontFamily: SANS, fontSize: "16px", fontWeight: 700, color: "#D97C95", lineHeight: 1 }}>{formatTHB(from)}</Typography>
                     </Box>
                   </Box>
                 );
