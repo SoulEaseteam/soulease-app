@@ -52,7 +52,8 @@ import {
   isSlotTaken,
 } from "@/utils/useTherapistBookings";
 
-const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
+// 🆕 28x.105 — SERIF retired from this picker (founder "ฟอนต์" readability
+//   pass); everything renders in the SANS stack now.
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const SLOT_INCREMENT_MIN = 30;
@@ -535,9 +536,11 @@ const StepDateTime: React.FC<Props> = ({
                 </Typography>
                 <Typography
                   sx={{
-                    fontFamily: SERIF,
+                    // 🆕 28x.105 (founder "ฟอนต์") — SERIF→SANS, same
+                    //   readability pass as the rest of the sheet (28x.104).
+                    fontFamily: SANS,
                     fontSize: "15px",
-                    fontWeight: 600,
+                    fontWeight: 700,
                     letterSpacing: "-0.01em",
                   }}
                 >
@@ -668,7 +671,8 @@ const StepDateTime: React.FC<Props> = ({
             </Typography>
             <Typography
               sx={{
-                fontFamily: SERIF,
+                // 🆕 28x.105 — SERIF→SANS (founder "ฟอนต์")
+                fontFamily: SANS,
                 fontSize: "16px",
                 fontWeight: 700,
                 color: "var(--sr-ink)",
@@ -735,8 +739,10 @@ const StepDateTime: React.FC<Props> = ({
         >
           <Typography
             sx={{
-              fontFamily: SERIF,
+              // 🆕 28x.105 — SERIF→SANS (founder "ฟอนต์")
+              fontFamily: SANS,
               fontSize: "16px",
+              fontWeight: 700,
               color: "var(--sr-ink)",
               marginBottom: "4px",
             }}
