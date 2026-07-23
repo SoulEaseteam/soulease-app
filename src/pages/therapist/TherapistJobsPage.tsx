@@ -629,7 +629,15 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
               Total
             </Typography>
             <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "var(--sr-ink)", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-              {typeof job.totalPrice === "number" ? formatTHB(job.totalPrice) : "—"}
+              {/* 🆕 Round 28x.136 (founder screenshot: staff card showed ฿1,730
+                  on a cancelled job while admin correctly showed ฿0) — a
+                  cancelled/no-show booking pays ฿0, so the card must not keep
+                  displaying the original price. Same rule the admin drawer uses
+                  (isCancelled ? 0 : total). Display-only; the money was already
+                  ฿0 everywhere. */}
+              {CANCELLED_STATUSES.has((job.status ?? "").toLowerCase())
+                ? formatTHB(0)
+                : typeof job.totalPrice === "number" ? formatTHB(job.totalPrice) : "—"}
             </Typography>
           </Box>
 
