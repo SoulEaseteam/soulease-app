@@ -657,6 +657,11 @@ const AUDIT_IGNORE_KEYS = new Set([
   "reviews",
   "totalSessions",
   "sessions",
+  // 🆕 28x.133 — written by recomputeTherapistSessionStats on every booking
+  //   write; derived, not a human edit, so they must not spawn audit rows or
+  //   staff-activity notices.
+  "rebookRate",
+  "statsUpdatedAt",
 ]);
 
 /** Truncate large values so audit log row stays small. */
@@ -4843,10 +4848,23 @@ const SERVED_STATUSES = new Set(["completed", "done"]);
 
 async function recomputeTherapistSessionStats(therapistId: string): Promise<void> {
   const db = getFirestore();
-  const snap = await db
-    .collection("bookings")
-    .where("therapistId", "==", therapistId)
-    .get();
+  const tRef = db.collection("therapists").doc(therapistId);
+  const [snap, tSnap] = await Promise.all([
+    db.collection("bookings").where("therapistId", "==", therapistId).get(),
+    tRef.get(),
+  ]);
+
+  // 🆕 Round 28x.133 (founder chose "โบนัสรายคน") — an admin-set display bonus
+  //   that lifts ONLY the customer-facing session count, so a quieter
+  //   practitioner doesn't look unbooked next to Yuri and lose the sale to
+  //   cold-start ("ถ้า yuri หยุด พนักงานคนอื่นก็ยอดจองน้อย ลูกค้าไม่อยากจอง").
+  //   It is added to totalSessions but NEVER to the rebook maths below —
+  //   rebook rate stays a true ratio of real people, per the founder's own
+  //   "rebook rate ไม่นับโหมดปั่นยอด". Staff never see it: their app reads the
+  //   live computeBookingStats (completed only), not this doc field.
+  const bonusRaw = tSnap.get("displaySessionBonus");
+  const displayBonus =
+    typeof bonusRaw === "number" && bonusRaw > 0 ? Math.round(bonusRaw) : 0;
 
   let served = 0;
   let credited = 0;
@@ -4884,8 +4902,8 @@ async function recomputeTherapistSessionStats(therapistId: string): Promise<void
   const rebookRate =
     uniqueCustomers > 0 ? Math.round((repeatCustomers / uniqueCustomers) * 100) : 0;
 
-  await db.collection("therapists").doc(therapistId).update({
-    totalSessions: served + credited,
+  await tRef.update({
+    totalSessions: served + credited + displayBonus,
     rebookRate,
     statsUpdatedAt: FieldValue.serverTimestamp(),
   });
@@ -5013,5 +5031,37 @@ export const onBookingCancelledStrikeTelegram = onDocumentUpdated(
       struck,
       total: msgs.length,
     });
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.133 — recompute the public session count when an admin changes
+// a practitioner's displaySessionBonus. Booking-write recompute (above) can't
+// catch this: no booking changed, only the therapist doc. Fires ONLY on a real
+// bonus change, so the recompute's own write of totalSessions/rebookRate does
+// not re-trigger it — no loop.
+// ─────────────────────────────────────────────────────────────────────────────
+export const onTherapistBonusChange = onDocumentUpdated(
+  {
+    document: "therapists/{therapistId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const before = event.data?.before.data() as { displaySessionBonus?: number } | undefined;
+    const after = event.data?.after.data() as { displaySessionBonus?: number } | undefined;
+    if (!after) return;
+
+    const b = typeof before?.displaySessionBonus === "number" ? before.displaySessionBonus : 0;
+    const a = typeof after.displaySessionBonus === "number" ? after.displaySessionBonus : 0;
+    if (a === b) return;
+
+    try {
+      await recomputeTherapistSessionStats(event.params.therapistId);
+    } catch (err) {
+      logger.warn("[onTherapistBonusChange] recompute failed", {
+        therapistId: event.params.therapistId,
+        err,
+      });
+    }
   }
 );

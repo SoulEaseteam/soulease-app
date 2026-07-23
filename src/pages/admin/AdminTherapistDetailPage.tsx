@@ -35,7 +35,7 @@ import {
   onSnapshot,
   serverTimestamp,
 } from "firebase/firestore";
-import { app, db } from "@/lib/firebase";
+import { app, auth, db } from "@/lib/firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -194,6 +194,10 @@ const AdminTherapistDetailPage: React.FC = () => {
   const [syncing, setSyncing] = useState(false);
   const [syncedAt, setSyncedAt] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // 🆕 Round 28x.133 (founder chose "โบนัสรายคน") — admin-set display boost.
+  const [bonusDraft, setBonusDraft] = useState<string>("");
+  const [savingBonus, setSavingBonus] = useState(false);
 
   // 🆕 opening the roster's Pencil icon lands here with ?edit=1 pre-armed.
   const [editing, setEditing] = useState(() => searchParams.get("edit") === "1");
@@ -458,11 +462,48 @@ const AdminTherapistDetailPage: React.FC = () => {
   // public detail page (which can't query bookings directly) can show chips.
   // 🆕 Round 28x.118 — totalSessions includes bonusSessions (admin-flagged
   // cancelled bookings that still count publicly) on top of the true count.
+  // Current stored bonus (live from the doc snapshot). The draft input syncs
+  // to it whenever the doc changes underneath (effect below).
+  const displayBonus =
+    typeof rawDoc?.displaySessionBonus === "number" ? rawDoc.displaySessionBonus : 0;
+  useEffect(() => {
+    setBonusDraft(String(displayBonus));
+  }, [displayBonus]);
+
+  // 🆕 28x.133 — write ONLY the bonus. The onTherapistBonusChange Cloud
+  //   Function recomputes totalSessions from it; the live doc snapshot then
+  //   repaints this page. No staff surface reads this field.
+  const saveBonus = async () => {
+    if (!docId) return;
+    const n = Math.max(0, Math.round(Number(bonusDraft) || 0));
+    setSavingBonus(true);
+    try {
+      await updateDoc(doc(db, "therapists", docId), {
+        displaySessionBonus: n,
+        updatedBy: auth.currentUser?.uid ?? "admin",
+      });
+      await logAdminAction("sync_therapist_stats" as Parameters<typeof logAdminAction>[0], {
+        therapistId: docId,
+        displaySessionBonus: n,
+      });
+    } catch (err) {
+      console.error("[AdminTherapistDetailPage] saveBonus failed:", err);
+    } finally {
+      setSavingBonus(false);
+    }
+  };
+
   const handleSyncStats = async () => {
     if (!docId || computedStats.loading) return;
     setSyncing(true);
     try {
-      const totalSessions = computedStats.totalCompleted + bonusSessions;
+      // 🆕 Round 28x.133 — the public count now has THREE parts, all admin-side:
+      //   completed (real) + credited cancellations (28x.118) + display bonus
+      //   (this round). Sync must include the bonus or clicking it would drop
+      //   the boost the founder just set. The onBooking*/onTherapistBonusChange
+      //   triggers keep this in sync automatically; this button stays as a
+      //   manual "recompute now" that must use the identical formula.
+      const totalSessions = computedStats.totalCompleted + bonusSessions + displayBonus;
       await updateDoc(doc(db, "therapists", docId), {
         totalSessions,
         rebookRate: computedStats.repeatPct,
@@ -764,14 +805,69 @@ const AdminTherapistDetailPage: React.FC = () => {
                 }}
               >
                 {(() => {
-                  const total = computedStats.totalCompleted + bonusSessions;
-                  const bonusNote = bonusSessions > 0 ? ` incl. +${bonusSessions} cancelled` : "";
-                  const label = `${total} sessions${bonusNote} · ${computedStats.repeatPct}% rebook`;
+                  const draftBonus = Math.max(0, Math.round(Number(bonusDraft) || 0));
+                  const total = computedStats.totalCompleted + bonusSessions + draftBonus;
+                  const label = `${total} sessions · ${computedStats.repeatPct}% rebook`;
                   return syncing ? "Syncing…" : syncedAt ? `Synced ✓ (${label})` : `Sync Stats (${label})`;
                 })()}
               </Button>
             </Box>
           </Tooltip>
+
+          {/* 🆕 Round 28x.133 (founder chose "โบนัสรายคน") — per-practitioner
+              display boost. Customers see completed + credited-cancellations +
+              this bonus; the practitioner's own app shows only completed (real);
+              rebook rate ignores all boosts. Admin-only surface. */}
+          <Box sx={{ background: adminColor.panel2, borderRadius: "12px", p: "12px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              โบนัสยอดโชว์ลูกค้า · Display boost
+            </Typography>
+            {(() => {
+              const draftBonus = Math.max(0, Math.round(Number(bonusDraft) || 0));
+              const real = computedStats.totalCompleted;
+              const credited = bonusSessions;
+              const shown = real + credited + draftBonus;
+              const dirty = draftBonus !== displayBonus;
+              return (
+                <>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input
+                      type="number"
+                      min={0}
+                      value={bonusDraft}
+                      onChange={(e) => setBonusDraft(e.target.value)}
+                      style={{
+                        width: 74, padding: "7px 10px", borderRadius: 8,
+                        border: `1px solid ${adminColor.line}`, background: adminColor.panel,
+                        color: adminColor.text, fontSize: 13, fontWeight: 700, textAlign: "center",
+                      }}
+                    />
+                    <Button
+                      onClick={() => void saveBonus()}
+                      disabled={savingBonus || !dirty}
+                      size="small"
+                      sx={{
+                        background: adminColor.accent, color: "#fff", textTransform: "none",
+                        fontWeight: 700, borderRadius: "9px", fontSize: 12, px: "12px", py: "6px",
+                        "&:hover": { background: adminColor.accentDeep },
+                        "&:disabled": { opacity: 0.4 },
+                      }}
+                    >
+                      {savingBonus ? "บันทึก…" : "บันทึกโบนัส"}
+                    </Button>
+                  </Box>
+                  <Typography sx={{ fontSize: 11.5, color: adminColor.dim, lineHeight: 1.5 }}>
+                    ทำจริง {real} · เครดิตยกเลิก {credited} · โบนัส {draftBonus}
+                    {" = "}
+                    <span style={{ color: adminColor.text, fontWeight: 800 }}>ลูกค้าเห็น {shown}</span>
+                  </Typography>
+                  <Typography sx={{ fontSize: 10.5, color: adminColor.dim, lineHeight: 1.45 }}>
+                    พนักงานเห็นแค่ยอดจริง ({real}) · rebook rate ไม่ถูกกระทบ
+                  </Typography>
+                </>
+              );
+            })()}
+          </Box>
         </Box>
 
         {!editing ? (
