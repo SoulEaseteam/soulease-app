@@ -758,14 +758,15 @@ const BookingSuccessPage: React.FC = () => {
                         "&:hover": { transform: "translateY(-2px)" },
                       }}
                     >
+                      {/* 🆕 28x.105c (founder "ขยายขึ้นอีกนิด ไอคอน") — 26→36px */}
                       <Box
                         component="img"
                         src={c.src}
                         alt=""
-                        width={26}
-                        height={26}
+                        width={36}
+                        height={36}
                         loading="lazy"
-                        sx={{ width: 26, height: 26, objectFit: "contain" }}
+                        sx={{ width: 36, height: 36, objectFit: "contain" }}
                       />
                       <Typography
                         sx={{
