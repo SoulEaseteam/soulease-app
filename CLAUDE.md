@@ -391,9 +391,19 @@ often don't send a usable `document.referrer`.
 - GitHub PR #12 (`claude/bot-copy-and-staff-self-service`) is a few
   commits behind local `main` — not required (she deploys direct via
   vercel/firebase), just not fully synced if anyone goes looking there.
-- Google Search Console — offered for real search-query data (referrer
-  can't carry it, Google-side limitation). Needs View's own Google account
-  to verify the domain; not started.
+- Google Search Console — ✅ VERIFIED (discovered 2026-07-23: the
+  owner-only "Search performance for this query" card renders on
+  Google SERPs while logged in as sunredbkk@gmail.com — brand query
+  "sunred massage" = 127 clicks / 160 impressions / avg pos 1.2 over
+  90 days, clicks +105%). Also discovered the same day, NOT yet
+  explained: 3+ Google Business Profile listings named
+  "SunRed massage"/"Outcall massage SunRed" at different Bangkok
+  addresses (5/4 Sukhumvit · Times Square 246 Sukhumvit · 61 Rama 9
+  Soi 5, ~6 map pins citywide), all Website→sunred.vip, one with a
+  5.0★ public review — origin unknown (View to confirm whether she
+  created these; the §"🚫 GBP do-not-verify" rule concerns public
+  guest reviews, and one public review already exists). Don't touch
+  the listings without her call.
 - `/admin/staff-requests` (gallery photo approval queue) shipped and
   passed typecheck/build/rules-tests, but was never visually confirmed
   live in an actual admin browser session — worth a first real look.
