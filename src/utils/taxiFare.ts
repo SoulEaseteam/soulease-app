@@ -38,8 +38,10 @@ import { getCachedRainStatus, type RainStatus } from "@/utils/weather";
  * 20: the real meter auto-prices trips up to ~20 km; beyond that the fare
  * (and no-show risk) is high enough that it routes to the concierge for a
  * quote / deposit instead.
+ * 🆕 Round 28x.115 (founder, same session as the new moto rate below) —
+ * back to 15: restated explicitly while recalibrating the fare curve.
  */
-export let ADMIN_QUOTE_KM = 20;
+export let ADMIN_QUOTE_KM = 15;
 
 /**
  * 🆕 Round 28s231 — Bangkok road-circuity factor. Straight-line
@@ -137,34 +139,27 @@ const TIER_4_PER_KM = 10;    // applies to km 40+
 //   applies when it's raining (getCachedRainStatus().tier !== "none") —
 //   a motorcycle isn't a safe or practical dispatch in the rain.
 //
-// 🆕 Round 28x.99n (founder: "ฉันจะกดแกรป แล้วบอกว่าตรงไหม") — the first
-//   pass used the Department of Land Transport's regulated วินมอเตอร์ไซค์
-//   MAX rates (a real official source, but not what GrabBike actually
-//   charges — it undershot badly past ~10 km). Founder spot-checked
-//   REAL GrabBike round-trip quotes in the app from the dispatch base to
-//   5 real, previously-booked addresses and reported these back:
-//     < 3 km → ฿100 (floor)   ·   3 km → ฿110   ·   6 km → ฿180
-//     10 km → ฿270            ·  15 km → ฿450   ·  ~20 km → ฿800
-//   These are CHECKPOINTS, not a formula — GrabBike's real pricing curve
-//   isn't a clean per-km meter (it steepens noticeably past ~10 km,
-//   almost certainly demand/distance-based dynamic pricing that a fixed
-//   per-km rate can't reproduce). motoRoundTripFare() below linearly
-//   interpolates between these checkpoints instead of using stepped
-//   flat bands — CLAUDE.md's own history flagged the OLD flat-band
-//   system (28w.11, now dead code below at calcTravelBudgetResult) as
-//   "cliffy", so a smooth ramp between real checkpoints is deliberately
-//   used here instead of reintroducing that same complaint.
+// 🆕 Round 28x.115 (founder: "ปรับขาไป 30 ขากลับ 20 · กม.ที่ 0-3 เริ่มที่ 100")
+//   — replaces the 28x.99n Grab-spot-check checkpoints with the founder's own
+//   flat per-leg rate: a ฿100 floor for 0–3 km, then every km beyond 3 adds
+//   ฿30 for the outbound leg + ฿20 for the return leg (฿50/km combined — the
+//   full round trip, same "both legs, no discount" principle as 28s308).
+//   Still expressed as CHECKPOINTS (not a closed-form formula in
+//   motoRoundTripFare) so the admin Settings editor and the linear-
+//   interpolation/round-to-฿10 machinery below keep working unchanged — the
+//   checkpoints below are just points ON that ฿50/km line:
+//     3 km → ฿100 · 6 km → ฿250 · 10 km → ฿450 · 15 km → ฿700
+//   (ADMIN_QUOTE_KM = 15, so nothing prices automatically past this last
+//   point — nice, since it's also the cutoff.)
 //
-//   If founder re-checks Grab again later, update these checkpoints —
-//   they're real spot-checks with a shelf life, not a permanent rate
-//   card the way the DLT numbers were.
+//   If founder re-tunes the per-km rate again later, update these
+//   checkpoints — they're a live rate card, not a permanent formula.
 let MOTO_FARE_CHECKPOINTS: [km: number, roundTripTHB: number][] = [
   [0, 100],
-  [3, 110],
-  [6, 180],
-  [10, 270],
-  [15, 450],
-  [20, 800],
+  [3, 100],
+  [6, 250],
+  [10, 450],
+  [15, 700],
 ];
 
 /**
@@ -298,12 +293,12 @@ export function grabCarRoundTripFare(distanceKm: number): number {
 
 /**
  * Round-trip GrabBike fare for any distance (km) — linear interpolation
- * between MOTO_FARE_CHECKPOINTS (real spot-checked round-trip quotes,
- * not a one-way-meter × 2 formula; see the comment on the checkpoints
- * table above for why). Distances at or beyond the last checkpoint hold
- * at that checkpoint's fare — in practice this never matters, since
- * ADMIN_QUOTE_KM (20) routes anything past the last checkpoint to a
- * manual admin quote before this function would need to extrapolate.
+ * between MOTO_FARE_CHECKPOINTS (points on the founder's flat ฿30/km-outbound
+ * + ฿20/km-return rate; see the comment on the checkpoints table above).
+ * Distances at or beyond the last checkpoint hold at that checkpoint's fare —
+ * in practice this never matters, since ADMIN_QUOTE_KM (15) routes anything
+ * past the last checkpoint to a manual admin quote before this function
+ * would need to extrapolate.
  */
 export function motoRoundTripFare(distanceKm: number): number {
   const pts = MOTO_FARE_CHECKPOINTS;
