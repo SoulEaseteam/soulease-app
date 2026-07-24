@@ -97,7 +97,7 @@ import {
 import {
   estimateTaxiFare,
   ADMIN_QUOTE_KM,
-  DISPATCH_BASE,
+  resolveFareOrigin,
   travelFareDisplay,
 } from "@/utils/taxiFare";
 // 🆕 Round 28b35 — Live therapist Holiday/override gate.
@@ -673,11 +673,14 @@ const BookingFlowPage: React.FC = () => {
     let cancelled = false;
     void (async () => {
       try {
-        // 🆕 Round 28s233 — origin is the single DISPATCH_BASE (not the
-        //   per-therapist coord) so the same destination always quotes the
-        //   same fare regardless of which practitioner is assigned.
+        // 🆕 Round 28s233 → 28x.112 — origin is the SELECTED practitioner's own
+        //   coords (was the single DISPATCH_BASE). This is the same basis the
+        //   /near-me estimate now quotes on, so the estimate and the actual
+        //   booking charge agree, and a nearer practitioner really is cheaper.
+        //   Falls back to DISPATCH_BASE only if she has no coords.
+        const origin = resolveFareOrigin(therapist);
         const r = await fetchDrivingDistance(
-          { lat: DISPATCH_BASE.lat, lng: DISPATCH_BASE.lng },
+          { lat: origin.lat, lng: origin.lng },
           { lat: form.lat!, lng: form.lng! }
         );
         if (!cancelled) setRoute(r);
@@ -688,7 +691,7 @@ const BookingFlowPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [locationSet, mapsReady, form.lat, form.lng]);
+  }, [locationSet, mapsReady, form.lat, form.lng, therapist?.lat, therapist?.lng]);
 
   // Build the taxi result. If the real route has resolved, use that
   // distance. Otherwise we render with the haversine quick estimate
@@ -700,12 +703,13 @@ const BookingFlowPage: React.FC = () => {
     //   NOT the GrabCar meter. Flat by real distance; excludes weather/traffic
     //   surge (those are dropped, per the founder's budget table). Distance is
     //   the real route km when available, else the dispatch-base haversine.
+    const fareOrigin = resolveFareOrigin(therapist);
     const distanceKm = route
       ? route.kmRoad
       : estimateTaxiFare({
-          // 🆕 Round 28s233 — single dispatch base origin (see useEffect above).
-          therapistLat: DISPATCH_BASE.lat,
-          therapistLng: DISPATCH_BASE.lng,
+          // 🆕 Round 28x.112 — origin is the selected practitioner (see useEffect).
+          therapistLat: fareOrigin.lat,
+          therapistLng: fareOrigin.lng,
           customerLat: form.lat,
           customerLng: form.lng,
           durationMin: form.duration ?? service?.duration ?? 60,
@@ -728,6 +732,8 @@ const BookingFlowPage: React.FC = () => {
     form.time,
     service?.duration,
     rainStatus,
+    therapist?.lat,
+    therapist?.lng,
   ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;

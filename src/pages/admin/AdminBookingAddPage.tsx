@@ -46,7 +46,7 @@ import services from "@/data/services";
 import { priceForDuration, durationsFor, formatTHB } from "@/utils/servicePricing";
 // 🆕 28w.43 — freeze the shop/therapist split on admin-created (born-confirmed) bookings.
 import { stampSplit } from "@/utils/commission";
-import { estimateTaxiFare, DISPATCH_BASE } from "@/utils/taxiFare";
+import { estimateTaxiFare, resolveFareOrigin } from "@/utils/taxiFare";
 import { paymentSurcharge, hasPaymentSurcharge } from "@/utils/paymentSurcharge";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import {
@@ -290,20 +290,25 @@ const AdminBookingAddPage: React.FC = () => {
     }
   }, [ready]);
 
-  // ── auto taxi from the SHARED dispatch base (28s249 fix #3) ─────────
-  //   Fare depends only on the customer location + duration now — the origin
-  //   is a fixed base, same as the customer flow (28s233).
+  // ── auto taxi from the SELECTED practitioner (28x.112) ──────────────
+  //   Origin is now the chosen practitioner's own coords (was the fixed
+  //   dispatch base), matching the customer flow so an admin-created booking
+  //   quotes the same distance the guest would see. Falls back to the dispatch
+  //   base if she has no coords. (Admin uses the haversine estimate — the
+  //   concierge confirms the final fare — while the customer page fetches the
+  //   exact Google route.)
   useEffect(() => {
     if (loc.lat == null || loc.lng == null) { setTaxiAuto(0); return; }
+    const origin = resolveFareOrigin(therapists.find((t) => t.id === therapistId));
     const { fare } = estimateTaxiFare({
-      therapistLat: DISPATCH_BASE.lat,
-      therapistLng: DISPATCH_BASE.lng,
+      therapistLat: origin.lat,
+      therapistLng: origin.lng,
       customerLat:  loc.lat,
       customerLng:  loc.lng,
       durationMin:  duration,
     });
     setTaxiAuto(fare);
-  }, [loc.lat, loc.lng, duration]);
+  }, [loc.lat, loc.lng, duration, therapistId, therapists]);
 
   // ── reset a manual override ONLY when a new location is picked (fix #4) ─
   useEffect(() => {

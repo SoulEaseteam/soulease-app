@@ -26,7 +26,7 @@ import { CONCIERGE } from "@/config/concierge";
 import { MapPin, Headset } from "phosphor-react";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import therapists from "@/data/therapists";
-import { travelFareDisplay, haversineKm, BKK_ROAD_FACTOR, DISPATCH_BASE } from "@/utils/taxiFare";
+import { travelFareDisplay, haversineKm, BKK_ROAD_FACTOR, resolveFareOrigin } from "@/utils/taxiFare";
 import { estimateEtaFromKm, fetchDrivingDistance, type RouteResult } from "@/utils/directionsApi";
 import { useTweenedNumber } from "@/hooks/useTweenedNumber";
 import { formatTHB } from "@/utils/servicePricing";
@@ -356,27 +356,31 @@ const TaxiEstimator: React.FC = () => {
     );
   };
 
-  // 🆕 28x.46 — fetch the REAL driving route from the dispatch base to the pin,
-  //   the same origin + method the booking page charges on. Falls back to a
-  //   haversine estimate inside fetchDrivingDistance if Directions is unavailable,
-  //   so the fare line never goes blank.
+  // 🆕 28x.46 → 28x.112 — fetch the REAL driving route from the SELECTED
+  //   practitioner to the pin (was the dispatch base). Same origin + method the
+  //   booking page now charges on. Re-fetches when the practitioner changes, so
+  //   picking a nearer one genuinely lowers the distance. Falls back to a
+  //   haversine estimate inside fetchDrivingDistance if Directions is
+  //   unavailable, so the fare line never goes blank.
   React.useEffect(() => {
-    if (!coords || !ready) { setRoute(null); return; }
+    if (!coords || !ready || !selected) { setRoute(null); return; }
+    const origin = resolveFareOrigin(selected);
     let cancelled = false;
     void fetchDrivingDistance(
-      { lat: DISPATCH_BASE.lat, lng: DISPATCH_BASE.lng },
+      { lat: origin.lat, lng: origin.lng },
       { lat: coords.lat, lng: coords.lng }
     ).then((r) => { if (!cancelled) setRoute(r); }).catch(() => { /* keep last */ });
     return () => { cancelled = true; };
-  }, [coords, ready]);
+  }, [coords, ready, selected]);
 
   const estimate = React.useMemo(() => {
     if (!selected || !coords) return null;
-    // Real driving distance from our dispatch base (same basis as the bill),
-    // rounded to 1 decimal so what the guest sees is what the band charges.
+    // Real driving distance from the SELECTED practitioner (same basis as the
+    // bill), rounded to 1 decimal so what the guest sees is what the band charges.
+    const origin = resolveFareOrigin(selected);
     const rawKm = route
       ? route.kmRoad
-      : haversineKm(DISPATCH_BASE.lat, DISPATCH_BASE.lng, coords.lat, coords.lng) * BKK_ROAD_FACTOR;
+      : haversineKm(origin.lat, origin.lng, coords.lat, coords.lng) * BKK_ROAD_FACTOR;
     if (!rawKm) return null;
     // Band from the RAW km (identical to the booking charge); round only for display.
     const distanceKm = Math.round(rawKm * 10) / 10;
@@ -657,16 +661,27 @@ const TaxiEstimator: React.FC = () => {
               {/* 🆕 28x.44 — placeholder shown until the guest picks; no name pre-filled. */}
               <option value="">{t("nearme.taxi.pickPrompt", "Select practitioner…")}</option>
               {roster.map((p) => {
-                // 🆕 28w.11 — founder: drop the area names, show the real
-                //   road distance from each practitioner to the picked location.
+                // 🆕 28w.11 — show the real road distance from each practitioner
+                //   to the picked location so the guest can pick the nearest.
+                // 🆕 28x.112 — the SELECTED practitioner shows the EXACT resolved
+                //   route km (matches the DISTANCE box below — no more 13.9-vs-18.2
+                //   contradiction). Others show a "~" haversine estimate: it's a
+                //   pre-pick hint, and a river crossing can make it under-read, so
+                //   the tilde signals "approximate until you select".
+                const isSel = p.id === selected?.id;
                 const km =
-                  coords && p.lat != null && p.lng != null
-                    ? haversineKm(p.lat, p.lng, coords.lat, coords.lng) * BKK_ROAD_FACTOR
+                  isSel && estimate
+                    ? { v: estimate.distanceKm, approx: false }
+                    : coords && p.lat != null && p.lng != null
+                    ? {
+                        v: haversineKm(p.lat, p.lng, coords.lat, coords.lng) * BKK_ROAD_FACTOR,
+                        approx: true,
+                      }
                     : null;
                 return (
                   <option key={p.id} value={p.id}>
                     {p.name}
-                    {km != null ? ` · ${km.toFixed(1)} km` : ""}
+                    {km != null ? ` · ${km.approx ? "~" : ""}${km.v.toFixed(1)} km` : ""}
                   </option>
                 );
               })}

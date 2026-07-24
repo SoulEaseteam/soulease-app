@@ -53,8 +53,32 @@ export const BKK_ROAD_FACTOR = 1.45;
  * 🆕 Round 28s233 — single dispatch base so the SAME destination always
  * quotes the SAME fare regardless of which practitioner is assigned
  * (Huai Khwang / Ratchada cluster centre). Tunable.
+ *
+ * ⚠️ Round 28x.112 (founder: "คิดจากตัวพนักงานที่เลือกจริง") — DISPATCH_BASE is
+ *    NO LONGER the routing origin. It flat-rated every practitioner from one
+ *    point, so a guest in Silom picking a Silom practitioner was still charged
+ *    the ~18 km Din Daeng distance — and the /near-me dropdown (which used each
+ *    practitioner's real home) disagreed with the fare box, which used this.
+ *    The travel fare now routes from the SELECTED practitioner's own coords via
+ *    `resolveFareOrigin()` below. DISPATCH_BASE survives ONLY as the fallback
+ *    when a practitioner has no lat/lng, so a fare never goes blank.
  */
 export const DISPATCH_BASE = { lat: 13.7548, lng: 100.5656 } as const;
+
+/**
+ * 🆕 Round 28x.112 — the single source of truth for "where does the travel
+ * fare start from". The selected practitioner's own coordinates when valid,
+ * else DISPATCH_BASE. Every fare/route call site (near-me estimate, booking
+ * flow, admin booking) MUST route from this so the estimate, the booking
+ * charge and the stored booking origin can never disagree again.
+ */
+export function resolveFareOrigin(
+  t: { lat?: number | null; lng?: number | null } | null | undefined
+): { lat: number; lng: number } {
+  return typeof t?.lat === "number" && typeof t?.lng === "number"
+    ? { lat: t.lat, lng: t.lng }
+    : { lat: DISPATCH_BASE.lat, lng: DISPATCH_BASE.lng };
+}
 
 /** Legacy alias — kept at 0 so any old caller that gated on "within free
  *  distance" never triggers; every trip is a paid trip. */
