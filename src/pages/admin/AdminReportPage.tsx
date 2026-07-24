@@ -41,7 +41,7 @@ import {
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import {
   isPayrollExcluded, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
-  isNoShow, noShowCompFor,
+  isNoShow, noShowCompFor, settlementTotals,
 } from "@/utils/commission";
 // 🆕 28w.39 — admin split-table editor (therapist/shop per service × duration).
 import SplitTableEditor from "./SplitTableEditor";
@@ -66,6 +66,12 @@ interface Booking {
   taxiFee?: number;
   totalPrice?: number;
   status?: string;
+  // 🆕 28x.114 — fields the settlement engine needs: cash-vs-transfer + the
+  //   per-job staff adjustments keyed on the booking in admin/bookings.
+  payment?: string;
+  paymentMethodId?: string;
+  staffBonus?: number;
+  staffDeduction?: number;
   createdAt?: FBTS;
 }
 
@@ -858,6 +864,51 @@ const AdminReportPage: React.FC = () => {
                   <Typography sx={{ ...adminFigureSx, fontSize: 15, fontWeight: (row as any).bold ? 800 : 600, color: (row as any).color || adminColor.text }}>{row.value}</Typography>
                 </Box>
               ))}
+
+              {/* 🆕 28x.114 — SETTLEMENT: who owes whom after cash-vs-transfer,
+                   no-show comp, promo (shop-absorbed), and per-job bonus/deduct.
+                   The one number View acts on when she reconciles with a
+                   practitioner. balance > 0 ⇒ shop owes her; < 0 ⇒ she transfers
+                   the shop. */}
+              {(() => {
+                const s = settlementTotals(preview.bookings);
+                const owed = s.balance;               // >0 shop owes her
+                const rows: { label: string; value: string; color?: string }[] = [];
+                if (s.cashShopShare > 0) rows.push({ label: "− ส่วนแบ่งร้าน (เงินสด พนักงานเก็บ)", value: `− ${thb(s.cashShopShare)}`, color: adminColor.dim });
+                if (s.transferOwedToHer > 0) rows.push({ label: "+ ร้านรับโอน ค้างจ่ายพนักงาน", value: `+ ${thb(s.transferOwedToHer)}`, color: adminColor.green });
+                if (s.noShowComp > 0) rows.push({ label: "+ No-show taxi (ร้านคืนพนักงาน)", value: `+ ${thb(s.noShowComp)}`, color: adminColor.green });
+                if (s.bonus > 0) rows.push({ label: "+ โบนัสพนักงาน", value: `+ ${thb(s.bonus)}`, color: adminColor.green });
+                if (s.deduction > 0) rows.push({ label: "− หักเงินพนักงาน", value: `− ${thb(s.deduction)}`, color: adminColor.red });
+                return (
+                  <Box sx={{ mt: 2, p: 1.5, borderRadius: "14px", background: adminColor.panel2, border: `1px solid ${adminColor.line}` }}>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+                      Settlement · การชำระ
+                    </Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2, mb: 1 }}>
+                      หักจากแท็กซี่และส่วนแบ่ง
+                    </Typography>
+                    {rows.map((r) => (
+                      <Box key={r.label} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.5 }}>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>{r.label}</Typography>
+                        <Typography sx={{ ...adminFigureSx, fontSize: 13.5, fontWeight: 700, color: r.color || adminColor.text }}>{r.value}</Typography>
+                      </Box>
+                    ))}
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1, pt: 1, borderTop: `1px solid ${adminColor.line}` }}>
+                      <Box>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 800, color: adminColor.text }}>
+                          {owed >= 0 ? "ร้านค้างจ่ายพนักงาน" : "พนักงานโอนให้ร้าน"}
+                        </Typography>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
+                          {owed >= 0 ? "Shop owes therapist" : "Therapist transfers shop"}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ ...adminFigureSx, fontSize: 20, fontWeight: 800, color: owed >= 0 ? adminColor.green : adminColor.accent, lineHeight: 1 }}>
+                        {thb(Math.abs(owed))}
+                      </Typography>
+                    </Box>
+                  </Box>
+                );
+              })()}
 
               {/* 🆕 28s305 (founder: "ดูสลิป บอกรายละเอียดบริการ") — the slip
                    only showed aggregate totals; therapists couldn't see WHICH
