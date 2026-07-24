@@ -36,6 +36,10 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+// 🆕 Round 28x.108 — the blog content module the React pages also read. Both
+//   consume the SAME generated file (built by scripts/buildBlogData.mjs), so
+//   the crawlable prerender body can never drift from what a human sees.
+import { BLOG_POSTS } from "../src/data/blogPosts.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = join(ROOT, "dist");
@@ -1274,6 +1278,108 @@ ${THERAPISTS.map(
   ];
 }
 
+// ── /blog + /blog/:slug (Round 28x.108) ───────────────────────────────────
+// Founder: "บลอค … เผื่อจะมีเนื้อหาไหน … ไปติดคำค้นหา" · "เจาะทุกกลุ่ม". The
+// whole point of the blog is SEO, so the crawlable body IS the deliverable —
+// each article's full semantic HTML goes straight into <noscript>, and the
+// head carries a BlogPosting with the real keywords + word count. EN-only,
+// same policy as therapist detail pages (no thin localized duplicates).
+function blogRoutes() {
+  const routes = [];
+
+  // Index
+  routes.push({
+    path: "/blog",
+    canonicalPath: "/blog",
+    hreflangBase: null,
+    htmlLang: "en",
+    ogLocale: "en_US",
+    title:
+      "The SunRed Journal — Outcall Massage Guides for Bangkok Travellers | SunRed",
+    description:
+      "Practical, no-nonsense guides to outcall massage in Bangkok — how to choose a service, late-night options, after-flight recovery, and travel-specific advice for international visitors.",
+    ogTitle: "The SunRed Journal — Outcall Massage Guides, Bangkok",
+    ogDescription:
+      "Guides to outcall massage in Bangkok for international travellers — choosing a service, late-night options, and recovery.",
+    jsonLd: [
+      breadcrumbJsonLd([
+        { name: "SunRed", url: `${ORIGIN}/` },
+        { name: "Journal", url: `${ORIGIN}/blog` },
+      ]),
+      {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "@id": `${ORIGIN}/blog#blog`,
+        name: "The SunRed Journal",
+        url: `${ORIGIN}/blog`,
+        publisher: { "@id": BUSINESS_ID },
+        blogPost: BLOG_POSTS.map((p) => ({
+          "@type": "BlogPosting",
+          headline: p.title,
+          url: p.url,
+          description: p.metaDescription,
+        })),
+      },
+    ],
+    noscript: `
+        <h1>The SunRed Journal</h1>
+        <p>Practical guides to outcall massage in Bangkok, written for
+          international travellers.</p>
+        <ul>
+${BLOG_POSTS.map(
+  (p) =>
+    `          <li><a href="${p.url}">${p.title}</a> — ${p.readingMinutes} min read. ${p.metaDescription}</li>`
+).join("\n")}
+        </ul>
+        <p><a href="${ORIGIN}/">Home — live availability</a></p>`,
+  });
+
+  // One route per article — the full HTML body is the crawlable payload.
+  for (const p of BLOG_POSTS) {
+    routes.push({
+      path: `/blog/${p.slug}`,
+      canonicalPath: `/blog/${p.slug}`,
+      hreflangBase: null,
+      htmlLang: "en",
+      ogLocale: "en_US",
+      title: `${p.title} | SunRed Journal`,
+      description: p.metaDescription,
+      ogTitle: p.title,
+      ogDescription: p.metaDescription,
+      jsonLd: [
+        breadcrumbJsonLd([
+          { name: "SunRed", url: `${ORIGIN}/` },
+          { name: "Journal", url: `${ORIGIN}/blog` },
+          { name: p.title, url: p.url },
+        ]),
+        {
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "@id": `${p.url}#article`,
+          headline: p.title,
+          description: p.metaDescription,
+          url: p.url,
+          inLanguage: "en",
+          keywords: p.keywords.join(", "),
+          wordCount: p.words,
+          isPartOf: { "@id": `${ORIGIN}/blog#blog` },
+          publisher: { "@id": BUSINESS_ID },
+          mainEntityOfPage: p.url,
+        },
+      ],
+      noscript: `
+        <article>
+          <h1>${p.title}</h1>
+          ${p.html}
+          <hr />
+          <p><a href="${ORIGIN}/">See tonight's live availability</a> ·
+             <a href="${ORIGIN}/blog">More from the SunRed Journal</a></p>
+        </article>`,
+    });
+  }
+  return routes;
+}
+
 const ROUTES = [
   ...serviceRoutes(),
   ...therapistRoutes(),
@@ -1281,6 +1387,7 @@ const ROUTES = [
   ...districtRoutes(),
   ...pricingRoutes(),
   ...staticPageRoutes(),
+  ...blogRoutes(),
 ];
 
 // ── Replacement helpers (assert every swap fires) ──────────────────────────

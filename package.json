@@ -9,9 +9,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prerender-routes.mjs",
+    "build": "node scripts/buildBlogData.mjs && vite build && node scripts/prerender-routes.mjs",
     "preview": "vite preview",
-    "vercel-build": "vite build && node scripts/prerender-routes.mjs",
+    "vercel-build": "node scripts/buildBlogData.mjs && vite build && node scripts/prerender-routes.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:strict": "eslint . --ext .ts,.tsx --max-warnings=0",

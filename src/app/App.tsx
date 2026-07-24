@@ -75,6 +75,11 @@ const ServiceDetailPage = React.lazy(() => import("@/pages/ServiceDetailPage"));
 //   for /pricing + /{zh,ja,ko}/pricing so external links land on
 //   something even before the real page ships.
 const PricingPage = React.lazy(() => import("@/pages/PricingPage"));
+// 🆕 Round 28x.108 — /blog (SEO journal). Index + per-article pages, both
+//   prerendered as crawlable shells in scripts/prerender-routes.mjs. Content
+//   is generated from SEO_Blog_Pack/*.md into src/data/blogPosts.mjs.
+const BlogIndexPage = React.lazy(() => import("@/pages/BlogIndexPage"));
+const BlogPostPage = React.lazy(() => import("@/pages/BlogPostPage"));
 // 🆕 28w.4 — /promotions is the customer "Promotions & News" page
 //   (QuickNavRow slot 2, replacing the Therapists scroll-to-grid link).
 const PromotionsPage = React.lazy(() => import("@/pages/PromotionsPage"));
@@ -366,6 +371,10 @@ export default function App() {
               LocaleEntryRedirect route above (redirects to /pricing
               after switching i18n language). */}
           <Route path="/pricing" element={<PricingPage />} />
+          {/* 🆕 Round 28x.108 — SEO journal. Inside MainLayout so nav + footer
+              come for free; prerendered for crawlers via prerender-routes.mjs. */}
+          <Route path="/blog" element={<BlogIndexPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/promotions" element={<PromotionsPage />} />
 
           {/* 🃏 Phase 2 — Browse + Detail */}

@@ -70,6 +70,12 @@ const HomeFooterV2: React.FC = () => {
     { label: t("footer.practitioners", "Practitioners"), onClick: scrollToTherapistGrid },
     { label: t("footer.nearMe", "Near me"), to: "/near-me" },
     { label: t("footer.pricing", "Pricing"), to: "/pricing" },
+    // 🆕 Round 28x.108 — the SEO journal. This footer renders on the home page
+    //   (the most-crawled URL on the site), so a real <a href> here is the
+    //   internal link that lets Googlebot discover /blog and, from the index's
+    //   own crawlable list, every article (same crawl-signal reasoning as the
+    //   area links below).
+    { label: t("footer.journal", "Journal"), to: "/blog" },
   ];
 
   // 🆕 Round 28x.99d — the 5 district SEO landing pages (App.tsx →

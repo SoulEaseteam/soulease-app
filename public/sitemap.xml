@@ -226,4 +226,13 @@
   <url><loc>https://sunred.vip/therapists/NickySunRed</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://sunred.vip/therapists/RichieSunRed</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
 
+  <!-- BLOG:START — auto-maintained by scripts/buildBlogData.mjs (Round 28x.108). Do not hand-edit between the markers. -->
+  <url><loc>https://sunred.vip/blog</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://sunred.vip/blog/how-to-choose-mobile-massage-bangkok</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://sunred.vip/blog/bangkok-mobile-massage-guide-singaporean</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://sunred.vip/blog/after-flight-recovery-massage-bangkok</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://sunred.vip/blog/late-night-massage-bangkok-options</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://sunred.vip/blog/business-trip-bangkok-recovery-protocol</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <!-- BLOG:END -->
+
 </urlset>
