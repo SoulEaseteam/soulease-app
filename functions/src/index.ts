@@ -45,6 +45,11 @@ initializeApp();
 // 🔑 Secrets
 const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
+// 🆕 Round 28x.107 — shared secret proving a POST to telegramWebhook really
+//   came from Telegram. Telegram echoes it back in the
+//   X-Telegram-Bot-Api-Secret-Token header on every update, but ONLY if it
+//   was registered via setWebhook({secret_token}). See scripts/setTelegramWebhook.mjs.
+const TELEGRAM_WEBHOOK_SECRET = defineSecret("TELEGRAM_WEBHOOK_SECRET");
 
 // 📬 Channel ID ของ Telegram — hardcode (ไม่ใช่ secret)
 const TELEGRAM_CHAT_ID = "-1002962073895";
@@ -591,7 +596,15 @@ export const setRoleOnSignup = functionsV1
         }
       }
 
-      await auth.setCustomUserClaims(uid, { role });
+      // 🆕 Round 28x.107 — the claim now carries `tid` (the therapist DOC id)
+      //   alongside `role`. storage.rules can't do a cross-service Firestore
+      //   read (28s281 proved that path silently denies), so the ONLY way a
+      //   Storage rule can tell "this practitioner owns therapists/{id}/" is
+      //   for the id to travel inside the token itself.
+      await auth.setCustomUserClaims(uid, {
+        role,
+        ...(linkedTherapistId ? { tid: linkedTherapistId } : {}),
+      });
 
       // Mirror role into /users/{uid} so the client UI can read it
       // without forcing an ID-token refresh.
@@ -612,6 +625,87 @@ export const setRoleOnSignup = functionsV1
       // fail-open: don't block sign-up if claim assignment fails
     }
   });
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.107 (founder security audit: "เว็บเรา มีการป้องกันอะไรบ้าง
+//   หากถูกเจาะ หรือโจมตี") — keep the `role` custom claim in lockstep with
+//   the /admins collection.
+//
+//   WHY THIS EXISTS: setRoleOnSignup above only fires ONCE, at account
+//   creation. Every other path that grants or revokes admin — setMemberAdmin,
+//   createAdminAccount, a hand edit in the Firebase console — wrote the
+//   /admins doc and stopped there, leaving the token stuck on whatever role
+//   the account was born with. That was survivable while nothing READ the
+//   claim. It stops being survivable in this round, because storage.rules now
+//   gates every write on it: a founder whose token still says "customer"
+//   would be locked out of her own photo uploads.
+//
+//   A trigger on the doc (not a call inside each writer) is the point — it
+//   can't be bypassed by a future code path that forgets to call it, and it
+//   covers manual console edits, which no callable ever will.
+//
+//   Demotion is careful: losing admin must NOT clobber a practitioner's
+//   therapist role, so we re-derive from the therapists collection instead of
+//   blindly stamping "customer".
+export const syncAdminClaim = onDocumentWritten(
+  { document: "admins/{uid}", region: "asia-southeast1" },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const isAdminNow = event.data?.after?.exists ?? false;
+    const wasAdmin = event.data?.before?.exists ?? false;
+    if (isAdminNow === wasAdmin) return; // field-only edit, role unchanged
+
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const user = await auth.getUser(uid).catch(() => null);
+    if (!user) {
+      logger.warn("[syncAdminClaim] no auth user for uid", { uid });
+      return;
+    }
+    const existing = (user.customClaims ?? {}) as {
+      role?: string;
+      tid?: string;
+    };
+
+    let role: "admin" | "therapist" | "customer";
+    let tid: string | undefined = existing.tid;
+
+    if (isAdminNow) {
+      role = "admin";
+    } else {
+      // Demoted — is this account still a practitioner login?
+      const asTherapist = await db
+        .collection("therapists")
+        .where("uid", "==", uid)
+        .limit(1)
+        .get();
+      if (!asTherapist.empty) {
+        role = "therapist";
+        tid = asTherapist.docs[0].id;
+      } else {
+        role = "customer";
+        tid = undefined;
+      }
+    }
+
+    await auth.setCustomUserClaims(uid, {
+      ...existing,
+      role,
+      ...(tid ? { tid } : { tid: null }),
+    });
+
+    // The client holds a cached ID token for up to an hour. Bump a marker the
+    // app watches so it can force a refresh immediately instead of the admin
+    // wondering why uploads still fail for the next 59 minutes.
+    await db.collection("users").doc(uid).set(
+      { role: role === "customer" ? "user" : role, claimsUpdatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+
+    logger.info("[syncAdminClaim] claim synced", { uid, role, tid: tid ?? null });
+  }
+);
 
 
 // 🆕 Round 28w.78 (founder: "audit-log มันอัปเดตตลอดเวลาเกินไป ให้เก็บเฉพาะ
@@ -3047,7 +3141,7 @@ interface TelegramUpdate {
 export const telegramWebhook = onRequest(
   {
     region: "asia-southeast1",
-    secrets: [TELEGRAM_BOT_TOKEN, OPENAI_API_KEY],
+    secrets: [TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, TELEGRAM_WEBHOOK_SECRET],
     cors: false,
   },
   async (req, res) => {
@@ -3055,6 +3149,37 @@ export const telegramWebhook = onRequest(
       res.status(405).send("POST only");
       return;
     }
+
+    // 🆕 Round 28x.107 (founder security audit) — prove the caller is Telegram.
+    //   This endpoint was open to the whole internet: the function URL is
+    //   derived from the project id, which ships inside the public web bundle,
+    //   so it is discoverable, not secret. Anyone could POST a forged update
+    //   and (a) burn OPENAI_API_KEY credits — real money — on synthetic
+    //   concierge questions, (b) spam guests through our own bot, or
+    //   (c) impersonate a practitioner's ACCEPT/DECLINE press if they learned
+    //   her Telegram user id.
+    //
+    //   Telegram sends this header on every update, but only once the webhook
+    //   has been (re-)registered with a secret_token — run
+    //   scripts/setTelegramWebhook.mjs after deploying, or real updates start
+    //   getting rejected here.
+    const wantSecret = TELEGRAM_WEBHOOK_SECRET.value();
+    if (!wantSecret) {
+      // Fail CLOSED, not open. An unset secret used to mean "no protection";
+      // making that the deny case means a botched deploy takes the bot
+      // offline loudly instead of silently reopening the hole.
+      logger.error("[telegramWebhook] TELEGRAM_WEBHOOK_SECRET missing — rejecting");
+      res.status(500).send("server-misconfigured");
+      return;
+    }
+    if (req.get("X-Telegram-Bot-Api-Secret-Token") !== wantSecret) {
+      logger.warn("[telegramWebhook] rejected: bad or missing secret token", {
+        ip: req.ip,
+      });
+      res.status(401).send("unauthorized");
+      return;
+    }
+
     const token = TELEGRAM_BOT_TOKEN.value();
     if (!token) {
       logger.error("[telegramWebhook] TELEGRAM_BOT_TOKEN missing");
@@ -3809,7 +3934,9 @@ export const createTherapistAccount = onCall(
       throw err;
     }
 
-    await getAuth().setCustomUserClaims(uid, { role: "therapist" });
+    // 🆕 28x.107 — `tid` rides in the token so storage.rules can scope a
+    //   practitioner's uploads to her OWN therapists/{id}/ folder.
+    await getAuth().setCustomUserClaims(uid, { role: "therapist", tid: therapistId });
     await db.collection("users").doc(uid).set(
       {
         username: handle,

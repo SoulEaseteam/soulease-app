@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -58,6 +58,11 @@ const templates_1 = require("./telegram-post-bot/templates");
 // 🔑 Secrets
 const TELEGRAM_BOT_TOKEN = (0, params_1.defineSecret)("TELEGRAM_BOT_TOKEN");
 const OPENAI_API_KEY = (0, params_1.defineSecret)("OPENAI_API_KEY");
+// 🆕 Round 28x.107 — shared secret proving a POST to telegramWebhook really
+//   came from Telegram. Telegram echoes it back in the
+//   X-Telegram-Bot-Api-Secret-Token header on every update, but ONLY if it
+//   was registered via setWebhook({secret_token}). See scripts/setTelegramWebhook.mjs.
+const TELEGRAM_WEBHOOK_SECRET = (0, params_1.defineSecret)("TELEGRAM_WEBHOOK_SECRET");
 // 📬 Channel ID ของ Telegram — hardcode (ไม่ใช่ secret)
 const TELEGRAM_CHAT_ID = "-1002962073895";
 // 🆕 Round 28s82 (founder 2026-05-31: "เอาแค่ส่งหาฉันคนเดียวก่อน") —
@@ -477,7 +482,15 @@ exports.setRoleOnSignup = functionsV1
                 });
             }
         }
-        await auth.setCustomUserClaims(uid, { role });
+        // 🆕 Round 28x.107 — the claim now carries `tid` (the therapist DOC id)
+        //   alongside `role`. storage.rules can't do a cross-service Firestore
+        //   read (28s281 proved that path silently denies), so the ONLY way a
+        //   Storage rule can tell "this practitioner owns therapists/{id}/" is
+        //   for the id to travel inside the token itself.
+        await auth.setCustomUserClaims(uid, {
+            role,
+            ...(linkedTherapistId ? { tid: linkedTherapistId } : {}),
+        });
         // Mirror role into /users/{uid} so the client UI can read it
         // without forcing an ID-token refresh.
         await db.collection("users").doc(uid).set({
@@ -493,6 +506,73 @@ exports.setRoleOnSignup = functionsV1
         v2_1.logger.error("[setRoleOnSignup] failed", { uid, email, err });
         // fail-open: don't block sign-up if claim assignment fails
     }
+});
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.107 (founder security audit: "เว็บเรา มีการป้องกันอะไรบ้าง
+//   หากถูกเจาะ หรือโจมตี") — keep the `role` custom claim in lockstep with
+//   the /admins collection.
+//
+//   WHY THIS EXISTS: setRoleOnSignup above only fires ONCE, at account
+//   creation. Every other path that grants or revokes admin — setMemberAdmin,
+//   createAdminAccount, a hand edit in the Firebase console — wrote the
+//   /admins doc and stopped there, leaving the token stuck on whatever role
+//   the account was born with. That was survivable while nothing READ the
+//   claim. It stops being survivable in this round, because storage.rules now
+//   gates every write on it: a founder whose token still says "customer"
+//   would be locked out of her own photo uploads.
+//
+//   A trigger on the doc (not a call inside each writer) is the point — it
+//   can't be bypassed by a future code path that forgets to call it, and it
+//   covers manual console edits, which no callable ever will.
+//
+//   Demotion is careful: losing admin must NOT clobber a practitioner's
+//   therapist role, so we re-derive from the therapists collection instead of
+//   blindly stamping "customer".
+exports.syncAdminClaim = (0, firestore_1.onDocumentWritten)({ document: "admins/{uid}", region: "asia-southeast1" }, async (event) => {
+    const uid = event.params.uid;
+    const isAdminNow = event.data?.after?.exists ?? false;
+    const wasAdmin = event.data?.before?.exists ?? false;
+    if (isAdminNow === wasAdmin)
+        return; // field-only edit, role unchanged
+    const auth = (0, auth_1.getAuth)();
+    const db = (0, firestore_2.getFirestore)();
+    const user = await auth.getUser(uid).catch(() => null);
+    if (!user) {
+        v2_1.logger.warn("[syncAdminClaim] no auth user for uid", { uid });
+        return;
+    }
+    const existing = (user.customClaims ?? {});
+    let role;
+    let tid = existing.tid;
+    if (isAdminNow) {
+        role = "admin";
+    }
+    else {
+        // Demoted — is this account still a practitioner login?
+        const asTherapist = await db
+            .collection("therapists")
+            .where("uid", "==", uid)
+            .limit(1)
+            .get();
+        if (!asTherapist.empty) {
+            role = "therapist";
+            tid = asTherapist.docs[0].id;
+        }
+        else {
+            role = "customer";
+            tid = undefined;
+        }
+    }
+    await auth.setCustomUserClaims(uid, {
+        ...existing,
+        role,
+        ...(tid ? { tid } : { tid: null }),
+    });
+    // The client holds a cached ID token for up to an hour. Bump a marker the
+    // app watches so it can force a refresh immediately instead of the admin
+    // wondering why uploads still fail for the next 59 minutes.
+    await db.collection("users").doc(uid).set({ role: role === "customer" ? "user" : role, claimsUpdatedAt: firestore_2.FieldValue.serverTimestamp() }, { merge: true });
+    v2_1.logger.info("[syncAdminClaim] claim synced", { uid, role, tid: tid ?? null });
 });
 // 🆕 Round 28w.78 (founder: "audit-log มันอัปเดตตลอดเวลาเกินไป ให้เก็บเฉพาะ
 //   การกระทำจริงก็พอ") — this trigger logged an audit row for ANY therapist
@@ -2465,11 +2545,40 @@ async function handleJobCallback(q, token) {
 }
 exports.telegramWebhook = (0, https_1.onRequest)({
     region: "asia-southeast1",
-    secrets: [TELEGRAM_BOT_TOKEN, OPENAI_API_KEY],
+    secrets: [TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, TELEGRAM_WEBHOOK_SECRET],
     cors: false,
 }, async (req, res) => {
     if (req.method !== "POST") {
         res.status(405).send("POST only");
+        return;
+    }
+    // 🆕 Round 28x.107 (founder security audit) — prove the caller is Telegram.
+    //   This endpoint was open to the whole internet: the function URL is
+    //   derived from the project id, which ships inside the public web bundle,
+    //   so it is discoverable, not secret. Anyone could POST a forged update
+    //   and (a) burn OPENAI_API_KEY credits — real money — on synthetic
+    //   concierge questions, (b) spam guests through our own bot, or
+    //   (c) impersonate a practitioner's ACCEPT/DECLINE press if they learned
+    //   her Telegram user id.
+    //
+    //   Telegram sends this header on every update, but only once the webhook
+    //   has been (re-)registered with a secret_token — run
+    //   scripts/setTelegramWebhook.mjs after deploying, or real updates start
+    //   getting rejected here.
+    const wantSecret = TELEGRAM_WEBHOOK_SECRET.value();
+    if (!wantSecret) {
+        // Fail CLOSED, not open. An unset secret used to mean "no protection";
+        // making that the deny case means a botched deploy takes the bot
+        // offline loudly instead of silently reopening the hole.
+        v2_1.logger.error("[telegramWebhook] TELEGRAM_WEBHOOK_SECRET missing — rejecting");
+        res.status(500).send("server-misconfigured");
+        return;
+    }
+    if (req.get("X-Telegram-Bot-Api-Secret-Token") !== wantSecret) {
+        v2_1.logger.warn("[telegramWebhook] rejected: bad or missing secret token", {
+            ip: req.ip,
+        });
+        res.status(401).send("unauthorized");
         return;
     }
     const token = TELEGRAM_BOT_TOKEN.value();
@@ -3115,7 +3224,9 @@ exports.createTherapistAccount = (0, https_1.onCall)({ region: "asia-southeast1"
         }
         throw err;
     }
-    await (0, auth_1.getAuth)().setCustomUserClaims(uid, { role: "therapist" });
+    // 🆕 28x.107 — `tid` rides in the token so storage.rules can scope a
+    //   practitioner's uploads to her OWN therapists/{id}/ folder.
+    await (0, auth_1.getAuth)().setCustomUserClaims(uid, { role: "therapist", tid: therapistId });
     await db.collection("users").doc(uid).set({
         username: handle,
         loginKind: "username",
@@ -4177,6 +4288,96 @@ exports.onTherapistBonusChange = (0, firestore_1.onDocumentUpdated)({
             therapistId: event.params.therapistId,
             err,
         });
+    }
+});
+// ─────────────────────────────────────────────────────────────
+// 🆕 28x.100 (founder "เปลี่ยนอัตโนมัติตามยอดจองรายวัน 2 งานHOT VIP 3
+//   TOP_RATED 4") — the ONLY writer of therapists.todayBookings.
+//
+//   The badge engine (src/utils/getTherapistBadge.ts) has read
+//   todayBookings since 28s153, but nothing ever wrote it — every card
+//   read 0 forever, so auto-badges never fired. This trigger recomputes
+//   the affected therapist's daily count on EVERY booking write (create,
+//   status change, cancel, therapist reassignment — both old and new
+//   therapist are refreshed on a swap).
+//
+//   "วันจอง" uses the BUSINESS day, not the calendar day: the shop's
+//   night runs 22:00–05:00, so the day rolls at 06:00 BKK — a 01:30
+//   job counts toward the same night as the 23:00 job before it.
+//   Implementation: shift epoch by (+7h BKK −6h boundary) = +1h, then
+//   take the UTC date string. The client engine uses the SAME formula
+//   (businessDayBKK) and ignores counts stamped with any other day, so
+//   stale counts expire at 06:00 with no midnight cron needed.
+//
+//   Statuses counted = real accepted work (confirmed/paid/in_progress/
+//   completed/done). pending (unconfirmed hold) and cancelled/no-show
+//   earn nothing — a badge must never be inflatable by spam holds.
+// ─────────────────────────────────────────────────────────────
+const DAILY_COUNTED_STATUSES = new Set([
+    "confirmed",
+    "paid",
+    "in_progress",
+    "completed",
+    "done",
+]);
+function businessDayBKKServer(ms) {
+    return new Date(ms + 3600000).toISOString().slice(0, 10);
+}
+function bookingTimeMs(v) {
+    if (v == null)
+        return 0;
+    const o = v;
+    if (typeof o.toMillis === "function")
+        return o.toMillis();
+    if (typeof o.seconds === "number")
+        return o.seconds * 1000;
+    if (typeof o._seconds === "number")
+        return o._seconds * 1000;
+    return 0;
+}
+exports.syncTherapistDailyCount = (0, firestore_1.onDocumentWritten)({
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+}, async (event) => {
+    const before = event.data?.before?.exists ? event.data.before.data() : undefined;
+    const after = event.data?.after?.exists ? event.data.after.data() : undefined;
+    const tids = new Set();
+    const beforeTid = before?.therapistId;
+    const afterTid = after?.therapistId;
+    if (typeof beforeTid === "string" && beforeTid)
+        tids.add(beforeTid);
+    if (typeof afterTid === "string" && afterTid)
+        tids.add(afterTid);
+    if (tids.size === 0)
+        return;
+    const db = (0, firestore_2.getFirestore)();
+    const dayKey = businessDayBKKServer(Date.now());
+    for (const tid of tids) {
+        try {
+            const snap = await db
+                .collection("bookings")
+                .where("therapistId", "==", tid)
+                .get();
+            let n = 0;
+            snap.forEach((d) => {
+                const b = d.data();
+                if (!DAILY_COUNTED_STATUSES.has(String(b.status ?? "")))
+                    return;
+                const ms = bookingTimeMs(b.startAt ?? b.createdAt);
+                if (!ms)
+                    return;
+                if (businessDayBKKServer(ms) === dayKey)
+                    n++;
+            });
+            await db
+                .collection("therapists")
+                .doc(tid)
+                .set({ todayBookings: n, todayBookingsDate: dayKey }, { merge: true });
+            v2_1.logger.info("[syncTherapistDailyCount] updated", { tid, n, dayKey });
+        }
+        catch (err) {
+            v2_1.logger.warn("[syncTherapistDailyCount] failed", { tid, err });
+        }
     }
 });
 //# sourceMappingURL=index.js.map

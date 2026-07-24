@@ -1156,12 +1156,131 @@ ${SERVICES.map(
   });
 }
 
+// ── /therapists + /payment-methods (Round 28x.107) ────────────────────────
+// Founder security/SEO audit: "เว็บเรา โดน ปิดกั้นหรือ ตาบอดบ้างไหม".
+//
+// Both of these sit in public/sitemap.xml — we tell Google to crawl them —
+// but neither had a prerender entry, so both were served the untouched
+// dist/index.html: the HOME PAGE's <title>, description, canonical and
+// JSON-LD. Verified live before the fix: curl -A Googlebot on each returned
+// "Outcall Massage Bangkok — Delivered to Your Hotel 24/7 | SunRed", byte-for-
+// byte the homepage's. Two submitted URLs, zero unique signal — Google files
+// that as duplicate and drops them, which is why brand queries are the only
+// thing ranking.
+//
+// /therapists is a redirect-to-/ route in App.tsx (same shape as the five
+// district keyword pages), so its shell is the whole SEO surface — the
+// noscript body below is the only crawlable roster listing on the site.
+// EN-only, matching the deliberate en-only policy on therapist detail pages
+// (see therapistRoutes: "avoid thin localized duplicates").
+function staticPageRoutes() {
+  return [
+    {
+      path: "/therapists",
+      canonicalPath: "/therapists",
+      hreflangBase: null,
+      htmlLang: "en",
+      ogLocale: "en_US",
+      title:
+        "Our Practitioners — Verified Outcall Massage Therapists in Bangkok | SunRed",
+      description: `Meet SunRed's verified female outcall massage practitioners in Bangkok — ${THERAPISTS.length} specialised therapists across ${AREAS_EN}. Live availability, discreet arrival to your hotel or residence, 24/7 concierge in EN/中文/日本語/한국어.`,
+      ogTitle: "Our Practitioners — Verified Outcall Massage Therapists, Bangkok",
+      ogDescription:
+        "Verified SunRed practitioners across central Bangkok. Live availability, discreet arrival to your hotel, 24/7 concierge.",
+      jsonLd: [
+        breadcrumbJsonLd([
+          { name: "SunRed", url: `${ORIGIN}/` },
+          { name: "Practitioners", url: `${ORIGIN}/therapists` },
+        ]),
+        {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: "SunRed verified practitioners",
+          itemListElement: THERAPISTS.map((t, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: t.name,
+            url: `${ORIGIN}/therapists/${t.id}`,
+          })),
+        },
+      ],
+      noscript: `
+        <h1>Our Practitioners — Verified Outcall Massage Therapists in Bangkok</h1>
+        <p>Every SunRed practitioner is a licensed Thai female therapist, identity-verified
+          by our concierge before her first session. Sessions are delivered to your hotel,
+          residence or villa across ${AREAS_EN} — discreet arrival, multilingual concierge
+          (English, 中文, 日本語, 한국어), available 24/7.</p>
+        <h2>Practitioners</h2>
+        <ul>
+${THERAPISTS.map(
+  (t) =>
+    `          <li><a href="${ORIGIN}/therapists/${t.id}">${t.name}</a> — serving ${t.area} &amp; central Bangkok</li>`
+).join("\n")}
+        </ul>
+        <h2>Reserve or ask the concierge</h2>
+        <ul>
+          <li><a href="${ORIGIN}/">Home — live availability</a></li>
+          <li><a href="${ORIGIN}/services">Browse all services &amp; pricing</a></li>
+          <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
+          <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
+          <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
+        </ul>`,
+    },
+    {
+      path: "/payment-methods",
+      canonicalPath: "/payment-methods",
+      hreflangBase: null,
+      htmlLang: "en",
+      ogLocale: "en_US",
+      title:
+        "Payment, Travel Fee & Booking Policy — Outcall Massage Bangkok | SunRed",
+      description:
+        "How to pay SunRed: cash (THB), PromptPay QR, WeChat Pay and Alipay — settled with your practitioner on arrival, never in advance. Travel fee, arrival window, cancellation and privacy policy for outcall massage in Bangkok.",
+      ogTitle: "Payment & Booking Policy | SunRed Bangkok",
+      ogDescription:
+        "Cash, PromptPay, WeChat Pay or Alipay — paid on arrival, never upfront. Travel fee, arrival window and cancellation policy.",
+      jsonLd: [
+        breadcrumbJsonLd([
+          { name: "SunRed", url: `${ORIGIN}/` },
+          { name: "Payment & Policy", url: `${ORIGIN}/payment-methods` },
+        ]),
+      ],
+      noscript: `
+        <h1>Payment, Travel Fee &amp; Booking Policy</h1>
+        <p>SunRed is an outcall service: your practitioner travels to your hotel, residence
+          or villa in Bangkok, and payment is settled with her on arrival — never in advance,
+          never by bank transfer to a stranger.</p>
+        <h2>Accepted payment methods</h2>
+        <ul>
+          <li>Cash — Thai Baht only</li>
+          <li>PromptPay QR — no additional fee</li>
+          <li>WeChat Pay / Alipay — carries a transfer fee (5% + &#3647;200 handling)</li>
+        </ul>
+        <h2>Before you reserve</h2>
+        <ul>
+          <li>A travel fee applies, calculated from your pin to the practitioner's dispatch point.</li>
+          <li>Your address and pin are used for dispatch only, and are never shared publicly.</li>
+          <li>The concierge confirms every reservation in chat before a practitioner is dispatched.</li>
+        </ul>
+        <h2>Reserve or ask the concierge</h2>
+        <ul>
+          <li><a href="${ORIGIN}/">Home — live availability</a></li>
+          <li><a href="${ORIGIN}/services">Services &amp; pricing</a></li>
+          <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
+          <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
+          <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
+        </ul>`,
+    },
+  ];
+}
+
 const ROUTES = [
   ...serviceRoutes(),
   ...therapistRoutes(),
   ...homeRoutes(),
   ...districtRoutes(),
   ...pricingRoutes(),
+  ...staticPageRoutes(),
 ];
 
 // ── Replacement helpers (assert every swap fires) ──────────────────────────

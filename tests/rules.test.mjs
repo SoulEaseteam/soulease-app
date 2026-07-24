@@ -187,6 +187,64 @@ await check("guest CANNOT create with a bogus status", () =>
   )
 );
 
+// 🆕 Round 28x.107 — payload shape + size gate on the open create door.
+// The point of these four is to prove the gate bounds an ATTACKER without
+// touching a real guest: the first case is the exact document the live
+// booking flow writes.
+console.log("\nbookings · payload sanity gate (28x.107)");
+await check("guest CAN create a full, realistic booking", () =>
+  assertSucceeds(
+    setDoc(doc(anon(), "bookings", "bk-sane-1"), {
+      status: "pending",
+      contactName: "John Smith",
+      phone: "+66812345678",
+      therapistId: "XingXingSunRed",
+      serviceId: "SR-HJ2200",
+      serviceName: "Gentleman's Signature Therapy",
+      duration: 70,
+      date: "2026-07-25",
+      time: "22:00",
+      locationName: "Grande Centre Point Terminal 21",
+      address: "2 Sukhumvit Rd, Khlong Toei Nuea, Watthana, Bangkok 10110",
+      addressDetails: "Room 1804",
+      location: { lat: 13.7376, lng: 100.5602 },
+      note: "Please call from the lobby.",
+      language: "en",
+    })
+  )
+);
+await check("guest CANNOT create a booking with no phone", () =>
+  assertFails(
+    setDoc(doc(anon(), "bookings", "bk-sane-2"), {
+      status: "pending",
+      contactName: "John Smith",
+    })
+  )
+);
+await check("guest CANNOT stuff a megabyte note", () =>
+  assertFails(
+    setDoc(doc(anon(), "bookings", "bk-sane-3"), {
+      status: "pending",
+      phone: "+66812345678",
+      note: "x".repeat(5000),
+    })
+  )
+);
+await check("guest CANNOT stuff 100 junk keys", () => {
+  const junk = { status: "pending", phone: "+66812345678" };
+  for (let i = 0; i < 100; i++) junk[`k${i}`] = "v";
+  return assertFails(setDoc(doc(anon(), "bookings", "bk-sane-4"), junk));
+});
+await check("admin CAN create a booking with no therapist assigned yet", () =>
+  assertSucceeds(
+    setDoc(doc(asUser(ADMIN_UID), "bookings", "bk-sane-5"), {
+      status: "pending",
+      phone: "+66812345678",
+      contactName: "Walk-in enquiry",
+    })
+  )
+);
+
 console.log("\nbookings · therapist access (the 28x.66 bug)");
 await check("therapist CAN list her own jobs", () =>
   assertSucceeds(

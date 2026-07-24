@@ -98,6 +98,46 @@ service cloud.firestore {
       );
     }
 
+    // ── booking payload sanity (28x.107) ──────────────────────────
+    // Founder security audit: "หากถูกเจาะ หรือโจมตี". Booking create is
+    // intentionally open to logged-out guests — that is the funnel, and
+    // gating it behind sign-up would cost real reservations. What was
+    // missing is any bound on WHAT that open door accepts. A scripted
+    // flood only had to include status:'pending'; every other field, and
+    // the document's total size, was free.
+    //
+    // Caps below are ~10x the largest real booking observed in production,
+    // so no genuine guest can hit them, while a spam script loses the
+    // ability to make each write large. Nothing here tries to detect a
+    // "fake" booking — that judgement is the concierge-confirm step's job
+    // (founder: phone numbers alone can't identify anyone), and no rule
+    // can do it.
+    function strOk(d, k, max) {
+      return !(k in d) || d[k] == null
+             || (d[k] is string && d[k].size() <= max);
+    }
+    function isSaneBookingPayload(d) {
+      return d.keys().size() <= 60
+             // Phone is the ONE field required outright: it is what the
+             // concierge works from, and every real create path writes it.
+             && d.phone is string
+             && d.phone.size() >= 6 && d.phone.size() <= 24
+             // therapistId / serviceId are bounded but NOT required — the
+             // admin panel can open a reservation before either is decided,
+             // and a rule that assumes the happy path would block real work.
+             && strOk(d, 'therapistId', 64)
+             && strOk(d, 'serviceId', 64)
+             // Free text — the only places a payload can grow without limit.
+             && strOk(d, 'note', 1000)
+             && strOk(d, 'address', 500)
+             && strOk(d, 'addressDetails', 500)
+             && strOk(d, 'addressNote', 500)
+             && strOk(d, 'locationName', 200)
+             && strOk(d, 'meetingPoint', 300)
+             && strOk(d, 'contactName', 120)
+             && strOk(d, 'discountCode', 64);
+    }
+
     /** True if the signed-in user owns this therapist doc.
      *  Matches by docId, by `uid` field, or by `email` field. */
     function isTherapistOwner(therapistId) {
@@ -366,8 +406,24 @@ service cloud.firestore {
                   || isAssignedTherapist();
       // 🆕 28x.60 — plus: may not claim the shop's own name/number. This is the
       //   only unforgeable place to enforce it; the booking page's check is UX.
+      // 🆕 28x.107 (founder security audit) — plus a SHAPE + SIZE gate.
+      //   Create here is deliberately unauthenticated and stays that way: a
+      //   guest reserves before they ever hold an account, and forcing sign-up
+      //   first would cost more real bookings than it prevents fake ones.
+      //   But "unauthenticated" was also "unbounded" — the only thing a
+      //   scripted flood had to satisfy was a status string, so it could write
+      //   megabyte documents as fast as the SDK allowed. This is the exact
+      //   "คู่แข่งแกล้ง" vector: a competitor can't be stopped from placing a
+      //   plausible fake booking (the concierge-confirm step is what catches
+      //   those, by design), but they SHOULDN'T be able to make each one cheap
+      //   AND enormous.
+      //
+      //   What this cannot do is rate-limit — Firestore rules have no counter.
+      //   That needs App Check; see the note on enforceAppCheck in
+      //   functions/src/index.ts. This narrows the blast radius meanwhile.
       allow create: if request.resource.data.status in ['pending', 'confirmed']
-                    && !claimsReservedIdentity(request.resource.data);
+                    && !claimsReservedIdentity(request.resource.data)
+                    && (isAdmin() || isSaneBookingPayload(request.resource.data));
       allow update: if isAdmin()
                     || (isSignedIn()
                         && resource.data.userId == request.auth.uid
@@ -678,9 +734,25 @@ service cloud.firestore {
     // without needing repro steps. Public CREATE so anonymous guests
     // can log; admin-only READ; immutable (no update/delete) so the
     // log can't be tampered with.
+    // 🆕 28x.107 — `allow create: if true` meant an unauthenticated caller
+    //   could write arbitrarily large documents into an admin-read-only
+    //   collection, forever, and nobody would look at it until the bill
+    //   arrived. Same posture as bookings above: keep the door open (the
+    //   whole point is capturing failures from guests who never signed in),
+    //   but bound what fits through it.
     match /booking_errors/{eventId} {
       allow read: if isAdmin();
-      allow create: if true;
+    //   ⚠️ Field names below are the ones src/utils/bookingError.ts actually
+    //   writes (errorName / errorMessage / errorStack — NOT message/stack).
+    //   A cap on a key that is never written is a cap on nothing; this is the
+    //   same class of silent no-op as the analytics_events allow-list drift
+    //   in 28x.99. Caps sit just above that file's own TRUNC() limits.
+      allow create: if request.resource.data.keys().size() <= 30
+                    && strOk(request.resource.data, 'errorName', 400)
+                    && strOk(request.resource.data, 'errorMessage', 2000)
+                    && strOk(request.resource.data, 'errorStack', 3000)
+                    && strOk(request.resource.data, 'userAgent', 800)
+                    && strOk(request.resource.data, 'step', 100);
       allow update, delete: if false;
     }
 
@@ -712,7 +784,19 @@ service cloud.firestore {
         'bundle_view',
         'bundle_reserve_click',
         'referral_tier_applied'
-      ];
+      ]
+      // 🆕 28x.107 — the allow-list bounds WHICH events land here but not how
+      //   big each one is, and this is the highest-volume open-create
+      //   collection on the site. Cap the document so a flood is at least a
+      //   cheap flood.
+      //   Field names are the ones analytics.ts actually writes — `sid`, not
+      //   `sessionId`. Verified against the addDoc call, not guessed.
+      && request.resource.data.keys().size() <= 25
+      && strOk(request.resource.data, 'path', 500)
+      && strOk(request.resource.data, 'referrer', 500)
+      && strOk(request.resource.data, 'sid', 100)
+      && strOk(request.resource.data, 'utmSource', 200)
+      && strOk(request.resource.data, 'lang', 20);
       allow update, delete: if false;
     }
 

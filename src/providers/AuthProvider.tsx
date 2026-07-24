@@ -75,6 +75,20 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       if (firebaseUser) {
         const detectedRole = await resolveRole(firebaseUser.uid);
         setRole(detectedRole);
+
+        // 🆕 Round 28x.107 — force one ID-token refresh per session for staff.
+        //   storage.rules now reads `role`/`tid` OUT OF THE TOKEN (it can't do
+        //   a cross-service Firestore read — 28s281 proved that path silently
+        //   denies). A cached token is valid for up to an hour, so an admin
+        //   whose claim was just granted — or backfilled — would keep getting
+        //   "storage/unauthorized" on her own uploads with nothing on screen
+        //   explaining why. Refreshing only for staff keeps guest page loads
+        //   free of the extra round trip.
+        if (detectedRole !== "user") {
+          await firebaseUser.getIdToken(true).catch(() => {
+            /* offline / transient — the hourly auto-refresh still lands it */
+          });
+        }
         // 🆕 28x.99 — mirror into the module-level cache so analytics.ts
         // (a plain util, not a component) can skip tracking staff sessions.
         setCachedRole(detectedRole);

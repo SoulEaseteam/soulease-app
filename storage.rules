@@ -3,63 +3,93 @@ rules_version = '2';
 // 🆕 Round 28s280 (founder: "แกลเลอรี — อัปโหลดเพิ่ม/ลบรูปได้ จากมือถือ") —
 // therapist gallery photo uploads. Firebase Storage wasn't configured
 // before this round (the storage export was dropped in 28s105 for having
-// zero consumers). These rules mirror firestore.rules' admin model:
-// admin = an entry exists in /admins/{uid}.
+// zero consumers).
+//
+// 🆕 Round 28x.107 (founder security audit: "เว็บเรา มีการป้องกันอะไรบ้าง
+// หากถูกเจาะ หรือโจมตี") — REWRITTEN. Every path below used to be
+// `allow write, delete: if request.auth != null`, i.e. any signed-in
+// account at all. That included ordinary CUSTOMERS, who can self-register
+// on the public site. One customer account plus a twenty-line script could
+// delete every practitioner photo, every service image and every bundle
+// hero on the live site, or overwrite them with anything. That is a
+// one-command defacement of the whole shopfront, and nothing in the app
+// stood in its way.
+//
+// The gate is now the `role` custom claim, minted server-side and carried
+// in the ID token:
+//   • role == "admin"     → full write/delete on marketing images
+//   • role == "therapist" → write/delete ONLY inside her own
+//                           therapists/{tid}/ folder, matched on the `tid`
+//                           claim (galleryPending uploads from the staff app)
+//   • everyone else       → read only, exactly as before
+//
+// WHY A CLAIM AND NOT firestore.exists(): Round 28s280 tried the
+// cross-service `firestore.exists(/admins/{uid})` check and 28s281 had to
+// rip it out — it denied every real admin upload in practice. Do NOT
+// reintroduce it. The claim travels inside the token, so no cross-service
+// read is involved and the check cannot silently fail the same way.
+//
+// The claim is kept in sync by `syncAdminClaim` (a trigger on
+// /admins/{uid}, so even a hand edit in the Firebase console propagates)
+// and was backfilled onto existing accounts by
+// scripts/backfillRoleClaims.mjs. AuthProvider force-refreshes the ID
+// token once per staff session so a freshly-granted claim lands
+// immediately instead of up to an hour later.
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Therapist gallery images — publicly readable (they're shown on the
-    // customer-facing site), writable by any AUTHENTICATED user, capped at
-    // 15 MB and restricted to image/* content types.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    function isTherapist() {
+      return request.auth != null && request.auth.token.role == 'therapist';
+    }
+
+    function isStaff() {
+      return isAdmin() || isTherapist();
+    }
+
+    // Image uploads share one shape everywhere: image/* only, 15 MB cap.
+    function isSaneImage() {
+      return request.resource.size < 15 * 1024 * 1024
+             && request.resource.contentType.matches('image/.*');
+    }
+
+    // Therapist profile + gallery images — publicly readable (they are the
+    // customer-facing site's main product surface).
     //
-    // 🆕 Round 28s281 — dropped the `firestore.exists(/admins/{uid})`
-    // cross-service admin check that 28s280 used: it denied every real
-    // admin upload ("storage/unauthorized") in practice — the Storage→
-    // Firestore cross-service read wasn't resolving. Auth-only is an
-    // acceptable posture here because the real exposure gate is elsewhere:
-    // a file only appears on a public profile once its URL is written into
-    // that therapist's `gallery` array, and firestore.rules already limits
-    // therapist-doc writes to admins. So a non-admin upload here is at
-    // worst an orphan file (never shown anywhere), capped at 15 MB, by one
-    // of the app's very few account holders. Tighten to true admin-only
-    // later via an `admin:true` custom claim (needs a Cloud Function) if
-    // storage-fill abuse ever shows up.
-    // 🆕 Round 28s284 — broadened from .../gallery/** to .../** so profile
-    // photos (therapists/{id}/profile/**) uploaded from the avatar picker
-    // are covered too, alongside gallery/**.
+    // Writers: admins (therapistFormKit's gallery/ + profile/ uploads) and
+    // the practitioner herself (the staff app's galleryPending/ uploads),
+    // scoped by the `tid` claim so one practitioner cannot touch another's
+    // folder. Note this is now strictly tighter than the pre-28x.107 rule
+    // in BOTH directions: customers lose write entirely, and practitioners
+    // lose write to everyone else's photos.
     match /therapists/{therapistId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.resource.size < 15 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null;
+      allow write: if isSaneImage()
+                   && (isAdmin()
+                       || (isTherapist() && request.auth.token.tid == therapistId));
+      allow delete: if isAdmin()
+                    || (isTherapist() && request.auth.token.tid == therapistId);
     }
 
     // 🆕 Round 28s301 (founder: "ราคา & บริการ เพิ่ม เมนูได้") — images for
-    // admin-created custom services. Same posture as therapist images:
-    // public read (shown on the customer booking menu), authenticated
-    // write, image-only, size-capped.
+    // admin-created custom services. Written only from the admin panel
+    // (AdminPromotionsPage), so admin-only is the honest rule.
     match /services/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.resource.size < 15 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null;
+      allow write: if isAdmin() && isSaneImage();
+      allow delete: if isAdmin();
     }
 
     // 🆕 Round 28r60 (founder — "Bundle UI polish · photo + category tags")
-    // — hero images for admin-created Bundle Packages. Same posture as the
-    // therapist + services paths: public read (shown on the customer
-    // BundleSection card), authenticated image-only write, 15MB cap. Same
-    // rationale as 28s281 for auth-only writes — the exposure gate is the
-    // Firestore-side `bundles.{id}.imageUrl` field on `publicRules`, which
-    // firestore.rules restricts to admins.
+    // — hero images for admin-created Bundle Packages. Admin panel only,
+    // same as services above.
     match /bundles/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.resource.size < 15 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null;
+      allow write: if isAdmin() && isSaneImage();
+      allow delete: if isAdmin();
     }
 
     // 🆕 Round 28x.124 (founder: "ถึงแล้ว — ให้พนักงานถ่ายรูปจุดที่รอลูกค้า
@@ -67,15 +97,16 @@ service firebase.storage {
     // reaches the meeting point. Deliberately NOT `allow read: if true`,
     // unlike every path above: those are marketing images meant for the
     // public site, this is a photo of where a specific guest is waiting.
-    // Signed-in read only. The Cloud Function still reaches it to forward to
-    // Telegram because getDownloadURL()'s token bypasses these rules — the
-    // rule's job here is to stop the path being publicly browsable.
+    //
+    // 🆕 28x.107 — read was `request.auth != null`, which let any customer
+    // who registered an account browse the meeting points of OTHER guests.
+    // Staff-only now, on both read and write. The Cloud Function still
+    // reaches it to forward to Telegram because getDownloadURL()'s token
+    // bypasses these rules.
     match /jobArrivals/{bookingId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-                   && request.resource.size < 15 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null;
+      allow read: if isStaff();
+      allow write: if isStaff() && isSaneImage();
+      allow delete: if isAdmin();
     }
 
     // Everything else: locked down.
