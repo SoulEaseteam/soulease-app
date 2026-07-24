@@ -35,6 +35,18 @@ const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
 const ROSE = "#D97C95";
 
+// 🆕 28x.111 — the taxi widget's in-line service picker. Bestseller (same id
+//   as ServicesPage/PricingPage/StepService) gets the ★ + is the default pick.
+const BESTSELLER_ID = "SR-HJ2200";
+// Short chip labels — the full names ("Gentleman's Signature Therapy") are too
+//   long for a 2-column chip row. Euphemism register preserved.
+const SERVICE_SHORT: Record<string, string> = {
+  "xSR-Thai": "Thai",
+  "SR-Aroma": "Aroma",
+  "SR-HJ2200": "Gentleman's",
+  "SR-B2B3200": "Therapeutic",
+};
+
 // 🆕 Round 28x.99k (founder: "ปรับ...ให้บาลานซ์หน่อย") — the taxi-estimate
 // map always rendered Google's default WHITE basemap, even at night when
 // the whole page (and the practitioner map above it) wears the dark
@@ -381,26 +393,59 @@ const TaxiEstimator: React.FC = () => {
   //   moves (à la Grab). Tween the amount the guest pays; 0 when unpriced.
   const tweenedFare = useTweenedNumber(estimate?.fare ?? 0);
 
-  // 🆕 28x.52 (founder idea #3) — the selected practitioner's starting rate
-  //   (lowest 60-min service they offer) → an all-in "from" price with taxi.
-  const startingPrice = React.useMemo(() => {
+  // 🆕 28x.111 (founder: "ให้ลูกค้าเลือกเมนูในวิดเจ็ตเลย") — replaces the old
+  //   28x.52 "from = cheapest service" anchor. That floor (Thai ฿1,200) trained
+  //   the guest to expect the cheapest before they ever saw the menu, so the
+  //   ฿2,200 bestseller read as expensive. Now the widget shows a service
+  //   PICKER, defaults to the practitioner's most premium option (bestseller
+  //   Gentleman's if she offers it), and the all-in price reflects the choice.
+  //   The chosen service is carried into the booking flow (serviceId), so the
+  //   guest lands pre-selected instead of re-picking. The concierge still
+  //   confirms the final price.
+  const availableServices = React.useMemo(() => {
     const ids = selected?.servicesAvailable ?? selected?.services ?? [];
-    const prices = ids
-      .map((id) => staticServices.find((s) => s.id === id)?.price)
-      .filter((p): p is number => typeof p === "number");
-    return prices.length ? Math.min(...prices) : 1200;
+    return ids
+      .map((id) => staticServices.find((s) => s.id === id))
+      .filter((s): s is (typeof staticServices)[number] => Boolean(s))
+      // Cheapest → dearest so the row reads as a natural up-menu ladder.
+      .sort((a, b) => a.price - b.price);
   }, [selected]);
+
+  const [selectedServiceId, setSelectedServiceId] = React.useState<string | null>(
+    null
+  );
+  // When the practitioner changes, default the pick to her most premium option:
+  //   bestseller (Gentleman's) if offered, else the dearest she does. This is
+  //   the deliberate up-menu nudge — the eye lands on the higher-margin service,
+  //   not the ฿1,200 floor, while the guest can still tap down to Thai.
+  React.useEffect(() => {
+    if (!availableServices.length) {
+      setSelectedServiceId(null);
+      return;
+    }
+    const hasBestseller = availableServices.some((s) => s.id === BESTSELLER_ID);
+    const dearest = availableServices[availableServices.length - 1];
+    setSelectedServiceId(hasBestseller ? BESTSELLER_ID : dearest.id);
+  }, [availableServices]);
+
+  const chosenService =
+    availableServices.find((s) => s.id === selectedServiceId) ??
+    availableServices[availableServices.length - 1] ??
+    null;
+  const servicePrice = chosenService?.price ?? 1200;
   const allIn =
-    estimate?.fare != null ? startingPrice + estimate.fare : null;
+    estimate?.fare != null ? servicePrice + estimate.fare : null;
   const mapsUrl = coords ? `https://maps.google.com/?q=${coords.lat},${coords.lng}` : "";
 
   // 🆕 28x.52 (idea #3) — jump straight into this practitioner's booking with
   //   the pinned location already carried over (no re-entering the address).
+  //   28x.111 — carry the chosen service too so the booking flow pre-selects it.
   const bookNow = () => {
     if (!selected || !coords) return;
     writePersistedForm(selected.id, {
       ...initialFormState,
       therapistId: selected.id,
+      serviceId: chosenService?.id ?? null,
       lat: coords.lat,
       lng: coords.lng,
       locationName: placeName ?? null,
@@ -701,8 +746,52 @@ const TaxiEstimator: React.FC = () => {
             </Box>
           )}
 
-          {/* 🆕 28x.52 (idea #3) — all-in "from" price + one-tap book. */}
-          {allIn != null && selected && (
+          {/* 🆕 28x.111 — service picker (defaults to the bestseller). Lets the
+              guest choose the menu here so the all-in price reflects THEIR pick
+              instead of anchoring on the cheapest service. */}
+          {selected && availableServices.length > 0 && (
+            <Box sx={{ mt: 0.5 }}>
+              <Typography
+                sx={{
+                  fontFamily: SANS, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+                  textTransform: "uppercase", color: "var(--sr-body)", mb: 0.75,
+                }}
+              >
+                {t("nearme.taxi.pickService", "Choose service")}
+              </Typography>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.75 }}>
+                {availableServices.map((s) => {
+                  const active = s.id === chosenService?.id;
+                  const isBest = s.id === BESTSELLER_ID;
+                  return (
+                    <Box
+                      key={s.id}
+                      component="button"
+                      type="button"
+                      onClick={() => setSelectedServiceId(s.id)}
+                      sx={{
+                        position: "relative", textAlign: "left", cursor: "pointer",
+                        p: "8px 10px", borderRadius: "11px",
+                        border: active ? `1.5px solid ${ROSE}` : "1px solid var(--sr-hairline)",
+                        background: active ? "rgba(217,124,149,0.12)" : "var(--sr-panel-2)",
+                        transition: "border-color .15s ease, background .15s ease",
+                      }}
+                    >
+                      <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2 }}>
+                        {isBest && "★ "}{SERVICE_SHORT[s.id] ?? s.name}
+                      </Typography>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: active ? "#C2185B" : "var(--sr-body)", mt: 0.2 }}>
+                        {formatTHB(s.price)}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
+
+          {/* 🆕 28x.52 (idea #3) → 28x.111 — all-in price (chosen service) + book. */}
+          {allIn != null && selected && chosenService && (
             <Box
               sx={{
                 mt: 0.5, p: "12px 14px", borderRadius: "14px",
@@ -712,15 +801,18 @@ const TaxiEstimator: React.FC = () => {
             >
               <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
                 <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)" }}>
-                  {t("nearme.taxi.allInLabel", "From, with {{name}}", { name: selected.name })}
+                  {t("nearme.taxi.allInLabelChosen", "{{svc}}, with {{name}}", {
+                    svc: SERVICE_SHORT[chosenService.id] ?? chosenService.name,
+                    name: selected.name,
+                  })}
                 </Typography>
                 <Box sx={{ textAlign: "right" }}>
                   <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "var(--sr-ink)", lineHeight: 1 }}>
                     {formatTHB(allIn)}
                   </Typography>
                   <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-body)", mt: 0.3 }}>
-                    {t("nearme.taxi.allInBreak", "service from {{svc}} + travel {{taxi}}", {
-                      svc: formatTHB(startingPrice), taxi: formatTHB(allIn - startingPrice),
+                    {t("nearme.taxi.allInBreak2", "service {{svc}} + travel {{taxi}}", {
+                      svc: formatTHB(servicePrice), taxi: formatTHB(allIn - servicePrice),
                     })}
                   </Typography>
                 </Box>
