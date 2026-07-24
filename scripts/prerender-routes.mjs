@@ -33,7 +33,7 @@
 // ────────────────────────────────────────────────────────────────────────
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 // 🆕 Round 28x.108 — the blog content module the React pages also read. Both
@@ -475,17 +475,62 @@ const THERAPISTS = [
   { id: "RichieSunRed", name: "Richie", area: "Rama 9" },
 ];
 
+// 🆕 Round 28x.110 (founder: "ไบโอพนักงาน ทำเลย") — pull the real, hand-written
+// English bios out of src/data/therapists.ts and into the crawlable body. The
+// bios already exist there (multi-locale) and the in-app detail page shows
+// them, but the PRERENDER — the only version Google indexes — was serving a
+// generic one-liner, so all 12 profile pages read near-identically. Reading
+// from therapists.ts (not a hand-copy here) keeps them from drifting.
+//
+// Parsed from source text rather than imported because this is a .mjs and
+// therapists.ts is TypeScript. Robust to block-order/whitespace: split on each
+// `id: "…SunRed"` and scan that slice. A miss degrades to the generic body
+// (never drops the page), and the build asserts coverage below.
+function loadTherapistBios() {
+  const src = readFileSync(join(ROOT, "src/data/therapists.ts"), "utf8");
+  const ids = [...src.matchAll(/\bid:\s*"([A-Za-z]+SunRed)"/g)];
+  const map = {};
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i][1];
+    const start = ids[i].index;
+    const end = i + 1 < ids.length ? ids[i + 1].index : src.length;
+    const block = src.slice(start, end);
+    const bioEn = block.match(/bios:\s*\{[\s\S]*?\ben:\s*"((?:[^"\\]|\\.)*)"/)?.[1];
+    const role = block.match(/employmentType:\s*"([^"]+)"/)?.[1];
+    if (bioEn) map[id] = { bioEn: bioEn.replace(/\\"/g, '"'), role: role ?? null };
+  }
+  return map;
+}
+const THERAPIST_BIOS = loadTherapistBios();
+
 function therapistRoutes() {
-  return THERAPISTS.map((t) => ({
+  return THERAPISTS.map((t) => {
+    const bio = THERAPIST_BIOS[t.id];
+    // Description: lead with the real bio (verbatim; it's already euphemism-
+    // compliant and under Google's snippet length), so each page's snippet is
+    // distinct. Fall back to the generic line only if a bio wasn't parsed.
+    const description = bio
+      ? `${bio.bioEn} A verified SunRed outcall massage practitioner delivered to your Bangkok hotel or residence — discreet, 24/7.`
+      : `Book ${t.name}, a verified SunRed outcall massage practitioner serving ${t.area} and central Bangkok. Thai, aromatherapy & signature therapies delivered to your hotel or residence — discreet, verified, available 24/7. EN/中文/日本語/한국어.`;
+    const roleLine = bio?.role
+      ? `<p>${t.name} is a ${bio.role.toLowerCase()} with SunRed.</p>`
+      : "";
+    const bioBody = bio
+      ? `<p>${bio.bioEn}</p>${roleLine}`
+      : `<p>${t.name} is a verified SunRed outcall massage practitioner serving
+          ${t.area} and central Bangkok.</p>`;
+    return {
     path: `/therapists/${t.id}`,
     canonicalPath: `/therapists/${t.id}`,
     hreflangBase: null, // en-only; no localized cluster
     htmlLang: "en",
     ogLocale: "en_US",
     title: `${t.name} — Outcall Massage Practitioner in Bangkok | SunRed`,
-    description: `Book ${t.name}, a verified SunRed outcall massage practitioner serving ${t.area} and central Bangkok. Thai, aromatherapy & signature therapies delivered to your hotel or residence — discreet, verified, available 24/7. EN/中文/日本語/한국어.`,
+    description,
     ogTitle: `${t.name} — Verified Outcall Massage Practitioner, Bangkok`,
-    ogDescription: `Verified SunRed practitioner serving ${t.area} & central Bangkok. Delivered to your hotel, discreet, 24/7.`,
+    ogDescription: bio
+      ? bio.bioEn
+      : `Verified SunRed practitioner serving ${t.area} & central Bangkok. Delivered to your hotel, discreet, 24/7.`,
     jsonLd: [
       breadcrumbJsonLd([
         { name: "Home", url: `${ORIGIN}/` },
@@ -495,10 +540,10 @@ function therapistRoutes() {
     ],
     noscript: `
         <h1>${t.name} — Outcall Massage Practitioner in Bangkok</h1>
-        <p>${t.name} is a verified SunRed outcall massage practitioner serving
-          ${t.area} and central Bangkok. Sessions are delivered to your hotel,
-          residence or villa — discreet arrival, verified identity, multilingual
-          concierge (English, 中文, 日本語, 한국어), available 24/7.</p>
+        ${bioBody}
+        <p>Sessions are delivered to your hotel, residence or villa across
+          ${t.area} and central Bangkok — discreet arrival, verified identity,
+          multilingual concierge (English, 中文, 日本語, 한국어), available 24/7.</p>
         <h2>Reserve or ask the concierge</h2>
         <ul>
           <li><a href="${ORIGIN}/services">Browse all services &amp; pricing</a></li>
@@ -507,7 +552,20 @@ function therapistRoutes() {
           <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
           <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
         </ul>`,
-  }));
+    };
+  });
+}
+
+// Assert every rostered practitioner got a real bio — a silent parse miss
+// would quietly ship the generic body for someone, exactly the near-duplicate
+// problem this round exists to fix.
+{
+  const missing = THERAPISTS.filter((t) => !THERAPIST_BIOS[t.id]).map((t) => t.id);
+  if (missing.length) {
+    throw new Error(
+      `[prerender] no bio parsed from therapists.ts for: ${missing.join(", ")}`
+    );
+  }
 }
 
 // ── Localized home pages (zh / ja / ko) ────────────────────────────────────
