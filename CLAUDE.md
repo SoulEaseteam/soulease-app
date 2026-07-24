@@ -408,6 +408,38 @@ often don't send a usable `document.referrer`.
   passed typecheck/build/rules-tests, but was never visually confirmed
   live in an actual admin browser session — worth a first real look.
 
+**📝 SEO blog shipped — Round 28x.108 (2026-07-24)**
+
+`/blog` (The SunRed Journal) is live: 5 English articles targeting top-of-
+funnel "which service / what are my options" queries (choosing a service,
+Singaporean guide, after-flight recovery, late-night options, business-trip
+recovery) — the earlier, less-contested intent the money pages don't cover.
+Founder direction was "เจาะทุกกลุ่ม" (all segments), so the Singaporean/
+business-traveller pieces are included even though that audience skews
+one-time-tourist (see §6 Sammyboy note — same customer-mix caveat applies if
+judging these by traffic alone).
+
+How it's wired (so you don't re-derive it):
+- **Content source of truth = `SEO_Blog_Pack/*.md`** (the drafts that sat
+  unused for weeks). `scripts/buildBlogData.mjs` parses them → the committed
+  `src/data/blogPosts.mjs`. BOTH the React pages (`Blog{Index,Post}Page`) and
+  the crawler prerender import that ONE module — no drift.
+- **To add / edit an article**: edit the markdown, run `npm run build` (or just
+  `node scripts/buildBlogData.mjs`) locally, commit the regenerated
+  `blogPosts.mjs` + `public/sitemap.xml`, deploy. The generator also rewrites
+  the sitemap's `<!-- BLOG:START/END -->` block, so a new article needs no
+  separate sitemap edit.
+- **⚠️ SEO_Blog_Pack is .vercelignore'd** (marketing files aren't build
+  inputs), and Vercel materialises an EMPTY `SEO_Blog_Pack/` dir. So on Vercel
+  the generator finds 0 articles and **must** no-op, consuming the committed
+  `blogPosts.mjs`. It guards on the article COUNT for exactly this — do NOT
+  change that guard to `existsSync`, and never let it write an empty result
+  (28x.108b/c: an existsSync guard shipped a blank /blog to prod once).
+- Each article prerenders a crawlable shell: unique title/description,
+  BlogPosting JSON-LD, and the FULL article HTML (tables included) in
+  `<noscript>`. Real `<a href="/blog">Journal</a>` in the home footer for
+  crawl discovery.
+
 **🔐 Security posture after Round 28x.107 (2026-07-24 audit)**
 
 Founder asked point-blank: "เว็บเรา มีการป้องกันอะไรบ้าง หากถูกเจาะ หรือ
