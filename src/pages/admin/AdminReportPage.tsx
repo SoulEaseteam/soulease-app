@@ -819,7 +819,13 @@ const AdminReportPage: React.FC = () => {
         fullWidth
         PaperProps={{ sx: { borderRadius: "20px", overflow: "hidden", background: adminColor.panel } }}
       >
-        {preview && (
+        {preview && (() => {
+          // 🆕 28x.114e (founder) — compute the settlement once so the header,
+          //   the income block and the settlement block all agree. Bonus is the
+          //   therapist's INCOME (folded into Paid), not a shop settlement line.
+          const settle = settlementTotals(preview.bookings);
+          const paidWithBonus = preview.worker + settle.bonus;
+          return (
           <>
             {/* header strip */}
             <Box sx={{ background: adminColor.panel2, px: 3, pt: 3, pb: 2.5, borderBottom: `1px solid ${adminColor.line}` }}>
@@ -840,7 +846,7 @@ const AdminReportPage: React.FC = () => {
                   { en: "Jobs",  th: "งาน",     value: String(preview.jobs) },
                   // 🆕 28x.114c (founder) — Gross now includes taxi.
                   { en: "Gross", th: "รวมค่าแท็กซี่",  value: thb(preview.serviceTotal + preview.taxiTotal) },
-                  { en: "Paid",  th: "จ่ายนวด", value: thb(preview.worker) },
+                  { en: "Paid",  th: "จ่ายนวด", value: thb(paidWithBonus) },
                 ].map((s, i) => (
                   <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
                     <Typography sx={{ ...adminFigureSx, fontSize: 17, color: i === 2 ? adminColor.accent : adminColor.text, lineHeight: 1 }}>{s.value}</Typography>
@@ -858,12 +864,13 @@ const AdminReportPage: React.FC = () => {
                    block below. Shop Take removed from here (it's implicit in
                    the settlement). */}
               {(() => {
-                const s = settlementTotals(preview.bookings);
                 return [
                   { label: "Gross Service · ค่าบริการรวม", value: thb(preview.serviceTotal) },
                   { label: "Total Taxi · Taxi รวม",        value: thb(preview.taxiTotal) },
-                  ...(s.bonus > 0 ? [{ label: "Bonus · โบนัส", value: `+ ${thb(s.bonus)}`, color: adminColor.green }] : []),
-                  { label: "Paid to Therapist · รายได้พนักงาน", value: thb(preview.worker), color: adminColor.accent, bold: true },
+                  // 🆕 28x.114e — bonus is the therapist's income, shown here and
+                  //   folded into Paid to Therapist (not a shop-settlement line).
+                  ...(settle.bonus > 0 ? [{ label: "Bonus · โบนัส", value: `+ ${thb(settle.bonus)}`, color: adminColor.green }] : []),
+                  { label: "Paid to Therapist · รายได้พนักงาน", value: thb(paidWithBonus), color: adminColor.accent, bold: true },
                   ...(preview.cancelled > 0 ? [{ label: "Cancelled · ยกเลิก", value: `${preview.cancelled} times`, color: adminColor.dim }] : []),
                 ].map((row) => (
                   <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.75, borderBottom: `1px solid ${adminColor.line}` }}>
@@ -878,12 +885,13 @@ const AdminReportPage: React.FC = () => {
                    The cash-shop-share breakdown line was removed (รูป 1 ตัดออก);
                    the net still includes it internally. */}
               {(() => {
-                const s = settlementTotals(preview.bookings);
-                const owed = s.balance;               // >0 shop owes her
+                const owed = settle.balance;          // >0 shop owes her
                 const rows: { label: string; value: string; color?: string }[] = [];
-                if (s.discount > 0) rows.push({ label: "Promo Discount · ส่วนลดโปร", value: `− ${thb(s.discount)}`, color: adminColor.dim });
-                if (s.bonus > 0) rows.push({ label: "Bonus · โบนัส", value: `+ ${thb(s.bonus)}`, color: adminColor.green });
-                if (s.deduction > 0) rows.push({ label: "หักเงิน · Deduction", value: `− ${thb(s.deduction)}`, color: adminColor.red });
+                if (settle.discount > 0) rows.push({ label: "Promo Discount · ส่วนลดโปร", value: `− ${thb(settle.discount)}`, color: adminColor.dim });
+                // 🆕 28x.114e — Bonus removed from Settlement (founder: "ร้านไม่ได้").
+                //   It's the therapist's income, already in Paid to Therapist; the
+                //   shop's settlement only gains from a deduction (หักเงิน).
+                if (settle.deduction > 0) rows.push({ label: "หักเงิน · Deduction", value: `− ${thb(settle.deduction)}`, color: adminColor.red });
                 return (
                   <Box sx={{ mt: 2, p: 1.5, borderRadius: "14px", background: adminColor.panel2, border: `1px solid ${adminColor.line}` }}>
                     <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
@@ -996,7 +1004,8 @@ const AdminReportPage: React.FC = () => {
               </motion.button>
             </DialogActions>
           </>
-        )}
+          );
+        })()}
       </Dialog>
     </Box>
   );
