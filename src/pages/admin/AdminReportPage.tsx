@@ -838,7 +838,8 @@ const AdminReportPage: React.FC = () => {
               <Box sx={{ display: "flex", gap: 1, mt: 2, p: 1.5, borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
                 {[
                   { en: "Jobs",  th: "งาน",     value: String(preview.jobs) },
-                  { en: "Gross", th: "รับรวม",  value: thb(preview.serviceTotal) },
+                  // 🆕 28x.114c (founder) — Gross now includes taxi.
+                  { en: "Gross", th: "รวมค่าแท็กซี่",  value: thb(preview.serviceTotal + preview.taxiTotal) },
                   { en: "Paid",  th: "จ่ายนวด", value: thb(preview.worker) },
                 ].map((s, i) => (
                   <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
@@ -851,34 +852,38 @@ const AdminReportPage: React.FC = () => {
             </Box>
 
             <DialogContent sx={{ px: 3, py: 2 }}>
-              {[
-                { label: "Gross Service · ค่าบริการรวม",   value: thb(preview.serviceTotal) },
-                ...(preview.discountTotal > 0 ? [{ label: "Promo Discount · ส่วนลดโปร", value: `− ${thb(preview.discountTotal)}`, color: adminColor.dim }] : []),
-                { label: "Total Taxi · Taxi รวม",          value: thb(preview.taxiTotal) },
-                { label: "Shop Take · ร้านได้",             value: thb(preview.shop),    color: adminColor.dim },
-                { label: "Paid to Therapist · จ่ายนวด",    value: thb(preview.worker),  color: adminColor.accent, bold: true },
-                ...(preview.cancelled > 0 ? [{ label: "Cancelled · ยกเลิก", value: `${preview.cancelled} times`, color: adminColor.dim }] : []),
-              ].map((row) => (
-                <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.75, borderBottom: `1px solid ${adminColor.line}` }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted }}>{row.label}</Typography>
-                  <Typography sx={{ ...adminFigureSx, fontSize: 15, fontWeight: (row as any).bold ? 800 : 600, color: (row as any).color || adminColor.text }}>{row.value}</Typography>
-                </Box>
-              ))}
+              {/* 🆕 28x.114c (founder layout) — top block = the therapist's
+                   income summary: service, taxi, bonus, what she's paid,
+                   cancelled. Promo + the net settlement moved into their own
+                   block below. Shop Take removed from here (it's implicit in
+                   the settlement). */}
+              {(() => {
+                const s = settlementTotals(preview.bookings);
+                return [
+                  { label: "Gross Service · ค่าบริการรวม", value: thb(preview.serviceTotal) },
+                  { label: "Total Taxi · Taxi รวม",        value: thb(preview.taxiTotal) },
+                  ...(s.bonus > 0 ? [{ label: "Bonus · โบนัส", value: `+ ${thb(s.bonus)}`, color: adminColor.green }] : []),
+                  { label: "Paid to Therapist · รายได้พนักงาน", value: thb(preview.worker), color: adminColor.accent, bold: true },
+                  ...(preview.cancelled > 0 ? [{ label: "Cancelled · ยกเลิก", value: `${preview.cancelled} times`, color: adminColor.dim }] : []),
+                ].map((row) => (
+                  <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.75, borderBottom: `1px solid ${adminColor.line}` }}>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted }}>{row.label}</Typography>
+                    <Typography sx={{ ...adminFigureSx, fontSize: 15, fontWeight: (row as any).bold ? 800 : 600, color: (row as any).color || adminColor.text }}>{row.value}</Typography>
+                  </Box>
+                ));
+              })()}
 
-              {/* 🆕 28x.114 — SETTLEMENT: who owes whom after cash-vs-transfer,
-                   no-show comp, promo (shop-absorbed), and per-job bonus/deduct.
-                   The one number View acts on when she reconciles with a
-                   practitioner. balance > 0 ⇒ shop owes her; < 0 ⇒ she transfers
-                   the shop. */}
+              {/* 🆕 28x.114c — SETTLEMENT block per founder spec: promo (info),
+                   bonus, deduction, then the one Payment line she reconciles on.
+                   The cash-shop-share breakdown line was removed (รูป 1 ตัดออก);
+                   the net still includes it internally. */}
               {(() => {
                 const s = settlementTotals(preview.bookings);
                 const owed = s.balance;               // >0 shop owes her
                 const rows: { label: string; value: string; color?: string }[] = [];
-                if (s.cashShopShare > 0) rows.push({ label: "− ส่วนแบ่งร้าน (เงินสด พนักงานเก็บ)", value: `− ${thb(s.cashShopShare)}`, color: adminColor.dim });
-                if (s.transferOwedToHer > 0) rows.push({ label: "+ ร้านรับโอน ค้างจ่ายพนักงาน", value: `+ ${thb(s.transferOwedToHer)}`, color: adminColor.green });
-                if (s.noShowComp > 0) rows.push({ label: "+ No-show taxi (ร้านคืนพนักงาน)", value: `+ ${thb(s.noShowComp)}`, color: adminColor.green });
-                if (s.bonus > 0) rows.push({ label: "+ โบนัสพนักงาน", value: `+ ${thb(s.bonus)}`, color: adminColor.green });
-                if (s.deduction > 0) rows.push({ label: "− หักเงินพนักงาน", value: `− ${thb(s.deduction)}`, color: adminColor.red });
+                if (s.discount > 0) rows.push({ label: "Promo Discount · ส่วนลดโปร", value: `− ${thb(s.discount)}`, color: adminColor.dim });
+                if (s.bonus > 0) rows.push({ label: "Bonus · โบนัส", value: `+ ${thb(s.bonus)}`, color: adminColor.green });
+                if (s.deduction > 0) rows.push({ label: "หักเงิน · Deduction", value: `− ${thb(s.deduction)}`, color: adminColor.red });
                 return (
                   <Box sx={{ mt: 2, p: 1.5, borderRadius: "14px", background: adminColor.panel2, border: `1px solid ${adminColor.line}` }}>
                     <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
@@ -896,10 +901,10 @@ const AdminReportPage: React.FC = () => {
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1, pt: 1, borderTop: `1px solid ${adminColor.line}` }}>
                       <Box>
                         <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 800, color: adminColor.text }}>
-                          {owed >= 0 ? "ร้านค้างจ่ายพนักงาน" : "พนักงานโอนให้ร้าน"}
+                          Payment · ยอดค้างชำระ
                         </Typography>
                         <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
-                          {owed >= 0 ? "Shop owes therapist" : "Therapist transfers shop"}
+                          {owed >= 0 ? "ร้านค้างจ่ายพนักงาน · shop owes therapist" : "พนักงานโอนให้ร้าน · therapist transfers shop"}
                         </Typography>
                       </Box>
                       <Typography sx={{ ...adminFigureSx, fontSize: 20, fontWeight: 800, color: owed >= 0 ? adminColor.green : adminColor.accent, lineHeight: 1 }}>
