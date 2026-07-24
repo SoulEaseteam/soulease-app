@@ -846,7 +846,9 @@ const AdminReportPage: React.FC = () => {
                   { en: "Jobs",  th: "งาน",     value: String(preview.jobs) },
                   // 🆕 28x.114c (founder) — Gross now includes taxi.
                   { en: "Gross", th: "รวมค่าแท็กซี่",  value: thb(preview.serviceTotal + preview.taxiTotal) },
-                  { en: "Paid",  th: "จ่ายนวด", value: thb(paidWithBonus) },
+                  // 🆕 28x.114f (founder) — header PAID = the 60% share ONLY, no
+                  //   bonus. Bonus shows in the body's Paid-to-Therapist total.
+                  { en: "Paid",  th: "จ่ายนวด · 60%", value: thb(preview.worker) },
                 ].map((s, i) => (
                   <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
                     <Typography sx={{ ...adminFigureSx, fontSize: 17, color: i === 2 ? adminColor.accent : adminColor.text, lineHeight: 1 }}>{s.value}</Typography>
