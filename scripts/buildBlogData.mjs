@@ -244,21 +244,27 @@ function firstParagraph(body) {
 
 // The markdown drafts (SEO_Blog_Pack/) are marketing files, deliberately NOT
 // uploaded to Vercel (see .vercelignore). The generated src/data/blogPosts.mjs
-// and the sitemap block ARE committed, so a build with no source present is
-// fine — consume the committed artifacts and no-op. This is what runs on
-// Vercel; the real regeneration happens on the local `npm run build` before
-// deploy, where SEO_Blog_Pack is present.
-if (!existsSync(SRC_DIR)) {
+// and the sitemap block ARE committed, so a build with no source present must
+// consume those committed artifacts and no-op — NOT overwrite them with an
+// empty result.
+//
+// The guard is "did we find zero articles", not "does the directory exist":
+// .vercelignore excludes the .md FILES but Vercel still materialises an empty
+// SEO_Blog_Pack/ dir, so existsSync() is true there. An earlier version keyed
+// on existsSync and shipped a blank blogPosts.mjs to production (0 posts) —
+// the /blog index rendered with an empty article list. Key on the file count.
+const files = existsSync(SRC_DIR)
+  ? (await readdir(SRC_DIR)).filter((f) => /^\d+_.*\.md$/.test(f)).sort()
+  : [];
+
+if (files.length === 0) {
   console.log(
-    "buildBlogData: SEO_Blog_Pack not present (expected on Vercel) — " +
-      "using committed src/data/blogPosts.mjs. Skipping regen."
+    "buildBlogData: no source articles found (expected on Vercel — " +
+      "SEO_Blog_Pack is not uploaded). Keeping committed " +
+      "src/data/blogPosts.mjs + sitemap. Skipping regen."
   );
   process.exit(0);
 }
-
-const files = (await readdir(SRC_DIR))
-  .filter((f) => /^\d+_.*\.md$/.test(f))
-  .sort();
 
 const posts = [];
 for (const f of files) {
