@@ -47,9 +47,7 @@ import {
 } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
-// 🆕 28x.106 — overrides expire at the BUSINESS night's end (06:00 BKK),
-//   not midnight; a "พักคืนนี้" set at 21:00 used to evaporate mid-shift.
-import { endOfBusinessDayBKK, fmtBKKTimeShort } from "@/utils/time";
+import { fmtBKKTimeShort } from "@/utils/time";
 import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
 import { computeBookingStats, type TherapistBookingStats, EMPTY_BOOKING_STATS } from "@/hooks/useTherapistBookingStats";
 import { logAdminAction } from "@/utils/auditLog";
@@ -620,7 +618,11 @@ const AdminTherapistDetailPage: React.FC = () => {
       statusOverride: formData.statusOverride,
       // 🆕 Round 28s267's rule, applied here too — a manual override now
       //   expires at end of BKK day instead of sticking forever.
-      overrideUntil: formData.statusOverride !== "Auto" ? endOfBusinessDayBKK().toDate() : null,
+      // 🆕 28x.106b (founder "ถ้าไม่ใช่ auto ก็ทำงานตามคำสั่ง") — manual
+      //   overrides NEVER auto-expire: no overrideUntil stamp means the
+      //   engine keeps the override until the admin flips it back to Auto.
+      //   (Supersedes both midnight-expiry and the brief 06:00 variant.)
+      overrideUntil: null,
       isHoliday: formData.isHoliday,
       currentLocation: locationValue,
       hidden: formData.hidden,
