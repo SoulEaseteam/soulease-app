@@ -408,6 +408,50 @@ often don't send a usable `document.referrer`.
   passed typecheck/build/rules-tests, but was never visually confirmed
   live in an actual admin browser session — worth a first real look.
 
+**🔐 Security posture after Round 28x.107 (2026-07-24 audit)**
+
+Founder asked point-blank: "เว็บเรา มีการป้องกันอะไรบ้าง หากถูกเจาะ หรือ
+โจมตี". Four holes were found and closed the same night — see the 28x.107
+commit for detail. What matters going forward:
+
+- **Auth model is now claim-based, not collection-based.** `role`
+  ("admin" | "therapist" | "customer") and `tid` (the therapist DOC id)
+  ride inside the ID token. `storage.rules` reads them directly;
+  `firestore.rules` still uses `exists(/admins/$(uid))`, which is fine
+  there — Firestore CAN do that read, Storage cannot.
+  ⚠️ **Never** reintroduce `firestore.exists()` into storage.rules. It was
+  tried in 28s280 and silently denied every real admin upload (28s281).
+  The claim is the workaround, not a preference.
+- `syncAdminClaim` (trigger on `admins/{uid}`) keeps the claim honest even
+  when an admin is added by hand in the Firebase console. If you add a new
+  way to grant staff status, you do NOT need to call anything — but you DO
+  need the write to land in `/admins`, or the claim never updates.
+- `scripts/backfillRoleClaims.mjs` is idempotent — re-run it (dry run
+  first, no flag) any time claims look stale.
+- Two test suites now guard rules changes. Run BOTH before deploying rules:
+  - `npx firebase emulators:exec --only firestore --project soulease-spa "node tests/rules.test.mjs"` (73 tests)
+  - `npx firebase emulators:exec --only storage --project soulease-spa "node tests/storage.rules.test.mjs"` (19 tests)
+  - Both need `PATH="/opt/homebrew/opt/openjdk/bin:$PATH"` prefixed.
+- `telegramWebhook` verifies `X-Telegram-Bot-Api-Secret-Token` and **fails
+  closed**. If the bot ever goes silent after a deploy, check that first:
+  `node scripts/setTelegramWebhook.mjs` shows Telegram's side. Re-registering
+  must happen BEFORE deploying new code, not after — the order is in that
+  file's header.
+
+**Security follow-ups still owed:**
+- **App Check is still off** (`enforceAppCheck: false`, functions/src/index.ts).
+  Booking create is deliberately open to logged-out guests and rules cannot
+  rate-limit — 28x.107 bounded the SIZE of each write but not the RATE. A
+  scripted flood of small fake bookings is still possible. App Check needs a
+  reCAPTCHA v3 site key registered in the Firebase console (View's action),
+  then the client SDK init, then flipping enforcement on. This is the last
+  real gap and it maps directly to her "คู่แข่งแกล้ง" worry.
+- **Orphan admin doc**: `admins/mZylmnzdkBapBupYdDbVnqt9G3E3`
+  (`soulease.team@gmail.com`) has NO Firebase Auth account behind it —
+  a leftover admin grant from the pre-rebrand era. Harmless today (an
+  admin doc with no login grants nothing), but it should be deleted so the
+  admin list means what it says. Not deleted without View's call.
+
 ## 10. How to start each session
 
 When View opens a new chat with you, say:
