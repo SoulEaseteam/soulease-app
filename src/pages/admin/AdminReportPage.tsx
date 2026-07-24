@@ -935,8 +935,13 @@ const AdminReportPage: React.FC = () => {
                     return (
                       <Box key={b.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1.5, py: 0.85, borderBottom: `1px solid ${adminColor.line}`, opacity: excluded ? 0.5 : 1 }}>
                         <Box sx={{ minWidth: 0 }}>
-                          <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {/* 🆕 28x.114b (founder: "ใส่นาทีลงไปด้วย งง") — the job
+                              line hid the duration, so two Gentleman's jobs at
+                              different minutes looked identical. Show it inline
+                              and let the name wrap so nothing truncates. */}
+                          <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 600, color: adminColor.text, lineHeight: 1.25 }}>
                             {b.serviceName || "—"}
+                            {b.duration ? <Box component="span" sx={{ color: adminColor.muted, fontWeight: 700 }}>{"  ·  "}{b.duration} min</Box> : null}
                           </Typography>
                           {meta && (
                             <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.2 }}>
