@@ -259,6 +259,11 @@ export function isTestLocationBooking(b: {
   return (
     loc.includes("aspire") ||
     loc.includes("ซอย พร้อมพันธ์") ||
-    loc.includes("qh86+45p")
+    loc.includes("qh86+45p") ||
+    // 🆕 28x.113 (founder listed these when purging test orders) — two more
+    //   placeholders testers typed into the location field. "distribute the
+    //   total" is nonsense as an address; "[test]" is explicit.
+    loc.includes("distribute the total") ||
+    loc.includes("[test]")
   );
 }

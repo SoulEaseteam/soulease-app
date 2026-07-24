@@ -38,3 +38,6 @@ dist-electron/
 **/.DS_Store
 .firebase/
 Portfolio_View_Clean.docx
+
+# Round 28x.113 — local booking backups from deleteTestBookings.mjs (contain PII, never commit)
+.backups/

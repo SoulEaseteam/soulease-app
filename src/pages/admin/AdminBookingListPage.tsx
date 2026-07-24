@@ -217,7 +217,14 @@ interface Booking {
   reviewed?: boolean;
 }
 
-type TabKey = "all" | "pending" | "confirmed" | "completed" | "cancelled" | "test";
+type TabKey = "all" | "pending" | "confirmed" | "completed" | "cancelled" | "no_show" | "test";
+
+// 🆕 28x.113 (founder: "เพิ่มตัวกรอง NO SHOW") — a no-show can be stored under
+//   any of these spellings across the app's write paths; normalise so the tab
+//   catches all of them.
+const NO_SHOW_STATUSES = new Set(["no_show", "no-show", "noshow"]);
+const isNoShowStatus = (s?: string | null): boolean =>
+  NO_SHOW_STATUSES.has(String(s ?? "").toLowerCase());
 
 const SANS  = adminFont.sans;
 const SERIF = adminFont.serif;
@@ -253,6 +260,10 @@ const TABS: { key: TabKey; label: string; labelTh: string }[] = [
   { key: "confirmed", label: "Confirmed", labelTh: "ยืนยันแล้ว" },
   { key: "completed", label: "Completed", labelTh: "เสร็จสิ้น"  },
   { key: "cancelled", label: "Cancelled", labelTh: "ยกเลิก"    },
+  // 🆕 28x.113 (founder: "เพิ่มตัวกรอง NO SHOW") — guests who booked but never
+  //   showed. Its own tab so no-show rate is visible at a glance (the shop
+  //   eats the practitioner's taxi comp on these — see noShowCompFor).
+  { key: "no_show",   label: "No-show",   labelTh: "ไม่มา"      },
   // 🆕 Round 28x.137 (founder: "admin/bookings เพิ่มตัวกรองเป็นงานเทส และดึงยอด
   //   กลับมาไปไว้ที่นั้น") — QA test bookings (the Aspire/Soi Prompan address)
   //   were excluded from every therapist stat in 28x.135 but still live in the
@@ -497,9 +508,12 @@ const AdminBookingListPage: React.FC = () => {
 
   // ── counts per bucket ──────────────────────────────────────────────
   const counts = useMemo(() => {
-    const c: Record<TabKey, number> = { all: faceted.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0, test: 0 };
+    const c: Record<TabKey, number> = { all: faceted.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0, no_show: 0, test: 0 };
     for (const b of faceted) {
-      if (b.status in c) c[b.status as TabKey]++;
+      // 🆕 28x.113 — no-show variants (no_show / no-show / noshow) all count to
+      //   the one tab; else fall through to the exact-status buckets.
+      if (isNoShowStatus(b.status)) c.no_show++;
+      else if (b.status in c) c[b.status as TabKey]++;
       // 🆕 28x.137 — test is orthogonal to status: a test booking can be any
       //   status, so it's counted independently, not via b.status.
       if (isTestLocationBooking(b)) c.test++;
@@ -553,7 +567,11 @@ const AdminBookingListPage: React.FC = () => {
       // 🆕 28x.137 — the Test tab filters by test-address, ignoring status
       //   (a test booking may be pending/completed/cancelled). Every other tab
       //   filters by status as before.
-      const matchTab = tab === "all" ? true : tab === "test" ? isTestLocationBooking(b) : b.status === tab;
+      const matchTab =
+        tab === "all" ? true
+        : tab === "test" ? isTestLocationBooking(b)
+        : tab === "no_show" ? isNoShowStatus(b.status)
+        : b.status === tab;
       const matchQ   = !q || [nameOf(b), b.phone, b.therapistName, b.serviceName, b.address, b.locationName, b.id, b.createdByName, b.createdByEmail, b.createdByPhone]
         .join(" ").toLowerCase().includes(q);
       return matchTab && matchQ;
