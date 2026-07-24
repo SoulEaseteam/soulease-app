@@ -546,6 +546,16 @@ You'll have ALL context. No re-explanation needed.
 
 ### ⛔ Anti-patterns to NOT repeat (lessons learned)
 
+- **The /near-me taxi widget defaults to the BESTSELLER, not the cheapest
+  service (28x.111) — do not revert to a "from ฿1,200" floor.** Founder's
+  concern: showing the cheapest service (Thai ฿1,200) as the anchor trained
+  guests to expect the floor, so the ฿2,200 Gentleman's bestseller read as
+  expensive and menu revenue leaked. The widget now shows a service PICKER
+  and pre-selects the practitioner's most premium option (bestseller if she
+  offers it, else her dearest). The guest can still tap down. The chosen
+  serviceId is carried into the booking flow. If a future session is tempted
+  to "simplify" back to a single from-price, keep the picker + bestseller
+  default — it's a deliberate up-menu revenue choice, verified live.
 - **PromiseStrip was retired 28s148 — do not resurrect.** Original
   rule (28s99): closing reassurance belonged at the BOTTOM of HomePage,
   never the top, because SunRed traffic is pre-warmed (TG channel,
