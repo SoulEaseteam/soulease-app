@@ -28,6 +28,11 @@ functions/
 # file — gitignore can't un-ignore a child if the whole parent dir is excluded.
 scripts/*
 !scripts/prerender-routes.mjs
+# 🆕 Round 28x.108 — the blog data generator runs in `vercel-build` too
+#   (before vite build), so it must survive the upload alongside the prerender
+#   step. src/data/blogPosts.mjs (its committed output) already ships as part
+#   of src/, so this is only needed for the regen-on-build to work.
+!scripts/buildBlogData.mjs
 
 # Local-only env templates
 .env.local

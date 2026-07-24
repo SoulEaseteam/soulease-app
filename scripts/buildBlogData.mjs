@@ -26,6 +26,7 @@
 // ────────────────────────────────────────────────────────────────────────
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -239,6 +240,20 @@ function firstParagraph(body) {
     if (t && !/^(#|>|[-*]\s|\d+\.\s|\|)/.test(t)) return plain(t);
   }
   return "";
+}
+
+// The markdown drafts (SEO_Blog_Pack/) are marketing files, deliberately NOT
+// uploaded to Vercel (see .vercelignore). The generated src/data/blogPosts.mjs
+// and the sitemap block ARE committed, so a build with no source present is
+// fine — consume the committed artifacts and no-op. This is what runs on
+// Vercel; the real regeneration happens on the local `npm run build` before
+// deploy, where SEO_Blog_Pack is present.
+if (!existsSync(SRC_DIR)) {
+  console.log(
+    "buildBlogData: SEO_Blog_Pack not present (expected on Vercel) — " +
+      "using committed src/data/blogPosts.mjs. Skipping regen."
+  );
+  process.exit(0);
 }
 
 const files = (await readdir(SRC_DIR))
