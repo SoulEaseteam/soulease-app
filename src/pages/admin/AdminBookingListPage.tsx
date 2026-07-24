@@ -195,6 +195,8 @@ interface Booking {
   servicePrice?: number;
   discountAmount?: number;  // 🆕 28s258 — needed for the shared commission calc
   discountCode?: string;    // 🆕 28w.58 — promo code applied at booking (e.g. FREETAXI)
+  staffBonus?: number;      // 🆕 28x.114 — shop→therapist bonus on this job (settlement +)
+  staffDeduction?: number;  // 🆕 28x.114 — therapist penalty on this job (settlement −)
   discountLabel?: string;   // 🆕 28w.58 — human-readable promo label
   attributionSource?: string; // 🆕 28x.99t — which channel the guest came from
   taxiFee?: number;
@@ -1399,6 +1401,22 @@ const BookingCard: React.FC<{
                 </Typography>
               </Box>
             )}
+            {/* 🆕 28x.114 — staff bonus/deduction chip, so a per-job adjustment is
+                visible in the list without opening the editor. */}
+            {(b.staffBonus ?? 0) > 0 && (
+              <Box sx={{ display: "inline-flex", alignItems: "center", mt: 0.4, ml: 0.4, px: 0.75, py: "2px", borderRadius: 999, background: `${adminColor.green}18` }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, color: adminColor.green, lineHeight: 1 }}>
+                  โบนัส +฿{b.staffBonus}
+                </Typography>
+              </Box>
+            )}
+            {(b.staffDeduction ?? 0) > 0 && (
+              <Box sx={{ display: "inline-flex", alignItems: "center", mt: 0.4, ml: 0.4, px: 0.75, py: "2px", borderRadius: 999, background: `${adminColor.red}14` }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, color: adminColor.red, lineHeight: 1 }}>
+                  หัก −฿{b.staffDeduction}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           <Box sx={{ display: "flex", gap: 0.75, alignItems: "center" }}>
@@ -1759,6 +1777,8 @@ const DetailPanel: React.FC<{
       total: String(b.totalPrice ?? b.total ?? 0),
       discountCode: b.discountCode ?? "",
       attributionSource: b.attributionSource ?? "",
+      staffBonus: b.staffBonus ? String(b.staffBonus) : "",
+      staffDeduction: b.staffDeduction ? String(b.staffDeduction) : "",
     });
     setEditing(true);
   };
@@ -1779,6 +1799,9 @@ const DetailPanel: React.FC<{
     // 🆕 28x.99t — most bookings (admin-created) never captured this;
     //   lets the operator tag it after the fact, from memory.
     attributionSource: b.attributionSource ?? "",
+    // 🆕 28x.114 — per-job staff adjustments (feed the settlement engine).
+    staffBonus: b.staffBonus ? String(b.staffBonus) : "",
+    staffDeduction: b.staffDeduction ? String(b.staffDeduction) : "",
   });
 
   // 🆕 28s263 — changing Service or Duration re-fills Service price with the
@@ -1811,6 +1834,10 @@ const DetailPanel: React.FC<{
   // actually gets saved) is independent and freely editable.
   const editServicePrice = Number(editForm.servicePrice) || 0;
   const editTaxiFee      = Number(editForm.taxiFee) || 0;
+  // 🆕 28x.114 — staff bonus/deduction (never negative). These do NOT touch the
+  //   customer Total; they only move the therapist↔shop settlement.
+  const editStaffBonus     = Math.max(0, Math.round(Number(editForm.staffBonus) || 0));
+  const editStaffDeduction = Math.max(0, Math.round(Number(editForm.staffDeduction) || 0));
   const editSurcharge    = paymentSurcharge(editForm.payment, editServicePrice + editTaxiFee);
   // 🆕 28x.38 — validate the typed discount code against the menu amount
   //   (service, not taxi), same rules the customer flow enforces. Quiet
@@ -1926,6 +1953,9 @@ const DetailPanel: React.FC<{
         discountCode: editForm.discountCode.trim().toUpperCase(),
         discountAmount: editDiscountAmount,
         discountLabel: editDiscountAmount > 0 ? editDiscount.label : "",
+        // 🆕 28x.114 — per-job staff settlement adjustments (0 clears).
+        staffBonus: editStaffBonus,
+        staffDeduction: editStaffDeduction,
         // 🆕 28x.99t — lets the operator backfill/correct the channel from
         //   memory on bookings that never captured it automatically.
         attributionSource: editForm.attributionSource || null,
@@ -2291,6 +2321,42 @@ const DetailPanel: React.FC<{
                         ⚠️ เบอร์นี้เคยใช้โค้ด {editCodeTrim} แล้ว {priorCodeUses} ครั้ง
                       </Typography>
                     </Box>
+                  )}
+                </Box>
+
+                {/* 🆕 28x.114 — staff settlement adjustments for THIS job. These
+                    never change the customer's Total; they move only the
+                    therapist↔shop balance on the payslip/wallet. Bonus = shop
+                    gives her extra; Deduct = penalty she owes the shop. */}
+                <Box sx={{ mt: 1.25 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: adminColor.muted, mb: 0.75 }}>
+                    ปรับยอดพนักงาน · Staff adjustment
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      label="+ โบนัส · Bonus (฿)" size="small" fullWidth
+                      value={editForm.staffBonus}
+                      onChange={(e) => setEditForm((f) => ({ ...f, staffBonus: e.target.value.replace(/[^0-9]/g, "") }))}
+                      sx={editFieldSx}
+                      inputProps={{ inputMode: "numeric" }}
+                    />
+                    <TextField
+                      label="− หักเงิน · Deduct (฿)" size="small" fullWidth
+                      value={editForm.staffDeduction}
+                      onChange={(e) => setEditForm((f) => ({ ...f, staffDeduction: e.target.value.replace(/[^0-9]/g, "") }))}
+                      sx={editFieldSx}
+                      inputProps={{ inputMode: "numeric" }}
+                    />
+                  </Box>
+                  {(editStaffBonus > 0 || editStaffDeduction > 0) && (
+                    <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, mt: 0.6, color: adminColor.dim }}>
+                      {editStaffBonus > 0 && <Box component="span" sx={{ color: adminColor.green }}>โบนัส +{formatTHB(editStaffBonus)}</Box>}
+                      {editStaffBonus > 0 && editStaffDeduction > 0 && "  ·  "}
+                      {editStaffDeduction > 0 && <Box component="span" sx={{ color: adminColor.red }}>หัก −{formatTHB(editStaffDeduction)}</Box>}
+                      {"  → "}สุทธิต่อพนักงาน{" "}
+                      {editStaffBonus - editStaffDeduction >= 0 ? "+" : "−"}
+                      {formatTHB(Math.abs(editStaffBonus - editStaffDeduction))}
+                    </Typography>
                   )}
                 </Box>
 
