@@ -225,3 +225,129 @@ export function stampSplit(b: {
   const shopShare = Math.max(0, commissionBaseFor(b) - therapistShare);
   return { therapistShare, shopShare };
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.114 (founder: full staff wallet / payslip settlement) — the
+//   ONE engine that decides, per booking, who owes whom and how much. Every
+//   money surface (admin payslip, staff wallet) reads this so they can never
+//   disagree. Founder-confirmed model:
+//
+//   • CASH booking — the therapist collected the whole cash (service + taxi)
+//     from the guest. She keeps her share + the taxi; she OWES the shop the
+//     shop's share. Taxi cancels out (she collected it and keeps it), so the
+//     net is simply −shopShare (therapist owes shop).
+//   • TRANSFER booking (guest paid the shop directly) — the shop holds the
+//     money. The shop OWES the therapist her share + the taxi; the shop keeps
+//     its share (+ any payment service charge). Net = +(therapistShare + taxi).
+//   • NO-SHOW — no service, but the therapist travelled: the shop owes her the
+//     taxi comp (max ฿200 / actual). Net = +noShowComp.
+//   • Promo is absorbed by the SHOP (therapist keeps her full rate) — it's a
+//     line on the slip, never subtracted from the therapist.
+//   • staffBonus — shop gives it to the therapist → shop owes her (net +bonus).
+//   • staffDeduction — a penalty on the therapist → she owes the shop (net −).
+//
+//   SIGN CONVENTION: net > 0 ⇒ SHOP OWES THERAPIST (เงินโอนค้างรับ / ร้านค้าง
+//   จ่าย). net < 0 ⇒ THERAPIST OWES SHOP (ยอดโอนให้ร้าน). Sum net across a
+//   therapist's bookings for the period → her settlement balance.
+export interface SettlementInput {
+  status?: string | null;
+  serviceId?: string | null;
+  servicePrice?: number | null;
+  discountAmount?: number | null;
+  duration?: number | null;
+  therapistShare?: number | null;
+  shopShare?: number | null;
+  taxiFee?: number | null;
+  payment?: string | null;
+  paymentMethodId?: string | null;
+  /** shop → therapist, added to net (28x.114). */
+  staffBonus?: number | null;
+  /** therapist penalty, subtracted from net (28x.114). */
+  staffDeduction?: number | null;
+}
+
+export interface BookingSettlement {
+  /** > 0 shop owes therapist · < 0 therapist owes shop · 0 settled */
+  net: number;
+  therapistShare: number;
+  shopShare: number;
+  taxi: number;
+  noShowComp: number;
+  discount: number;
+  bonus: number;
+  deduction: number;
+  isCash: boolean;
+  /** true only for completed/paid service work (not no-show / cancelled) */
+  counted: boolean;
+  direction: "shop_owes" | "therapist_owes" | "settled";
+}
+
+export function bookingSettlement(b: SettlementInput): BookingSettlement {
+  const bonus = Math.max(0, Math.round(b.staffBonus ?? 0));
+  const deduction = Math.max(0, Math.round(b.staffDeduction ?? 0));
+  const taxi = Math.max(0, Math.round(b.taxiFee ?? 0));
+  const discount = Math.max(0, Math.round(b.discountAmount ?? 0));
+  const isCash = isCashPayment(b.payment, b.paymentMethodId);
+  const dir = (n: number): BookingSettlement["direction"] =>
+    n > 0 ? "shop_owes" : n < 0 ? "therapist_owes" : "settled";
+
+  // No-show first — it's in PAYROLL_EXCLUDED but earns a taxi comp, so it must
+  // be handled before the generic excluded branch below.
+  if (isNoShow(b.status)) {
+    const comp = noShowCompFor(b);
+    const net = comp + bonus - deduction;
+    return { net, therapistShare: 0, shopShare: 0, taxi, noShowComp: comp, discount: 0, bonus, deduction, isCash, counted: false, direction: dir(net) };
+  }
+
+  // Cancelled / refunded / failed / rejected — no service money moves, but a
+  // manual bonus/deduction stamped on the booking still settles.
+  if (isPayrollExcluded(b.status)) {
+    const net = bonus - deduction;
+    return { net, therapistShare: 0, shopShare: 0, taxi: 0, noShowComp: 0, discount: 0, bonus, deduction, isCash, counted: false, direction: dir(net) };
+  }
+
+  // Completed / paid / in-progress — real service work.
+  const therapistShare = therapistPayoutFor(b);
+  const shopShare = shopShareFor(b);
+  const serviceNet = isCash ? -shopShare : therapistShare + taxi;
+  const net = serviceNet + bonus - deduction;
+  return { net, therapistShare, shopShare, taxi, noShowComp: 0, discount, bonus, deduction, isCash, counted: true, direction: dir(net) };
+}
+
+/** Aggregate settlement across a therapist's bookings (28x.114). Returns the
+ *  running totals a payslip / wallet renders. `balance` > 0 ⇒ shop owes her. */
+export function settlementTotals(bookings: SettlementInput[]): {
+  balance: number;
+  jobs: number;
+  therapistEarned: number;   // Σ therapistShare on counted jobs (her gross)
+  shopShareTotal: number;    // Σ shopShare on counted jobs
+  cashShopShare: number;     // shop share she collected in cash → owes shop
+  transferOwedToHer: number; // share+taxi the shop holds on transfer jobs
+  noShowComp: number;
+  bonus: number;
+  deduction: number;
+  discount: number;
+  taxiTotal: number;
+} {
+  const t = {
+    balance: 0, jobs: 0, therapistEarned: 0, shopShareTotal: 0, cashShopShare: 0,
+    transferOwedToHer: 0, noShowComp: 0, bonus: 0, deduction: 0, discount: 0, taxiTotal: 0,
+  };
+  for (const b of bookings) {
+    const s = bookingSettlement(b);
+    t.balance += s.net;
+    t.noShowComp += s.noShowComp;
+    t.bonus += s.bonus;
+    t.deduction += s.deduction;
+    t.discount += s.discount;
+    if (s.counted) {
+      t.jobs++;
+      t.therapistEarned += s.therapistShare;
+      t.shopShareTotal += s.shopShare;
+      t.taxiTotal += s.taxi;
+      if (s.isCash) t.cashShopShare += s.shopShare;
+      else t.transferOwedToHer += s.therapistShare + s.taxi;
+    }
+  }
+  return t;
+}
