@@ -21,7 +21,7 @@ import {
 import {
   SectionCard, LocationPicker, FeaturesEditor, LanguagesEditor, ServicesEditor,
   CredentialsEditor, BiosEditor, GalleryEditor, TogglePill, AvatarUploader, fieldSx, selectMenuProps,
-} from "./therapistFormKit";
+} from "@/components/admin/therapistFormKit";
 
 const badgeOptions = ["", "VIP", "HOT", "NEW"] as const;
 

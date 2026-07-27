@@ -55,7 +55,7 @@ import {
   SectionCard, LocationPicker, FeaturesEditor, LanguagesEditor, ServicesEditor,
   CredentialsEditor, BiosEditor, GalleryEditor, AvatarUploader, fieldSx, selectMenuProps,
   FEATURE_ROWS, LANG_LABEL, LANG_LEVEL_TH, BIO_LANGS,
-} from "./therapistFormKit";
+} from "@/components/admin/therapistFormKit";
 
 type Avail = "available" | "bookable" | "resting" | "holiday";
 type StatusOverride = "Auto" | "available" | "bookable" | "resting";

@@ -42,7 +42,7 @@ import KeywordLanding from "@/components/common/KeywordLanding";
 //   imports framer-motion (~100 kB) and was eagerly loaded on every
 //   page. Now lazy-loaded so the homepage paint doesn't pull motion in.
 const AdminFloatingChat = React.lazy(
-  () => import("@/components/AdminFloatingChat")
+  () => import("@/components/admin/AdminFloatingChat")
 );
 
 // Route Guard

@@ -1,4 +1,4 @@
-// src/pages/admin/therapistFormKit.tsx
+// src/components/admin/therapistFormKit.tsx
 //
 // 🆕 Round 28s282 — shared building blocks for the two therapist form
 // surfaces (AdminTherapistDetailPage edit mode + AddTherapistPage), so the

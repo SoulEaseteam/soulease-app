@@ -46,7 +46,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { DEFAULT_TRAVEL_BANDS, travelBudgetForKm, type TravelBand } from "@/utils/taxiFare";
 import { Clock, BellRinging, CreditCard, Wallet, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
 import { adminColor, adminFont } from "@/theme/adminTheme";
-import { SectionCard, fieldSx } from "./therapistFormKit";
+import { SectionCard, fieldSx } from "@/components/admin/therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
 
 const SANS = adminFont.sans;

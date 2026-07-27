@@ -1,4 +1,4 @@
-// src/components/AdminFloatingChat.tsx
+// src/components/admin/AdminFloatingChat.tsx
 //
 // 🎨 Round 28l (founder 2026-05-02) — full visual refresh to match the
 // rest of the site's warm-cream + red→coral identity.

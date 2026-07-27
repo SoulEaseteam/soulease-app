@@ -10,12 +10,12 @@ import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { getBadgeForTherapist, pickTopRatedTherapistId } from "@/utils/getTherapistBadge";
 import { haversineKm } from "@/utils/taxiFare";
 
-import TherapistProfileCard from "@/components/TherapistProfileCard";
+import TherapistProfileCard from "@/components/therapist/TherapistProfileCard";
 // 🆕 Round 28s128 — Clean single-column list card for the home grid.
 //   Replaces the 2-column TherapistProfileCard layout per founder
 //   feedback ("หน้าเว็บรกมาก"). Old card kept for other surfaces.
-import TherapistMinimalCard from "@/components/TherapistMinimalCard";
-import TherapistSearchBar from "@/components/TherapistSearchBar";
+import TherapistMinimalCard from "@/components/therapist/TherapistMinimalCard";
+import TherapistSearchBar from "@/components/therapist/TherapistSearchBar";
 import MokoDiscoveryHeader from "@/components/home/MokoDiscoveryHeader";
 import HomeMapBrowse from "@/components/home/HomeMapBrowse";
 import { matchesQuery } from "@/utils/therapistSearch";

@@ -1,4 +1,4 @@
-// src/components/TherapistSearchBar.tsx
+// src/components/therapist/TherapistSearchBar.tsx
 //
 // 🔍 Glass-pill search bar — verbatim port of `02-mockups/sunred-therapists2.html`
 // (`.search-bar` block). Drop above a TherapistProfileCard grid to filter

@@ -1,4 +1,4 @@
-// src/pages/admin/SplitTableEditor.tsx
+// src/components/admin/SplitTableEditor.tsx
 //
 // 🆕 Round 28w.39 (founder 2026-07-14 "ตารางส่วนแบ่ง เอาไว้หน้ารีพอต") —
 //   admin-only editor for the per-(service, duration) therapist split.

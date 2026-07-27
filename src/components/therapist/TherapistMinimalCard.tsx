@@ -1,4 +1,4 @@
-// src/components/TherapistMinimalCard.tsx
+// src/components/therapist/TherapistMinimalCard.tsx
 //
 // 🆕 Round 28s128 — Clean minimal card for the home therapist list.
 //   Inspired by the founder's reference (medical/cardiologist app style):

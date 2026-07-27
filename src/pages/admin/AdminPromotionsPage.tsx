@@ -57,7 +57,7 @@ import {
 import { toast } from "react-toastify";
 import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, PencilSimple, ArrowCounterClockwise, Package, Calendar, Printer, Sliders, ClockCounterClockwise, Flask, ShieldCheck, TrendUp, MagnifyingGlass, Gift } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
-import { SectionCard, fieldSx, downscaleImage } from "./therapistFormKit";
+import { SectionCard, fieldSx, downscaleImage } from "@/components/admin/therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
 import type { MassageService } from "@/data/services";
 import services from "@/data/services";

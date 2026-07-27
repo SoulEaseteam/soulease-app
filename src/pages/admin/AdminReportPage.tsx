@@ -44,7 +44,7 @@ import {
   isNoShow, noShowCompFor,
 } from "@/utils/commission";
 // 🆕 28w.39 — admin split-table editor (therapist/shop per service × duration).
-import SplitTableEditor from "./SplitTableEditor";
+import SplitTableEditor from "@/components/admin/SplitTableEditor";
 
 const SANS  = adminFont.sans;
 const SERIF = adminFont.serif;
