@@ -45,17 +45,17 @@ import {
 } from "@/utils/membership";
 import { countryFromPhone, normPhone, type PhoneCountry } from "@/utils/phoneCountry";
 import { logAdminAction } from "@/utils/auditLog";
+import type { User as UserBase, UserRole } from "@/types/user";
 
 const SANS = adminFont.sans;
 
-type Role = "admin" | "therapist" | "user";
+// Shared field list lives in @/types/user (reconciled 2026-07-27
+// restructure). `Role` kept as a local alias since it's referenced
+// elsewhere in this file beyond the User interface itself.
+type Role = UserRole;
 
-interface User {
+interface User extends Omit<UserBase, "id"> {
   id: string;
-  name?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  role?: Role | null;
 }
 
 // 🆕 Round 28s286 — a compact per-booking row kept on each guest so the

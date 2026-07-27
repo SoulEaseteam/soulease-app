@@ -16,17 +16,16 @@ import { db, auth } from "@/lib/firebase";
 import { Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { adminResetCustomerPassword } from "@/utils/adminResetPassword";
+import type { User as UserBase } from "@/types/user";
 
-interface User {
+// Shared field list lives in @/types/user (reconciled 2026-07-27
+// restructure). This page always synthesizes `id` before use and
+// treats `email`/`role` as guaranteed non-null, unlike the looser
+// canonical shape shared with AdminUsersPage.
+interface User extends Omit<UserBase, "id" | "email" | "role"> {
   id: string;
   email: string;
   role: 'user' | 'therapist' | 'admin';
-  createdAt?: Timestamp;
-  isActive?: boolean;
-  image?: string;
-  name?: string;
-  phone?: string;
-  username?: string;
 }
 
 const AdminUserDetailPage: React.FC = () => {

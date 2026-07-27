@@ -37,16 +37,14 @@ import {
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/layouts/BottomNavGlass";
 import type { Therapist, Location as TherapistLocation } from "@/types/therapist";
+import type { Booking } from "@/types/booking";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the 430 cap.
 import { responsiveShell } from "@/theme/breakpoints";
 
 const containerStyle = { width: "100%", height: "100%" };
 const defaultCenter = { lat: 13.736717, lng: 100.523186 };
 
-interface BookingDoc {
-  location?: TherapistLocation;
-  status?: string;
-}
+type BookingDoc = Pick<Booking, "location" | "status">;
 
 const TherapistLocationPage: React.FC = () => {
   const [therapistId, setTherapistId] = useState<string | null>(null);

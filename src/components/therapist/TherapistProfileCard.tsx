@@ -22,7 +22,6 @@ import {
   onSnapshot,
   query,
   where,
-  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -47,17 +46,11 @@ import staticServices from "@/data/services";
 import type { MassageService } from "@/data/services";
 import { brand, fonts, accents } from "@/theme/theme";
 import type { LiveLocation } from "@/hooks/useUserLocation";
+import type { Booking } from "@/types/booking";
 
 /** ---------------- Utility ---------------- */
 
-interface BookingDoc {
-  startAt?: Timestamp | Date | string | null;
-  endAt?: Timestamp | Date | string | null;
-  start?: Timestamp | Date | string | null;
-  end?: Timestamp | Date | string | null;
-  status?: string;
-  reviewText?: string;
-}
+type BookingDoc = Pick<Booking, "startAt" | "endAt" | "start" | "end" | "status" | "reviewText">;
 
 function toDateSafe(v: unknown): Date | null {
   try {

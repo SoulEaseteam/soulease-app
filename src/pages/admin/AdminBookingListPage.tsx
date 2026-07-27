@@ -111,6 +111,7 @@ import { paymentSurcharge } from "@/utils/paymentSurcharge";
 import { membershipFor, applyMembershipConfig, MEMBERSHIP_COLORS, type MembershipThresholds, type MembershipResult } from "@/utils/membership";
 import { bookingAuthorLabel } from "@/utils/bookingAuthor";
 import { normPhone } from "@/utils/phoneCountry";
+import type { Booking as BookingBase } from "@/types/booking";
 import {
   MagnifyingGlass,
   CheckCircle,
@@ -159,52 +160,20 @@ const FEED_LIMIT = 500;
 const CARD_FRAME_BG = "#C5D8DF";
 
 // ── types ─────────────────────────────────────────────────────────────
-interface Booking {
+// Shared field list + comments now live in @/types/booking (reconciled
+// 2026-07-27 restructure). This page's stricter local requirements
+// (id/therapistName/serviceName/createdAt/status always present) are
+// layered back on via Omit + intersection, since only this page's own
+// admin-list fetch normalizes them that way.
+interface Booking extends Omit<BookingBase,
+  "id" | "therapistName" | "serviceName" | "startAt" | "createdAt" | "status"
+> {
   id: string;
-  // 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") — who created this reservation.
-  //   Absent on anything booked before this round; bookingAuthorLabel() says
-  //   "แอดมิน (ไม่ระบุ)" rather than inventing an author for it.
-  createdBy?: string;
-  createdByEmail?: string;
-  createdByPhone?: string;
-  createdByName?: string;
-  userName?: string;
-  // 🆕 Round 28s230 — customer flow writes `contactName`, admin-add writes
-  //   `customerName`; `nameOf()` normalises all three.
-  contactName?: string;
-  customerName?: string;
-  phone?: string;
-  holdState?: string;
-  needsAdminReview?: boolean;
-  reviewReason?: string;
-  userId?: string;
-  therapistId?: string;
   therapistName: string;
-  serviceId?: string;
   serviceName: string;
-  duration?: number;
-  date?: string;
-  time?: string;
   startAt?: Timestamp;
-  locationName?: string;
-  address?: string;
-  placeDetail?: string;
-  servicePrice?: number;
-  discountAmount?: number;  // 🆕 28s258 — needed for the shared commission calc
-  discountCode?: string;    // 🆕 28w.58 — promo code applied at booking (e.g. FREETAXI)
-  discountLabel?: string;   // 🆕 28w.58 — human-readable promo label
-  taxiFee?: number;
-  paymentFee?: number;      // 🆕 28s260 — WeChat/Alipay surcharge, recomputed if payment method is edited
-  totalPrice?: number;
-  total?: number;
   createdAt: Timestamp;
   status: string;
-  payment?: string;         // 🆕 28s260 — payment METHOD (cash/transfer/…), distinct from paid/paymentStatus below
-  paid?: boolean;
-  paymentStatus?: string;   // 🆕 28s252 — customer-flow field, now kept in sync
-  cancelReason?: string;    // 🆕 28s252 — captured on cancel
-  adminNote?: string;
-  reviewed?: boolean;
 }
 
 type TabKey = "all" | "pending" | "confirmed" | "completed" | "cancelled";

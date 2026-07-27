@@ -57,6 +57,7 @@ import {
   findTherapistOrFetch,
 } from "@/utils/therapistLookup";
 import type { Therapist } from "@/types/therapist";
+import type { Booking as BookingBase, BookingStatus } from "@/types/booking";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
@@ -70,43 +71,18 @@ const AMBER_TEXT = "#C97A1F";
 const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
 
 // ── types ────────────────────────────────────────────────────────────
-type BookingStatus =
-  | "pending"
-  | "confirmed"
-  | "paid"
-  | "in_progress"
-  | "in_session"
-  | "completed"
-  | "done"
-  | "cancelled"
-  | "canceled"
-  | "refunded"
-  | "no_show"
-  | "rejected"
-  | "failed"
-  | "upcoming";
+// BookingStatus and the shared field list now live in @/types/booking
+// (reconciled 2026-07-27 restructure — this page's stricter local
+// requirements are layered back on top via Omit + intersection below,
+// since this page normalizes `id`/`therapistId`/`status` before use in
+// a way the raw canonical shape can't guarantee for every consumer).
 type TabKey = "upcoming" | "completed" | "cancelled";
 
-interface Booking {
+interface Booking extends Omit<BookingBase, "id" | "therapistId" | "startAt" | "status"> {
   id: string;
   therapistId: string;
-  therapistName?: string;
-  serviceName?: string;
-  serviceId?: string;
-  duration?: number;
-  date?: string;
-  time?: string;
   startAt?: Timestamp;
-  locationName?: string;
-  address?: string;
-  servicePrice?: number;
-  taxiFee?: number;
-  totalPrice?: number;
-  total?: number;
   status: BookingStatus;
-  reviewed?: boolean;
-  createdAt?: Timestamp;
-  userId?: string;
 }
 
 // 🆕 28w.1 — every status the app actually writes to `bookings` is
