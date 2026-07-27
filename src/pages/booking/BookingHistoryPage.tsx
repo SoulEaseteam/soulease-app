@@ -1,4 +1,4 @@
-// src/pages/BookingHistoryPage.tsx
+// src/pages/booking/BookingHistoryPage.tsx
 //
 // 🆕 Round 28c17 (founder 2026-05-06) — full SunRed theme redesign.
 //   Dark hero header + x-transform sliding pill tabs (3 buckets) +

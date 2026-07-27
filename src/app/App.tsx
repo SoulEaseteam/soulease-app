@@ -105,7 +105,7 @@ const NotificationsPage = React.lazy(
   () => import("@/pages/NotificationsPage")
 );
 const BookingHistoryPage = React.lazy(
-  () => import("@/pages/BookingHistoryPage")
+  () => import("@/pages/booking/BookingHistoryPage")
 );
 
 const ReviewPage = React.lazy(() => import("@/pages/ReviewPage"));
