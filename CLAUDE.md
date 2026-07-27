@@ -142,9 +142,11 @@ View corrected the strategic framing during this session:
 - `src/data/therapists.ts` — therapist roster + servicesAvailable
 - `src/utils/servicePricing.ts` — pricing model
 - `src/utils/serviceCatalog.ts` — legacy slug → SKU resolver
-- `src/hooks/useServiceUsageStats.ts` — Firestore booking aggregator
-  - `servedById` — completed/done count (used by public chip)
-  - `customersById` — unique guest dedup (kept but not currently used)
+- `src/hooks/useTherapistBookingStats.ts` — Firestore booking aggregator
+  (per-therapist, not per-service — `useServiceUsageStats.ts` referenced
+  here previously never existed in the repo; corrected 2026-07-27)
+  - `totalCompleted` — completed/done count (used by public chip)
+  - `uniqueCustomers` / `repeatCustomers` — guest dedup + repeat-rate
 - `src/components/home/HowItWorks.tsx` — full "How to book" component
   (3-step ritual + reservation pillars + payment CTA + arrival window
   + concierge 4-channel grid + closing note). Self-contained.

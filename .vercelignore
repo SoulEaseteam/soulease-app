@@ -56,8 +56,7 @@ Expansion/
 .claude/
 
 # Markdown + one-off planning/handoff notes (co-founder memory + strategy).
-# None are read at build or runtime.
+# None are read at build or runtime. (DEPLOYMENT_STATUS.md/HANDOFF.md/
+# ROADMAP.md moved under docs/archive/ in the 2026-07-27 restructure —
+# already covered by the blanket *.md rule below, explicit lines dropped.)
 *.md
-DEPLOYMENT_STATUS.md
-HANDOFF.md
-ROADMAP.md
