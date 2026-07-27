@@ -169,6 +169,27 @@ View corrected the strategic framing during this session:
   - EXCLUDED: `cancelled`, `canceled`, `refunded`, `failed`,
     `rejected`, `no_show`, `pending`
 
+### Shared types + opt-in Firestore access layer (added 2026-07-27)
+- `src/types/booking.ts` / `src/types/user.ts` — canonical `Booking`/
+  `User` field lists, reconciled from what used to be 6 and 2
+  independently-drifting local interfaces. All fields optional/nullable
+  (matches the real Firestore doc, which several different code paths
+  write different subsets of). A file with its own stricter guarantee
+  (e.g. always synthesizing `id`) narrows locally via `Pick`/`Omit` —
+  see BookingHistoryPage.tsx or AdminBookingListPage.tsx for the
+  pattern. The Review-type family (`Review`/`ReviewLite`/`ReviewRow`/
+  `ReviewLike`/`BookingReviewDoc` across 9 files) was deliberately
+  **not** unified — those look like intentionally different per-view
+  shapes, not accidental duplication.
+- `src/lib/firestore/{bookings,therapists,adminSettings}.ts` — additive
+  typed collection refs + common query helpers. **Not yet used anywhere**
+  — the 60+ existing call sites that build `collection(db, "bookings")`
+  etc. inline weren't migrated (unrealistic to verify safely in one
+  pass). Convention going forward: when you're already touching a file
+  for other work and it queries one of these 3 collections, migrate
+  that file's calls to the shared helpers while you're in there. Don't
+  do a dedicated migration sweep.
+
 ---
 
 ## 5. Customer flow (real)
