@@ -1585,26 +1585,30 @@ const AdminPromotionsPage: React.FC = () => {
         // useCORS so it lands on the canvas instead of being blocked.
         useCORS: true,
       });
-      canvas.toBlob(async (blob) => {
-        if (!blob) { toast.error("แปลงรูปไม่สำเร็จ"); return; }
-        try {
-          // Clipboard image write requires the ClipboardItem API (recent Safari/Chrome).
-          const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-          if (CI && navigator.clipboard && "write" in navigator.clipboard) {
-            await navigator.clipboard.write([new CI({ "image/png": blob })]);
-            toast.success("คัดลอกรูปการ์ดแล้ว");
-          } else {
-            // Fallback: download it.
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `sunred-promo-${printCode}.png`;
-            a.click();
-            toast.success("ดาวน์โหลดรูปการ์ดแล้ว");
+      // toBlob's callback must return void, so the async work runs in a
+      // voided IIFE — its body is fully try/caught, nothing can escape.
+      canvas.toBlob((blob) => {
+        void (async () => {
+          if (!blob) { toast.error("แปลงรูปไม่สำเร็จ"); return; }
+          try {
+            // Clipboard image write requires the ClipboardItem API (recent Safari/Chrome).
+            const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+            if (CI && navigator.clipboard && "write" in navigator.clipboard) {
+              await navigator.clipboard.write([new CI({ "image/png": blob })]);
+              toast.success("คัดลอกรูปการ์ดแล้ว");
+            } else {
+              // Fallback: download it.
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(blob);
+              a.download = `sunred-promo-${printCode}.png`;
+              a.click();
+              toast.success("ดาวน์โหลดรูปการ์ดแล้ว");
+            }
+          } catch (e) {
+            console.error("[promotions] clipboard copy failed", e);
+            toast.error("คัดลอกไม่สำเร็จ (QR อาจถูก CORS block)");
           }
-        } catch (e) {
-          console.error("[promotions] clipboard copy failed", e);
-          toast.error("คัดลอกไม่สำเร็จ (QR อาจถูก CORS block)");
-        }
+        })();
       }, "image/png");
     } catch (err) {
       console.error("[promotions] html2canvas failed", err);

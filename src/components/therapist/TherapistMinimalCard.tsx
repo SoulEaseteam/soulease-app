@@ -103,7 +103,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
   //   can read the practitioner's bio + gallery and request a future
   //   reservation via concierge.
   const handleCardTap = () => {
-    navigate(`/therapists/${therapist.id}`);
+    void navigate(`/therapists/${therapist.id}`);
   };
 
   const handleBookTap = (e: React.MouseEvent) => {
@@ -112,7 +112,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
     if (onBook) onBook(therapist);
     // 🆕 28s343 — Book Now lands on the detail page's Services tab (founder
     //   "กด book now ต้องไปที่แท็บ Services") so the guest sees the picker.
-    else navigate(`/therapists/${therapist.id}#services`);
+    else void navigate(`/therapists/${therapist.id}#services`);
   };
 
   const status = computedStatus ?? "bookable";
@@ -493,7 +493,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 //   scrolls into view; when she doesn't, the section
                 //   still renders an empty-state card so guests
                 //   understand there just isn't more to show yet.
-                navigate(`/therapists/${therapist.id}#gallery`);
+                void navigate(`/therapists/${therapist.id}#gallery`);
               }}
               aria-label={`Photos of ${therapist.name}`}
               sx={{

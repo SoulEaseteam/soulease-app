@@ -50,22 +50,22 @@ const HomeFooterV2: React.FC = () => {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
       // Not on home page — navigate home then scroll
-      navigate("/");
+      void navigate("/");
     }
   };
 
   const menuLinks: FooterLink[] = [
-    { label: t("footer.home", "Home"), onClick: () => navigate("/") },
-    { label: t("footer.services", "Services"), onClick: () => navigate("/services") },
+    { label: t("footer.home", "Home"), onClick: () => void navigate("/") },
+    { label: t("footer.services", "Services"), onClick: () => void navigate("/services") },
     { label: t("footer.practitioners", "Practitioners"), onClick: scrollToTherapistGrid },
-    { label: t("footer.nearMe", "Near me"), onClick: () => navigate("/near-me") },
-    { label: t("footer.pricing", "Pricing"), onClick: () => navigate("/pricing") },
+    { label: t("footer.nearMe", "Near me"), onClick: () => void navigate("/near-me") },
+    { label: t("footer.pricing", "Pricing"), onClick: () => void navigate("/pricing") },
   ];
 
   const helpLinks: FooterLink[] = [
-    { label: t("footer.howToBook", "How to book"), onClick: () => navigate("/services?tab=how") },
-    { label: t("footer.payment", "Payment"), onClick: () => navigate("/services?tab=how") },
-    { label: t("footer.faq", "FAQ"), onClick: () => navigate("/services?tab=how") },
+    { label: t("footer.howToBook", "How to book"), onClick: () => void navigate("/services?tab=how") },
+    { label: t("footer.payment", "Payment"), onClick: () => void navigate("/services?tab=how") },
+    { label: t("footer.faq", "FAQ"), onClick: () => void navigate("/services?tab=how") },
     {
       label: t("footer.contact", "Contact us"),
       href: CONCIERGE.whatsappUrl,

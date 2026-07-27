@@ -105,7 +105,7 @@ function detailLine(detail?: Record<string, unknown>): string {
   if (!detail) return "";
   const parts: string[] = [];
   if (detail.bookingId) parts.push(`booking ${String(detail.bookingId).slice(0, 8)}`);
-  if (detail.from && detail.to) parts.push(`${detail.from} → ${detail.to}`);
+  if (detail.from && detail.to) parts.push(`${String(detail.from)} → ${String(detail.to)}`);
   if (detail.therapistName) parts.push(String(detail.therapistName));
   if (detail.phone) parts.push(String(detail.phone));
   if (detail.reason) parts.push(String(detail.reason));

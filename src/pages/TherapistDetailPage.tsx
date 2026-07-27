@@ -655,7 +655,7 @@ const TherapistDetailPage: React.FC = () => {
   // 🆕 28s387 — record an anonymous profile view (deduped per browser).
   //   Best-effort; never blocks render. Fires once per id.
   useEffect(() => {
-    recordTherapistView(id);
+    void recordTherapistView(id);
   }, [id]);
 
   useEffect(() => {

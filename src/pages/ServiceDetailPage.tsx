@@ -1041,7 +1041,7 @@ const ServiceDetailPage: React.FC = () => {
                       component="button"
                       onClick={() => {
                         window.scrollTo({ top: 0 });
-                        navigate(`/services/${svc.id}`);
+                        void navigate(`/services/${svc.id}`);
                       }}
                       aria-label={t("serviceDetail.detailsAria", "Details for {{name}}", {
                         name: svc.name,

@@ -327,12 +327,16 @@ const BookingFlowPage: React.FC = () => {
   const [forecast, setForecast] = useState<RainForecast | null>(null);
   useEffect(() => {
     let cancelled = false;
-    getRainStatus().then((status) => {
-      if (!cancelled) setRainStatus(status);
-    });
-    getRainForecast().then((fc) => {
-      if (!cancelled) setForecast(fc);
-    });
+    getRainStatus()
+      .then((status) => {
+        if (!cancelled) setRainStatus(status);
+      })
+      .catch((err) => console.warn("[weather] rain status failed:", err));
+    getRainForecast()
+      .then((fc) => {
+        if (!cancelled) setForecast(fc);
+      })
+      .catch((err) => console.warn("[weather] rain forecast failed:", err));
     return () => {
       cancelled = true;
     };

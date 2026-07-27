@@ -52,7 +52,7 @@ const QuickNavRow: React.FC = () => {
       Icon: FlowerLotus,
       // 🆕 28w.4 — founder: "Massage เปลี่ยนแค่ชื่อ Our Services".
       labelEn: t("home.quickNav.massage", "Our Services"),
-      onTap: () => navigate("/services"),
+      onTap: () => void navigate("/services"),
     },
     {
       key: "promos",
@@ -60,7 +60,7 @@ const QuickNavRow: React.FC = () => {
       // 🆕 28w.4 — was "Therapists" (scroll to grid); founder: repurpose
       //   to the new Promotions & News page.
       labelEn: t("home.quickNav.promos", "Promotions"),
-      onTap: () => navigate("/promotions"),
+      onTap: () => void navigate("/promotions"),
     },
     {
       key: "locations",
@@ -68,13 +68,13 @@ const QuickNavRow: React.FC = () => {
       // 🆕 28s335 — "Locations" → "Near Me"; routes to the new /near-me
       //   page that hosts the "OR BROWSE BY LOCATION" map (moved off home).
       labelEn: t("home.quickNav.nearme", "Near Me"),
-      onTap: () => navigate("/near-me"),
+      onTap: () => void navigate("/near-me"),
     },
     {
       key: "pricing",
       Icon: Tag,
       labelEn: t("home.quickNav.pricing", "Pricing"),
-      onTap: () => navigate("/pricing"),
+      onTap: () => void navigate("/pricing"),
       highlight: true, // 🎉 anniversary — new prices live
     },
   ];
