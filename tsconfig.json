@@ -27,7 +27,6 @@
       "@pages/*": ["src/pages/*"],
       "@providers/*": ["src/providers/*"],
       "@layouts/*": ["src/components/layouts/*"],
-      "@routes/*": ["src/routes/*"],
       "@hooks/*": ["src/hooks/*"],
       "@utils/*": ["src/utils/*"],
       "@lib/*": ["src/lib/*"],

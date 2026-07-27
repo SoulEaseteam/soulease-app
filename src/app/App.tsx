@@ -46,7 +46,7 @@ const AdminFloatingChat = React.lazy(
 );
 
 // Route Guard
-import PrivateRoute from "@/routes/PrivateRoute";
+import PrivateRoute from "@/app/PrivateRoute";
 
 // Layouts
 import MainLayout from "@/components/layouts/MainLayout";

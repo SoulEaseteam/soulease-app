@@ -1,5 +1,5 @@
 // ===============================================
-// src/routes/PrivateRoute.tsx
+// src/app/PrivateRoute.tsx
 // ===============================================
 
 import React from "react";
