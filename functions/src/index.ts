@@ -1100,9 +1100,10 @@ export const telegramWebhook = onRequest(
 // ─────────────────────────────────────────────────────────────
 // 🆕 Round 28s115 — Telegram channel-posting bot (@SunRedPostBot).
 //   Lives in src/telegram-post-bot/ to keep its surface separate
-//   from the booking-notification bot above. Re-exports 2 scheduled
-//   Functions (Mon spotlight + Fri weekend) and 1 admin-only
-//   callable (postToChannelManual).
+//   from the booking-notification bot above. Re-exports 3 scheduled
+//   Functions — brand promo cron jobs at evening/prime/late BKK time
+//   (28s224 replaced the original Mon-spotlight/Fri-weekend design
+//   with these) — and 1 admin-only callable (postToChannelManual).
 //
 //   Required setup BEFORE first deploy:
 //     1. firebase functions:secrets:set TELEGRAM_POST_BOT_TOKEN
@@ -1112,11 +1113,10 @@ export const telegramWebhook = onRequest(
 //     3. Verify the channel handle constant in
 //        src/telegram-post-bot/client.ts matches the live channel.
 //
-//   Deploy: firebase deploy --only functions:scheduledChannelSpotlight,
-//   functions:scheduledChannelWeekend,functions:postToChannelManual
+//   Deploy: firebase deploy --only functions:scheduledChannelEvening,
+//   functions:scheduledChannelPrime,functions:scheduledChannelLate,
+//   functions:postToChannelManual
 // ─────────────────────────────────────────────────────────────
-// 🆕 Round 28s224 — replaced Spotlight/Weekend with 3 brand promo
-//   cron jobs (evening 18:00 · prime 22:00 · late 01:00 BKK).
 export {
   scheduledChannelEvening,
   scheduledChannelPrime,
