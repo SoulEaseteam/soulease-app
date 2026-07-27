@@ -388,10 +388,28 @@ service cloud.firestore {
     // scheduled function reads docs >15 min stale and pings admin.
     // Public create + self-update so guest carts work (no auth at
     // checkout-fill stage). Admin reads/lists for follow-up.
+    //
+    // 🆕 2026-07-27 restructure (security fix) — `allow update: if true`
+    //   let ANY client rewrite ANY field of ANY existing cart doc, no
+    //   ownership or field check at all. Tightened to the exact field
+    //   set src/hooks/useAbandonedCartTracker.ts actually writes (the
+    //   debounced CartSnapshot fields + status/lastActivityAt/updatedAt/
+    //   createdAt from the tracker, status/confirmedAt from
+    //   markCartConfirmed()), plus a therapistId pin so a client can't
+    //   repoint an existing cart to a different therapist mid-flight.
+    //   `create` stays open — it can only add new docs, not corrupt an
+    //   existing lead, so the severity there is much lower.
     match /abandoned_bookings/{cartId} {
       allow read: if isAdmin();
       allow create: if true;
-      allow update: if true; // browser bumps lastActivityAt as user types
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly([
+                         'therapistId', 'therapistName', 'serviceName', 'serviceId',
+                         'duration', 'date', 'time', 'contactName', 'phone', 'language',
+                         'locationName', 'status', 'lastActivityAt', 'updatedAt',
+                         'createdAt', 'confirmedAt'
+                       ])
+                    && request.resource.data.therapistId == resource.data.therapistId;
       allow delete: if isAdmin();
     }
 
