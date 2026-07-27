@@ -11,7 +11,7 @@ import { Box, Typography, TextField, MenuItem, IconButton, Button, Avatar } from
 import { Plus, Trash, MagnifyingGlass, UploadSimple, CircleNotch, Camera } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { adminColor, adminFont, adminFigureSx, adminFieldSx } from "@/theme/adminTheme";
-import { useGoogleMaps } from "@/context/GoogleMapsContext";
+import { useGoogleMaps } from "@/providers/GoogleMapsContext";
 import { app } from "@/lib/firebase";
 import services from "@/data/services";
 

@@ -114,7 +114,7 @@ import {
   estimateEtaMin,
   type RouteResult,
 } from "@/utils/directionsApi";
-import { useGoogleMaps } from "@/context/GoogleMapsContext";
+import { useGoogleMaps } from "@/providers/GoogleMapsContext";
 import {
   getCachedRainStatus,
   getRainStatus,

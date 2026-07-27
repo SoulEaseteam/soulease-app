@@ -1,4 +1,4 @@
-// src/context/GoogleMapsContext.tsx
+// src/providers/GoogleMapsContext.tsx
 //
 // 🗺️  Google Maps loader — lazy + on-demand
 //

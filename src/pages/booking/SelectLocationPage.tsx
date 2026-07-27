@@ -33,7 +33,7 @@ import ElevatorRoundedIcon from "@mui/icons-material/ElevatorRounded";
 import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 
-import { useGoogleMaps } from "@/context/GoogleMapsContext";
+import { useGoogleMaps } from "@/providers/GoogleMapsContext";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 // 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
 import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";

@@ -25,7 +25,7 @@ import "./index.css";
 
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import AuthProvider from "@/providers/AuthProvider";
-import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
+import { GoogleMapsProvider } from "@/providers/GoogleMapsContext";
 // 🆕 Round 28j — language pill lives ONLY in TopNav (home) per founder
 // direction. No global floating pill anywhere on the site. HtmlLangSync
 // stays mounted so `<html lang>` follows i18n.language for SEO + a11y.

@@ -19,7 +19,7 @@ import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta, langToLocale } from "@/hooks/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
 import { MapPin } from "phosphor-react";
-import { useGoogleMaps } from "@/context/GoogleMapsContext";
+import { useGoogleMaps } from "@/providers/GoogleMapsContext";
 import therapists from "@/data/therapists";
 import { estimateTaxiFare, travelBudgetForKm, haversineKm, BKK_ROAD_FACTOR } from "@/utils/taxiFare";
 import { estimateEtaFromKm } from "@/utils/directionsApi";

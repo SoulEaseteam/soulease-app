@@ -48,7 +48,7 @@ import { priceForDuration, durationsFor, formatTHB } from "@/utils/servicePricin
 import { stampSplit } from "@/utils/commission";
 import { estimateTaxiFare, DISPATCH_BASE } from "@/utils/taxiFare";
 import { paymentSurcharge, hasPaymentSurcharge } from "@/utils/paymentSurcharge";
-import { useGoogleMaps } from "@/context/GoogleMapsContext";
+import { useGoogleMaps } from "@/providers/GoogleMapsContext";
 import {
   ArrowLeft, CalendarBlank, Clock, User, Phone, MapPin,
   Note, CurrencyCircleDollar, Taxi, MagnifyingGlass,
