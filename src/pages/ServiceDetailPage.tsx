@@ -73,7 +73,7 @@ import PromoBadge from "@/components/common/PromoBadge";
 import { useServiceConfigVersion } from "@/hooks/useServiceConfigVersion";
 import { trackServiceView, trackConciergeOpen } from "@/utils/analytics";
 import { db } from "@/lib/firebase";
-import { brand, fonts, accents, gradients } from "@/theme";
+import { brand, fonts, accents, gradients } from "@/theme/theme";
 import { useDocumentMeta, langToLocale } from "@/hooks/useDocumentMeta";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 // 🆕 Round 28r54 (Phase 3.3) — responsiveType scales the h1 name +

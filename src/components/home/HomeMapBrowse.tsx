@@ -24,7 +24,7 @@ import { motion } from "framer-motion";
 
 import type { Therapist } from "@/types/therapist";
 import { enhanceImage } from "@/utils/cloudinary";
-import { brand, fonts, accents } from "@/theme";
+import { brand, fonts, accents } from "@/theme/theme";
 import type { LiveLocation } from "@/hooks/useUserLocation";
 // 🆕 Round 28b3 — wire to real live data, same engines used by
 //   TherapistProfileCard so map + grid never disagree.

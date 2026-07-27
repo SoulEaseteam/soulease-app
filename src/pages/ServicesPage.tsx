@@ -43,7 +43,7 @@ import BundleSection from "@/components/common/BundleSection";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { responsiveShell } from "@/theme/breakpoints";
 import { CONCIERGE } from "@/config/concierge";
-import { accents, gradients } from "@/theme";
+import { accents, gradients } from "@/theme/theme";
 import { FaLine, FaTelegramPlane, FaWeixin, FaWhatsapp } from "react-icons/fa";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";

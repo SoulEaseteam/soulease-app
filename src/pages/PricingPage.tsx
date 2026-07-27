@@ -53,7 +53,7 @@ import {
   badgeForDuration,
 } from "@/utils/servicePricing";
 import PromoBadge from "@/components/common/PromoBadge";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 // 🆕 28w.37 — 1st-anniversary banner.
 import AnniversaryBanner from "@/components/home/AnniversaryBanner";
 

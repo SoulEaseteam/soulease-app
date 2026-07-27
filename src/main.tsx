@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 
 // MUI theme
 import { ThemeProvider, CssBaseline } from "@mui/material";
-import theme from "./theme";
+import theme from "./theme/theme";
 
 // 🆕 Round 28b13 (perf) — ToastContainer lazy-loaded so its 30 kB
 //   JS + 4 kB CSS don't block first paint. The container only mounts

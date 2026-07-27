@@ -26,7 +26,7 @@ import { Box, Menu, MenuItem } from "@mui/material";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { useTranslation } from "react-i18next";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 
 interface LangOption {
   code: string;

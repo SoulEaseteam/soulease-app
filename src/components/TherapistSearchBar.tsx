@@ -18,7 +18,7 @@ import React from "react";
 import { Box, IconButton } from "@mui/material";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import { brand, fonts } from "@/theme";
+import { brand, fonts } from "@/theme/theme";
 
 export interface TherapistSearchBarProps {
   value: string;

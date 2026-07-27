@@ -26,7 +26,7 @@ import { priceForDuration } from "@/utils/servicePricing";
 import staticServices from "@/data/services";
 // 🆕 Round 28r79 — dead imports (brand, glass) removed. Only
 //   fonts.heading + gradients.primary are consumed downstream.
-import { fonts, gradients } from "@/theme";
+import { fonts, gradients } from "@/theme/theme";
 import type { MassageService } from "@/data/services";
 // 🆕 Round 28r4 — same time-aware mode the Hero uses, so the grid
 //   header phrase ("On standby · Bangkok Tonight" / "Concierge resumes

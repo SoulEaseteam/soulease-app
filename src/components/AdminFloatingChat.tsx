@@ -30,7 +30,7 @@ import { useTranslation } from "react-i18next";
 import ChatBubbleRoundedIcon from "@mui/icons-material/ChatBubbleRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 
-import { brand, fonts, glass } from "@/theme";
+import { brand, fonts, glass } from "@/theme/theme";
 // 🆕 Round 28r6 (founder 2026-05-06) — Concierge FAB now reflects the
 //   four operational windows so the live indicator + header tagline
 //   never disagree with the page-wide page mood.

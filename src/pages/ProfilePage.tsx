@@ -27,7 +27,7 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { CONCIERGE } from "@/config/concierge";
 // 🆕 28w.23 — cap pages to the same shell as TopNav so they align on desktop.

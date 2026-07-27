@@ -32,7 +32,7 @@ import { whatsappDeepLink } from "@/config/concierge";
 import { getReferralConfig } from "@/utils/discount";
 import { PROMOS_ENABLED } from "@/config/featureFlags";
 import { responsiveShell } from "@/theme/breakpoints";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 
 const ROSE = "#D97C95";
 

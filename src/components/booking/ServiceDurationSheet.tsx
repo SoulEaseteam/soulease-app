@@ -43,7 +43,7 @@ import { Dialog, Box, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 // 🆕 Round 28r81 — accent amber for the "popular" star badges.
-import { accents } from "@/theme";
+import { accents } from "@/theme/theme";
 import type { MassageService } from "@/data/services";
 import {
   priceForDuration,

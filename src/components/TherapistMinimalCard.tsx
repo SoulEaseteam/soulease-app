@@ -18,7 +18,7 @@ import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 
-import { fonts, accents } from "@/theme";
+import { fonts, accents } from "@/theme/theme";
 
 // 🆕 Round 28s238 (founder: "Ocean Study" trial on the customer-facing
 //   browse card — scoped to THIS file only, not the global `brand` theme).

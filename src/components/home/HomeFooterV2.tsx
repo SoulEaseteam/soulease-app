@@ -28,7 +28,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 import { CONCIERGE } from "@/config/concierge";
 
 type FooterLink = {

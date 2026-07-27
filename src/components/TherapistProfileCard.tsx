@@ -45,7 +45,7 @@ import {
 } from "@/utils/servicePricing";
 import staticServices from "@/data/services";
 import type { MassageService } from "@/data/services";
-import { brand, fonts, accents } from "@/theme";
+import { brand, fonts, accents } from "@/theme/theme";
 import type { LiveLocation } from "@/hooks/useUserLocation";
 
 /** ---------------- Utility ---------------- */

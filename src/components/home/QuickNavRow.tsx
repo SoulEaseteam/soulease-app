@@ -30,7 +30,7 @@ import {
   MapPin,
   Tag,
 } from "phosphor-react";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 
 type QuickNavItem = {
   key: string;

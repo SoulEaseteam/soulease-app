@@ -17,7 +17,7 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { brand, fonts } from "@/theme";
+import { brand, fonts } from "@/theme/theme";
 
 export interface SunRedWordmarkProps {
   /** Font size in px. Glyph scales proportionally. Default 22. */
