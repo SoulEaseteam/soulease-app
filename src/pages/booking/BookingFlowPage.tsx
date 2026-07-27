@@ -105,7 +105,7 @@ import { useTherapistLiveStatus } from "@/hooks/useTherapistLiveStatus";
 import {
   useTherapistBookings,
   findActiveBooking,
-} from "@/utils/useTherapistBookings";
+} from "@/hooks/useTherapistBookings";
 // 🆕 Round 28b25/28b32 — Google Distance Matrix API for real road
 //   distance + traffic-aware ETA. Falls back to time-of-day speed
 //   estimates (BKK rush vs off-peak) when API is offline.

@@ -50,7 +50,7 @@ import { nowBKK, prettyHHMM } from "@/utils/time";
 import {
   useTherapistBookings,
   isSlotTaken,
-} from "@/utils/useTherapistBookings";
+} from "@/hooks/useTherapistBookings";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';

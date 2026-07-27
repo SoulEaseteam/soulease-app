@@ -16,7 +16,7 @@ import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 import { responsiveShell } from "@/theme/breakpoints";
-import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+import { useDocumentMeta, langToLocale } from "@/hooks/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
 import { MapPin } from "phosphor-react";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";

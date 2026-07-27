@@ -1,4 +1,4 @@
-// src/utils/useDocumentMeta.ts
+// src/hooks/useDocumentMeta.ts
 //
 // 🪶 Lightweight per-page meta hook (no react-helmet dep required)
 //

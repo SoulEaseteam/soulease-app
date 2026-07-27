@@ -1,4 +1,4 @@
-// src/utils/useTherapistBookings.ts
+// src/hooks/useTherapistBookings.ts
 //
 // 🆕 Phase 5 (founder 2026-05-01): subscribe to live Firestore bookings
 // for a given therapist so the UI can react in real-time after a booking

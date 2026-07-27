@@ -96,7 +96,7 @@ import {
   findActiveBooking,
   findNextBooking,
   nextAvailableHHMM,
-} from "@/utils/useTherapistBookings";
+} from "@/hooks/useTherapistBookings";
 // 🆕 Round 28b9 — BKK formatter for upcoming booking hint.
 import { fmtBKK, prettyHHMM } from "@/utils/time";
 // 🆕 Round 28aq — drive StatusPill from the engine instead of the
@@ -113,7 +113,7 @@ import { useTherapistReviews } from "@/hooks/useTherapistReviews";
 // (shared bookings listener); the standalone useTherapistBookingStats
 // hook is no longer imported here.
 
-import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+import { useDocumentMeta, langToLocale } from "@/hooks/useDocumentMeta";
 import therapistsData from "@/data/therapists";
 import type { Therapist } from "@/types/therapist";
 // 🚨 Round 28r66 HOTFIX — Firestore fallback for admin-added

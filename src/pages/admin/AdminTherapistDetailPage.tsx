@@ -46,7 +46,7 @@ import {
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
 import { endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
-import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
+import { useTherapistBookings, findActiveBooking } from "@/hooks/useTherapistBookings";
 import { computeBookingStats, type TherapistBookingStats, EMPTY_BOOKING_STATS } from "@/hooks/useTherapistBookingStats";
 import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";

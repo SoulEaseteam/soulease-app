@@ -86,7 +86,7 @@ const BESTSELLER_ID = "SR-HJ2200";
 //   Therapeutic") — only these two carry the premium CTA wording.
 const PREMIUM_BENEFITS_IDS = new Set(["SR-HJ2200", "SR-B2B3200"]);
 import { responsiveShell } from "@/theme/breakpoints";
-import { useDocumentMeta } from "@/utils/useDocumentMeta";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
 
 // 🆕 28w.28 — concierge channels (ported from ServicesPage) for the Reach us grid.

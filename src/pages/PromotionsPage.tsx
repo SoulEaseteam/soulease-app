@@ -22,7 +22,7 @@ import { responsiveShell } from "@/theme/breakpoints";
 import { useActivePromos } from "@/hooks/useActivePromos";
 import { formatTHB } from "@/utils/servicePricing";
 import { CONCIERGE } from "@/config/concierge";
-import { useDocumentMeta } from "@/utils/useDocumentMeta";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 // 🆕 28x.16 (founder: "หน้า promotions เอา การ์ดนี้ไปใส่") — surface the
 //   1st-anniversary privileges card here while the campaign is live, and
 //   stop showing "No promotions running" when it is.

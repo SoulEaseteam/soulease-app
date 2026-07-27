@@ -38,7 +38,7 @@ import {
   findActiveBooking,
   findNextBooking,
   nextAvailableHHMM,
-} from "@/utils/useTherapistBookings";
+} from "@/hooks/useTherapistBookings";
 import { fmtBKK } from "@/utils/time";
 // 🆕 Round 28r3 — resolve service id → display name so the floating
 //   card can show ชื่อเมนูเด่น (e.g. "Aroma · Therapeutic") inline
