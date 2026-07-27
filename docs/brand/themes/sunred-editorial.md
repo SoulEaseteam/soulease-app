@@ -1,5 +1,11 @@
 # SunRed Editorial
 
+> **STALE (flagged 2026-07-27):** the live app theme has moved on from
+> this black/white/red palette — `src/theme.ts` is now on a warm-taupe
+> surface (see CLAUDE.md's Moko-palette section for what's actually
+> live on the customer home page today). Kept here as a historical
+> reference, not the current design source of truth.
+
 The primary brand theme. Editorial monochrome — black, white, red. Built for the customer who chooses Bottega over Coach and Park Hyatt over a wellness resort.
 
 ## Color Palette

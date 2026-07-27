@@ -247,6 +247,19 @@ top nav** with a two-tone **SUN·RED** wordmark, a floating quick-nav card
 `main` up to date. Firestore "INTERNAL ASSERTION FAILED" still reproduces in **dev
 only** (React StrictMode double-subscribes listeners); production is unaffected.
 
+**Pending decisions for View:**
+- `docs/strategy/SunRed_90Day_Roadmap.md`'s 90-day window (Apr 29 – Jul 27
+  2026) ends today — needs either a successor plan or explicit
+  archival. Not decided as part of the 2026-07-27 restructure (content
+  strategy call, not a code decision).
+- `docs/strategy/SunRed_90Day_Roadmap.md`/`sunred-upgrade-strategy.md`
+  and `docs/expansion/01_Multi_Segment_Strategy.md` cover overlapping
+  ground (segment prioritization, channel growth) from different
+  eras; `docs/expansion/02_Multi_Language_Templates.md` overlaps
+  `docs/strategy/SunRed_Message_Templates.md` (same reply scenarios,
+  different language coverage). Worth a merge session — flagged, not
+  merged, since it's a content judgment call.
+
 ## 10. How to start each session
 
 When View opens a new chat with you, say:
