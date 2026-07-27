@@ -525,7 +525,7 @@ const PricingPage: React.FC = () => {
                             textDecoration: "line-through",
                           }}
                         >
-                          {formatTHB(wasPriceFor(s, d) as number)}
+                          {formatTHB(wasPriceFor(s, d)!)}
                         </Box>
                       )}
                       <Box

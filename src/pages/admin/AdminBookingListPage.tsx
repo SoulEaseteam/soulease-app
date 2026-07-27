@@ -1791,7 +1791,7 @@ const DetailPanel: React.FC<{
             </Box>
             {(b.discountAmount ?? 0) > 0 && (
               <Typography sx={{ ...adminFigureSx, fontSize: 15, fontWeight: 800, color: adminColor.accent, flexShrink: 0 }}>
-                −{formatTHB(b.discountAmount as number)}
+                −{formatTHB(b.discountAmount!)}
               </Typography>
             )}
           </Box>

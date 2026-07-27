@@ -681,7 +681,7 @@ const AdminPromotionsPage: React.FC = () => {
           detail: o.detail ?? s.detail,
           benefit: (o.benefit ?? s.benefit ?? []).join("\n"),
           // 🆕 28r103 — seed the badge from override → catalog default.
-          badge: (o.badge as MassageService["badge"]) ?? s.badge,
+          badge: o.badge! ?? s.badge,
           scheduledForMs: rawSched?.toMillis?.() ?? null,
         };
       });

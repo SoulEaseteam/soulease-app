@@ -824,7 +824,7 @@ const SelectLocationPage: React.FC = () => {
   //   prefix is detected.
   const onPhoneChange = (raw: string) => {
     // Normalise: convert "00xx" → "+xx", strip non-digits/+ from the rest.
-    let normalised = raw.replace(/^00/, "+").replace(/[^\d+]/g, "");
+    const normalised = raw.replace(/^00/, "+").replace(/[^\d+]/g, "");
     if (!normalised.startsWith("+") && /^\d/.test(normalised)) {
       // Plain digits → keep them as national digits under current dial.
       const digits = normalised.replace(/\D/g, "");

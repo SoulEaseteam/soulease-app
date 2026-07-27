@@ -181,7 +181,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         <SectionCard icon={<MoonStars size={13} weight="bold" />} title="Maintenance Mode · โหมดปิดปรับปรุง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า "ปิดปรับปรุงชั่วคราว" ทันที (ไม่ต้องรีเฟรช) — แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
+            เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า &quot;ปิดปรับปรุงชั่วคราว&quot; ทันที (ไม่ต้องรีเฟรช) — แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
           </Typography>
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable maintenance mode · เปิดโหมดปิดปรับปรุง</Typography>

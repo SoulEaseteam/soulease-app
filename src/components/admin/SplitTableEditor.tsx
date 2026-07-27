@@ -236,7 +236,7 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
                       ? "ใช้ % เดิม"
                       : invalid
                         ? "เกินราคา!"
-                        : `ร้าน ${formatTHB(shop as number)}`}
+                        : `ร้าน ${formatTHB(shop!)}`}
                   </Typography>
                 </Box>
               );

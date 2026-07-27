@@ -283,7 +283,7 @@ export const GalleryEditor: React.FC<{ value: string[]; onChange: (next: string[
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const onUploadFiles = async (files: FileList | null) => {
-    if (!files || !files.length) return;
+    if (!files?.length) return;
     if (!docId.trim()) { setUploadError("ใส่ ID ของหมอนวดก่อน แล้วค่อยอัปโหลดรูป"); return; }
     setUploadError(null);
     setUploading(files.length);

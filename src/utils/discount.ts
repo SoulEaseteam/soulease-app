@@ -88,7 +88,7 @@ export function pickReferralTier(
 export function getActiveReferralTier(
   count: number | undefined,
 ): ReferralTier | null {
-  const ov = builtinOverrides["REFERRAL"];
+  const ov = builtinOverrides.REFERRAL;
   return pickReferralTier(ov?.tiers, count);
 }
 const FIRST_TIME_CODE = "FIRST10";
@@ -302,7 +302,7 @@ export function getReferralConfig(): {
 } {
   const disabled = disabledBuiltinCodes.has("REFERRAL");
   const deleted = isBuiltinDeleted("REFERRAL");
-  const ov = builtinOverrides["REFERRAL"];
+  const ov = builtinOverrides.REFERRAL;
   const amountThb =
     typeof ov?.amount === "number" && ov.amount >= 0
       ? ov.amount
@@ -362,7 +362,7 @@ export interface DiscountValidationContext {
   taxiFareTHB?: number;
   /** 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — number
    *  of prior redemptions of THIS EXACT SUN-XXXX code across all guests.
-   *  Only consulted for referral codes when `builtinOverrides["REFERRAL"]
+   *  Only consulted for referral codes when `builtinOverrides.REFERRAL
    *  .tiers` is set. Optional so validateDiscount stays a sync,
    *  no-DB-lookup function; the CALLER (BookingFlowPage submit + admin
    *  test-code sandbox) is responsible for running a bounded count
@@ -579,7 +579,7 @@ export function validateDiscount(
     //   codes are minted per user, not editable one-by-one).
     if (isBuiltinDeleted("REFERRAL")) return { ...NULL_RESULT, code };
     if (builtinOverrideRejects("REFERRAL", subtotalTHB)) return { ...NULL_RESULT, code };
-    const ov = builtinOverrides["REFERRAL"];
+    const ov = builtinOverrides.REFERRAL;
     // 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — if the
     //   REFERRAL override carries a `tiers` list, look up the highest tier
     //   the referring code's prior-redemption count qualifies for. Any

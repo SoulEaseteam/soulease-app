@@ -718,7 +718,7 @@ const AdminEarningsPage: React.FC = () => {
   //   (no dependency). Opens a formatted, print-styled window of the current
   //   period's numbers + breakdowns and triggers the print dialog.
   const handleExportPDF = () => {
-    const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
+    const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
     const money = (n: number) => `฿${Math.round(n).toLocaleString("en-US")}`;
     const periodLabel = range === "custom"
       ? `${customStart.format("D MMM YYYY")} – ${customEnd.format("D MMM YYYY")}`
@@ -731,6 +731,10 @@ const AdminEarningsPage: React.FC = () => {
       .sort((a, b) => b.gross - a.gross)
       .map((r) => `<tr><td>${esc(r.name)}</td><td class="n">${r.jobs}</td><td class="n">${money(r.gross)}</td></tr>`)
       .join("");
+    // The `<\/script>` near the end of this literal is deliberate, not a
+    //   redundant escape: it stops the tag from closing an enclosing <script>
+    //   block early if this bundle is ever served inlined.
+    /* eslint-disable no-useless-escape */
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>SunRed · สรุปรายได้ ${esc(periodLabel)}</title>
 <style>
   *{box-sizing:border-box}
@@ -767,6 +771,7 @@ const AdminEarningsPage: React.FC = () => {
   <div class="foot">SunRed · สร้างจากข้อมูลการจองจริง · แบ่งหมอตามระดับ · ไม่รวมที่ยกเลิก/คืนเงิน</div>
   <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
 </body></html>`;
+    /* eslint-enable no-useless-escape */
     const w = window.open("", "_blank", "width=820,height=1000");
     if (!w) {
       window.alert("เปิดหน้าต่างพิมพ์ไม่ได้ — อนุญาต popup แล้วลองใหม่");

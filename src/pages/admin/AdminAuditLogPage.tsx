@@ -56,7 +56,11 @@ const WINDOW_MS: Record<TimeWindow, number> = {
 
 interface AuditRow {
   id: string;
-  action: AuditAction | string;
+  // Just `string`: real Firestore docs carry arbitrary/legacy values here
+  // (see the 28s295 note above), and `AuditAction | string` collapses to
+  // `string` anyway. Known values live in the AuditAction union in
+  // utils/auditLog.ts; `categoryOf`/the row filter both guard at runtime.
+  action: string;
   actorEmail?: string | null;
   detail?: Record<string, unknown>;
   at?: Timestamp | null;

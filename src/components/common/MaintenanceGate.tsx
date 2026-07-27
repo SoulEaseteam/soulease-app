@@ -141,8 +141,8 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             ? v.tiers
                 .filter((t) => t && typeof t.minRedeems === "number" && typeof t.amount === "number")
                 .map((t) => ({
-                  minRedeems: t.minRedeems as number,
-                  amount: t.amount as number,
+                  minRedeems: t.minRedeems!,
+                  amount: t.amount!,
                   ...(typeof t.label === "string" && t.label ? { label: t.label } : {}),
                 }))
             : undefined;
@@ -336,8 +336,8 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           ? v.tiers
               .filter((t) => t && typeof t.minRedeems === "number" && typeof t.amount === "number")
               .map((t) => ({
-                minRedeems: t.minRedeems as number,
-                amount: t.amount as number,
+                minRedeems: t.minRedeems!,
+                amount: t.amount!,
                 ...(typeof t.label === "string" && t.label ? { label: t.label } : {}),
               }))
           : undefined;
