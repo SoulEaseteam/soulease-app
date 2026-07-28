@@ -189,27 +189,94 @@ await check("guest CANNOT create with a bogus status", () =>
 
 // 🆕 Round 28x.107 — payload shape + size gate on the open create door.
 // The point of these four is to prove the gate bounds an ATTACKER without
-// touching a real guest: the first case is the exact document the live
-// booking flow writes.
-console.log("\nbookings · payload sanity gate (28x.107)");
-await check("guest CAN create a full, realistic booking", () =>
+// touching a real guest.
+//
+// 🚨 Round 28x.116 — the case below used to carry only ~15 fields with a
+// comment claiming it was "the exact document the live booking flow
+// writes." That claim was false: BookingFlowPage.tsx's real addDoc() call
+// writes 73 top-level keys (68 literal + 5 from ...bookingAuthor()), and
+// the 60-key cap silently rejected every real, non-admin booking for as
+// long as it was live — masked because admin-created bookings bypass the
+// gate via isAdmin(), so nothing here caught it. This case now mirrors the
+// REAL payload field-for-field so a future key-count regression fails a
+// test instead of shipping silently again.
+console.log("\nbookings · payload sanity gate (28x.107, 28x.116)");
+await check("guest CAN create the real 73-key booking payload BookingFlowPage.tsx writes", () =>
   assertSucceeds(
     setDoc(doc(anon(), "bookings", "bk-sane-1"), {
-      status: "pending",
-      contactName: "John Smith",
-      phone: "+66812345678",
+      accessToken: "test-token-abc123",
+      createdBy: "guest",
+      createdByUid: null,
+      createdByEmail: null,
+      createdByPhone: null,
+      createdByName: null,
+      userId: null,
       therapistId: "XingXingSunRed",
+      therapistName: "XingXing",
       serviceId: "SR-HJ2200",
       serviceName: "Gentleman's Signature Therapy",
+      servicePrice: 2200,
+      basePrice: 2200,
       duration: 70,
       date: "2026-07-25",
       time: "22:00",
+      startAt: new Date(),
+      endAt: new Date(),
       locationName: "Grande Centre Point Terminal 21",
       address: "2 Sukhumvit Rd, Khlong Toei Nuea, Watthana, Bangkok 10110",
       addressDetails: "Room 1804",
       location: { lat: 13.7376, lng: 100.5602 },
-      note: "Please call from the lobby.",
+      mapUrl: "https://maps.google.com/?q=13.7376,100.5602",
+      meetingPoint: "Lobby",
+      locationType: "hotel",
+      addressNote: "Please call from the lobby.",
+      contactName: "John Smith",
+      phone: "+66812345678",
       language: "en",
+      addons: [],
+      addonsTotal: 0,
+      note: "Please call from the lobby.",
+      discountCode: null,
+      discountAmount: null,
+      discountLabel: null,
+      subtotalPrice: 2200,
+      payment: "Cash",
+      paymentMethodId: "cash",
+      paymentFee: 0,
+      taxiFee: 150,
+      taxiTier: "short",
+      taxiBaseFee: 150,
+      rainTier: "none",
+      rainSurchargePct: 0,
+      taxiVehicle: "moto",
+      taxiOriginal: 160,
+      taxiSave: 10,
+      etaMinutes: 24,
+      isLiveRoute: true,
+      routeSource: "google",
+      originalTotalPrice: null,
+      distanceKm: 4.2,
+      totalPrice: 2350,
+      status: "pending",
+      paymentStatus: "unpaid",
+      holdState: "active",
+      holdExpiresAt: new Date(),
+      holdDurationMin: 10,
+      createdByAdmin: null,
+      adminOverrideTotal: null,
+      calculatedTotal: 2350,
+      originalPrice: 2360,
+      savingsTotal: 10,
+      savingsRouting: 0,
+      savingsDiscount: 0,
+      yearMonth: "2026-07",
+      attributionSource: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+      landingPath: "/",
+      referrerHost: null,
+      createdAt: new Date(),
     })
   )
 );

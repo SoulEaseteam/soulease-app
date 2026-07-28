@@ -117,7 +117,18 @@ service cloud.firestore {
              || (d[k] is string && d[k].size() <= max);
     }
     function isSaneBookingPayload(d) {
-      return d.keys().size() <= 60
+      // 🚨 Round 28x.116 HOTFIX — the 28x.107 comment above claimed 60 was
+      //   "~10x the largest real booking observed," but the real customer
+      //   BookingFlowPage.tsx addDoc payload is 73 top-level keys (counted
+      //   directly from source: 68 literal fields + 5 from ...bookingAuthor()).
+      //   Every non-admin booking create has been silently rejected by this
+      //   rule since it shipped — admin-created bookings bypass via isAdmin()
+      //   and looked fine, masking it. Founder screenshot: a real guest
+      //   (Almahanad) couldn't complete checkout; she had to re-create the
+      //   booking manually via /admin/bookings/add. 100 gives real headroom
+      //   above the measured 73 without reopening the key-bloat concern the
+      //   cap exists for.
+      return d.keys().size() <= 100
              // Phone is the ONE field required outright: it is what the
              // concierge works from, and every real create path writes it.
              && d.phone is string
