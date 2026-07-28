@@ -16,7 +16,7 @@ import { UserCircle } from "phosphor-react";
 import { FaRegHeart, FaRegFileAlt } from "react-icons/fa";
 import { SpaOutlined } from "@mui/icons-material";
 import { useAuth } from "@/providers/AuthProvider";
-import { brand, fonts } from "@/theme";
+import { brand, fonts } from "@/theme/theme";
 
 // 🆕 Round 28s224 — "Therapists" → "Practitioners". CLAUDE.md §3 euphemism
 //   table: therapist → practitioner (more premium register). Tab is the

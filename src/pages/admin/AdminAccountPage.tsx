@@ -99,7 +99,7 @@ const AdminAccountPage: React.FC = () => {
           snap.docs
             .map((d) => ({ id: d.id, ...(d.data() as { action?: string; actorId?: string; at?: { toMillis?: () => number } }) }))
             .filter((r) => r.actorId === user.uid && typeof r.action === "string" && r.action)
-            .map((r) => ({ id: r.id, action: r.action as string, atMs: r.at?.toMillis?.() ?? 0 }))
+            .map((r) => ({ id: r.id, action: r.action!, atMs: r.at?.toMillis?.() ?? 0 }))
             .slice(0, 8),
         );
       },

@@ -676,12 +676,15 @@ const SeedRow: React.FC<{
   bulkSelected: boolean;
   onBulkToggle: () => void;
   onToggle: () => void;
+  // Returns a promise — handleSubmit is async and the child awaits it to
+  // hold the submitting spinner until the write finishes. Declaring this
+  // as `=> void` erased the promise, so the spinner cleared instantly.
   onSubmit: (
     row: BookingRow,
     rating: number,
     reviewText: string,
     lang: ReviewLang,
-  ) => void;
+  ) => Promise<void>;
 }> = ({
   row,
   expanded,

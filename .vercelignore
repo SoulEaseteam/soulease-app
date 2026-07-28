@@ -48,16 +48,14 @@ public/images/icon/*.gif
 #   script). Excluding them from the Vercel upload cuts the per-deploy file
 #   count so we hit the free-tier `api-upload-free` limit far slower.
 #   Nothing here is deleted from the repo — it just never uploads to Vercel.
+#   (Brand/, SEO_Blog_Pack/, Expansion/ moved under docs/ in the
+#   2026-07-27 restructure — already covered by the docs/ rule below.)
 docs/
-Brand/
-SEO_Blog_Pack/
-Expansion/
 .github/
 .claude/
 
 # Markdown + one-off planning/handoff notes (co-founder memory + strategy).
-# None are read at build or runtime.
+# None are read at build or runtime. (DEPLOYMENT_STATUS.md/HANDOFF.md/
+# ROADMAP.md moved under docs/archive/ in the 2026-07-27 restructure —
+# already covered by the blanket *.md rule below, explicit lines dropped.)
 *.md
-DEPLOYMENT_STATUS.md
-HANDOFF.md
-ROADMAP.md

@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 
 // MUI theme
 import { ThemeProvider, CssBaseline } from "@mui/material";
-import theme from "./theme";
+import theme from "./theme/theme";
 
 // 🆕 Round 28b13 (perf) — ToastContainer lazy-loaded so its 30 kB
 //   JS + 4 kB CSS don't block first paint. The container only mounts
@@ -25,7 +25,7 @@ import "./index.css";
 
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import AuthProvider from "@/providers/AuthProvider";
-import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
+import { GoogleMapsProvider } from "@/providers/GoogleMapsContext";
 // 🆕 Round 28j — language pill lives ONLY in TopNav (home) per founder
 // direction. No global floating pill anywhere on the site. HtmlLangSync
 // stays mounted so `<html lang>` follows i18n.language for SEO + a11y.

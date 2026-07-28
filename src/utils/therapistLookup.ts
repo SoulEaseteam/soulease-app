@@ -11,7 +11,7 @@
 // reads; Firestore falls through only on a miss). r78 audit found
 // three callers still using the plain `therapistsData.find` pattern:
 //
-//   • src/pages/BookingHistoryPage.tsx     (booking row rendering)
+//   • src/pages/booking/BookingHistoryPage.tsx     (booking row rendering)
 //   • src/components/booking/StepService.tsx   (filter services)
 //   • src/components/booking/StepDateTime.tsx  (working-hours window)
 //

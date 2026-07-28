@@ -10,12 +10,12 @@ import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { getBadgeForTherapist, pickTopRatedTherapistId } from "@/utils/getTherapistBadge";
 import { haversineKm } from "@/utils/taxiFare";
 
-import TherapistProfileCard from "@/components/TherapistProfileCard";
+import TherapistProfileCard from "@/components/therapist/TherapistProfileCard";
 // 🆕 Round 28s128 — Clean single-column list card for the home grid.
 //   Replaces the 2-column TherapistProfileCard layout per founder
 //   feedback ("หน้าเว็บรกมาก"). Old card kept for other surfaces.
-import TherapistMinimalCard from "@/components/TherapistMinimalCard";
-import TherapistSearchBar from "@/components/TherapistSearchBar";
+import TherapistMinimalCard from "@/components/therapist/TherapistMinimalCard";
+import TherapistSearchBar from "@/components/therapist/TherapistSearchBar";
 import MokoDiscoveryHeader from "@/components/home/MokoDiscoveryHeader";
 import HomeMapBrowse from "@/components/home/HomeMapBrowse";
 import { matchesQuery } from "@/utils/therapistSearch";
@@ -26,7 +26,7 @@ import { priceForDuration } from "@/utils/servicePricing";
 import staticServices from "@/data/services";
 // 🆕 Round 28r79 — dead imports (brand, glass) removed. Only
 //   fonts.heading + gradients.primary are consumed downstream.
-import { fonts, gradients } from "@/theme";
+import { fonts, gradients } from "@/theme/theme";
 import type { MassageService } from "@/data/services";
 // 🆕 Round 28r4 — same time-aware mode the Hero uses, so the grid
 //   header phrase ("On standby · Bangkok Tonight" / "Concierge resumes

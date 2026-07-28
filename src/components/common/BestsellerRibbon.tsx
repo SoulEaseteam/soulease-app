@@ -16,7 +16,7 @@
 
 import React from "react";
 import { Box } from "@mui/material";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 
 interface Props {
   /** Ribbon copy. Already translated by the caller. */

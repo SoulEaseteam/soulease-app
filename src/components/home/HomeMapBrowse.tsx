@@ -24,7 +24,7 @@ import { motion } from "framer-motion";
 
 import type { Therapist } from "@/types/therapist";
 import { enhanceImage } from "@/utils/cloudinary";
-import { brand, fonts, accents } from "@/theme";
+import { brand, fonts, accents } from "@/theme/theme";
 import type { LiveLocation } from "@/hooks/useUserLocation";
 // 🆕 Round 28b3 — wire to real live data, same engines used by
 //   TherapistProfileCard so map + grid never disagree.
@@ -38,7 +38,7 @@ import {
   findActiveBooking,
   findNextBooking,
   nextAvailableHHMM,
-} from "@/utils/useTherapistBookings";
+} from "@/hooks/useTherapistBookings";
 import { fmtBKK } from "@/utils/time";
 // 🆕 Round 28r3 — resolve service id → display name so the floating
 //   card can show ชื่อเมนูเด่น (e.g. "Aroma · Therapeutic") inline

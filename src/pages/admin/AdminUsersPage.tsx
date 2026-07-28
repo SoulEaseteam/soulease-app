@@ -45,17 +45,17 @@ import {
 } from "@/utils/membership";
 import { countryFromPhone, normPhone, type PhoneCountry } from "@/utils/phoneCountry";
 import { logAdminAction } from "@/utils/auditLog";
+import type { User as UserBase, UserRole } from "@/types/user";
 
 const SANS = adminFont.sans;
 
-type Role = "admin" | "therapist" | "user";
+// Shared field list lives in @/types/user (reconciled 2026-07-27
+// restructure). `Role` kept as a local alias since it's referenced
+// elsewhere in this file beyond the User interface itself.
+type Role = UserRole;
 
-interface User {
+interface User extends Omit<UserBase, "id"> {
   id: string;
-  name?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  role?: Role | null;
 }
 
 // 🆕 Round 28s286 — a compact per-booking row kept on each guest so the
@@ -118,7 +118,7 @@ function bookingDetailPairs(d: Record<string, unknown>): Array<[string, string]>
   if (dateTime) pairs.push(["วันเวลา", dateTime]);
   if (d.phone) pairs.push(["โทร", String(d.phone)]);
   if (loc) pairs.push(["สถานที่", loc]);
-  pairs.push(["บริการ", `${(d.serviceName as string) ?? "—"}${d.duration ? ` · ${d.duration} min` : ""}`]);
+  pairs.push(["บริการ", `${(d.serviceName as string) ?? "—"}${d.duration ? ` · ${String(d.duration)} min` : ""}`]);
   if (d.therapistName) pairs.push(["หมอนวด", String(d.therapistName)]);
   pairs.push(["การจ่าย", `${(d.payment as string) ?? "—"} · ${paid ? "จ่ายแล้ว" : "ยังไม่จ่าย"}`]);
   if (d.servicePrice != null) pairs.push(["ค่าบริการ", thb(d.servicePrice)]);
@@ -129,7 +129,7 @@ function bookingDetailPairs(d: Record<string, unknown>): Array<[string, string]>
   if (note) pairs.push(["โน้ต", note]);
   if (d.reviewText) {
     const stars = d.rating ? "★".repeat(Math.max(0, Math.min(5, Math.round(num(d.rating))))) + " " : "";
-    pairs.push(["รีวิว", `${stars}${d.reviewText}`]);
+    pairs.push(["รีวิว", `${stars}${String(d.reviewText)}`]);
   }
   return pairs;
 }

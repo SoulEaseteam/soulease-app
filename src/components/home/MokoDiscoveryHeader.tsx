@@ -15,7 +15,7 @@
 import React from "react";
 import { Box } from "@mui/material";
 import { MapPin, ShieldCheck, Lightning } from "phosphor-react";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 import { useTranslation } from "react-i18next";
 
 export type RosterFilter = "all" | "available_now" | "express";

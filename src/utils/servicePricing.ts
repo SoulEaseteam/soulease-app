@@ -292,8 +292,8 @@ export function withLiveServiceOverrides(s: MassageService): MassageService {
   if (!ov) return s;
   return {
     ...s,
-    ...(liveServiceName(s.id) ? { name: ov.name as string } : {}),
-    ...(liveServiceDesc(s.id) ? { desc: ov.desc as string } : {}),
+    ...(liveServiceName(s.id) ? { name: ov.name! } : {}),
+    ...(liveServiceDesc(s.id) ? { desc: ov.desc! } : {}),
     ...(typeof ov.price === "number" && ov.price > 0 ? { price: ov.price } : {}),
     ...(typeof ov.image === "string" && ov.image.trim() ? { image: ov.image } : {}),
     ...(typeof ov.detail === "string" && ov.detail.trim() ? { detail: ov.detail } : {}),

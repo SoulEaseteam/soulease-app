@@ -105,7 +105,7 @@ import { useTherapistLiveStatus } from "@/hooks/useTherapistLiveStatus";
 import {
   useTherapistBookings,
   findActiveBooking,
-} from "@/utils/useTherapistBookings";
+} from "@/hooks/useTherapistBookings";
 // 🆕 Round 28b25/28b32 — Google Distance Matrix API for real road
 //   distance + traffic-aware ETA. Falls back to time-of-day speed
 //   estimates (BKK rush vs off-peak) when API is offline.
@@ -114,7 +114,7 @@ import {
   estimateEtaMin,
   type RouteResult,
 } from "@/utils/directionsApi";
-import { useGoogleMaps } from "@/context/GoogleMapsContext";
+import { useGoogleMaps } from "@/providers/GoogleMapsContext";
 import {
   getCachedRainStatus,
   getRainStatus,
@@ -327,12 +327,16 @@ const BookingFlowPage: React.FC = () => {
   const [forecast, setForecast] = useState<RainForecast | null>(null);
   useEffect(() => {
     let cancelled = false;
-    getRainStatus().then((status) => {
-      if (!cancelled) setRainStatus(status);
-    });
-    getRainForecast().then((fc) => {
-      if (!cancelled) setForecast(fc);
-    });
+    getRainStatus()
+      .then((status) => {
+        if (!cancelled) setRainStatus(status);
+      })
+      .catch((err) => console.warn("[weather] rain status failed:", err));
+    getRainForecast()
+      .then((fc) => {
+        if (!cancelled) setForecast(fc);
+      })
+      .catch((err) => console.warn("[weather] rain forecast failed:", err));
     return () => {
       cancelled = true;
     };

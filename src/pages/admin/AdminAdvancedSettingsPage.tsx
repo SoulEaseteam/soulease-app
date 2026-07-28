@@ -46,7 +46,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { DEFAULT_TRAVEL_BANDS, travelBudgetForKm, type TravelBand } from "@/utils/taxiFare";
 import { Clock, BellRinging, CreditCard, Wallet, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
 import { adminColor, adminFont } from "@/theme/adminTheme";
-import { SectionCard, fieldSx } from "./therapistFormKit";
+import { SectionCard, fieldSx } from "@/components/admin/therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
 
 const SANS = adminFont.sans;
@@ -181,7 +181,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         <SectionCard icon={<MoonStars size={13} weight="bold" />} title="Maintenance Mode · โหมดปิดปรับปรุง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า "ปิดปรับปรุงชั่วคราว" ทันที (ไม่ต้องรีเฟรช) — แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
+            เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า &quot;ปิดปรับปรุงชั่วคราว&quot; ทันที (ไม่ต้องรีเฟรช) — แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
           </Typography>
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable maintenance mode · เปิดโหมดปิดปรับปรุง</Typography>

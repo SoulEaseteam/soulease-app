@@ -70,11 +70,22 @@ View corrected the strategic framing during this session:
 - **Rule: still match marketing to actual nightly availability**
 
 **Pricing (THB, base = 60min):**
-- `xSR-Thai` Thai Massage — 1,200
-- `SR-Aroma` Aromatherapy — 1,600
-- `SR-HJ2200` Gentleman's Signature (Aroma + HJ release) — 2,200
-- `SR-B2B3200` SunRed Therapeutic (B2B/nuru genre) — 3,200
-- 90min = base × 1.5 · 120min = base × 2.0
+Corrected 2026-07-28 against the code — the old entry here said Aroma
+1,600 and "90min = base × 1.5 · 120min = base × 2.0", both of which
+Round 28w.36 superseded with explicit per-duration prices.
+
+| Service | Durations | Price (THB) |
+|---|---|---|
+| `xSR-Thai` Thai Massage | 60 / 90 / 120 | 1,200 / 1,600 / 2,000 |
+| `SR-Aroma` Aromatherapy | 60 / 90 / 120 | 1,400 / 1,800 / 2,400 |
+| `SR-HJ2200` Gentleman's Signature (Aroma + HJ release) | 70 / 120 | 2,200 / 3,000 |
+| `SR-B2B3200` SunRed Therapeutic (B2B/nuru genre) | 70 / 120 | 3,200 / 4,000 |
+
+Note Gentleman's and Therapeutic run **70/120 only** — no 60 or 90.
+60-min bases live in `src/data/services.ts`; every other duration in
+`DURATION_PRICE_OVERRIDES` in `src/utils/servicePricing.ts`. Admin can
+override any of these live from /admin/promotions, so treat the code as
+the shape and Firestore `adminSettings/publicRules` as the live value.
 - See `src/utils/servicePricing.ts` for canonical pricing
 - **Payment surcharge (Round 28s77):** WeChat Pay + Alipay carry a
   transfer fee = `round(total × 5%) + ฿200` (FX/processor markup +
@@ -142,9 +153,11 @@ View corrected the strategic framing during this session:
 - `src/data/therapists.ts` — therapist roster + servicesAvailable
 - `src/utils/servicePricing.ts` — pricing model
 - `src/utils/serviceCatalog.ts` — legacy slug → SKU resolver
-- `src/hooks/useServiceUsageStats.ts` — Firestore booking aggregator
-  - `servedById` — completed/done count (used by public chip)
-  - `customersById` — unique guest dedup (kept but not currently used)
+- `src/hooks/useTherapistBookingStats.ts` — Firestore booking aggregator
+  (per-therapist, not per-service — `useServiceUsageStats.ts` referenced
+  here previously never existed in the repo; corrected 2026-07-27)
+  - `totalCompleted` — completed/done count (used by public chip)
+  - `uniqueCustomers` / `repeatCustomers` — guest dedup + repeat-rate
 - `src/components/home/HowItWorks.tsx` — full "How to book" component
   (3-step ritual + reservation pillars + payment CTA + arrival window
   + concierge 4-channel grid + closing note). Self-contained.
@@ -166,6 +179,27 @@ View corrected the strategic framing during this session:
     `done`
   - EXCLUDED: `cancelled`, `canceled`, `refunded`, `failed`,
     `rejected`, `no_show`, `pending`
+
+### Shared types + opt-in Firestore access layer (added 2026-07-27)
+- `src/types/booking.ts` / `src/types/user.ts` — canonical `Booking`/
+  `User` field lists, reconciled from what used to be 6 and 2
+  independently-drifting local interfaces. All fields optional/nullable
+  (matches the real Firestore doc, which several different code paths
+  write different subsets of). A file with its own stricter guarantee
+  (e.g. always synthesizing `id`) narrows locally via `Pick`/`Omit` —
+  see BookingHistoryPage.tsx or AdminBookingListPage.tsx for the
+  pattern. The Review-type family (`Review`/`ReviewLite`/`ReviewRow`/
+  `ReviewLike`/`BookingReviewDoc` across 9 files) was deliberately
+  **not** unified — those look like intentionally different per-view
+  shapes, not accidental duplication.
+- `src/lib/firestore/{bookings,therapists,adminSettings}.ts` — additive
+  typed collection refs + common query helpers. **Not yet used anywhere**
+  — the 60+ existing call sites that build `collection(db, "bookings")`
+  etc. inline weren't migrated (unrealistic to verify safely in one
+  pass). Convention going forward: when you're already touching a file
+  for other work and it queries one of these 3 collections, migrate
+  that file's calls to the shared helpers while you're in there. Don't
+  do a dedicated migration sweep.
 
 ---
 
@@ -244,6 +278,19 @@ top nav** with a two-tone **SUN·RED** wordmark, a floating quick-nav card
 **taupe Membership** section — all live on sunred.vip. Open **PR #5** brings GitHub
 `main` up to date. Firestore "INTERNAL ASSERTION FAILED" still reproduces in **dev
 only** (React StrictMode double-subscribes listeners); production is unaffected.
+
+**Pending decisions for View:**
+- `docs/strategy/SunRed_90Day_Roadmap.md`'s 90-day window (Apr 29 – Jul 27
+  2026) ends today — needs either a successor plan or explicit
+  archival. Not decided as part of the 2026-07-27 restructure (content
+  strategy call, not a code decision).
+- `docs/strategy/SunRed_90Day_Roadmap.md`/`sunred-upgrade-strategy.md`
+  and `docs/expansion/01_Multi_Segment_Strategy.md` cover overlapping
+  ground (segment prioritization, channel growth) from different
+  eras; `docs/expansion/02_Multi_Language_Templates.md` overlaps
+  `docs/strategy/SunRed_Message_Templates.md` (same reply scenarios,
+  different language coverage). Worth a merge session — flagged, not
+  merged, since it's a content judgment call.
 
 ## 10. How to start each session
 

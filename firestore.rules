@@ -278,21 +278,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── blocked devices (legacy, unused) / admin settings ───────────
-    // 🆕 Round 28s293 — `blockedDevices` was a dead feature: nothing in
-    //   the client ever generated or wrote a "deviceId" anywhere else in
-    //   the codebase, so admin had no real value to type into the block
-    //   dialog and nothing ever checked this collection at booking time.
-    //   Replaced with `blockedPhones` below, keyed on the normalized
-    //   phone number that's already collected on every booking and
-    //   already the CRM's identity key (see AdminUsersPage.tsx). Left
-    //   this rule in place (harmless, admin-only) rather than deleting —
-    //   AdminBlockedDevicesPage.tsx no longer reads/writes it.
-    match /blockedDevices/{deviceId} {
-      allow read, write: if isAdmin();
-    }
-
-    // 🆕 Round 28s293 — read must be public: guest checkout has no auth
+    // ── blocked phones / admin settings ──────────────────────────────
+    // 🆕 Round 28s293 — replaced the earlier `blockedDevices` collection
+    //   (dead feature: nothing in the client ever generated or wrote a
+    //   "deviceId" anywhere, so admin had no real value to type into the
+    //   block dialog) with this one, keyed on the normalized phone number
+    //   that's already collected on every booking and already the CRM's
+    //   identity key (see AdminUsersPage.tsx). `blockedDevices` rule block
+    //   removed 2026-07-27 restructure — confirmed zero code references.
+    //   Read must be public: guest checkout has no auth
     //   at all (BookingFlowPage writes userId: null for the common case),
     //   so the pre-submit block check has no signed-in user to gate on.
     //   Docs only hold a normalized phone as the ID + a reason string
@@ -367,11 +361,6 @@ service cloud.firestore {
       allow update, delete: if false; // append-only
     }
 
-    // ── payouts (Phase 4 — weekly therapist payout tracking) ───────
-    match /payouts/{payoutId} {
-      allow read, write: if isAdmin();
-    }
-
     // ── payoutAccounts (28s314 — therapists' bank details for the
     //   Pay-Therapists transfer flow). Admin-only: these hold private
     //   bank/account numbers and must NEVER be world-readable like the
@@ -399,10 +388,28 @@ service cloud.firestore {
     // scheduled function reads docs >15 min stale and pings admin.
     // Public create + self-update so guest carts work (no auth at
     // checkout-fill stage). Admin reads/lists for follow-up.
+    //
+    // 🆕 2026-07-27 restructure (security fix) — `allow update: if true`
+    //   let ANY client rewrite ANY field of ANY existing cart doc, no
+    //   ownership or field check at all. Tightened to the exact field
+    //   set src/hooks/useAbandonedCartTracker.ts actually writes (the
+    //   debounced CartSnapshot fields + status/lastActivityAt/updatedAt/
+    //   createdAt from the tracker, status/confirmedAt from
+    //   markCartConfirmed()), plus a therapistId pin so a client can't
+    //   repoint an existing cart to a different therapist mid-flight.
+    //   `create` stays open — it can only add new docs, not corrupt an
+    //   existing lead, so the severity there is much lower.
     match /abandoned_bookings/{cartId} {
       allow read: if isAdmin();
       allow create: if true;
-      allow update: if true; // browser bumps lastActivityAt as user types
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly([
+                         'therapistId', 'therapistName', 'serviceName', 'serviceId',
+                         'duration', 'date', 'time', 'contactName', 'phone', 'language',
+                         'locationName', 'status', 'lastActivityAt', 'updatedAt',
+                         'createdAt', 'confirmedAt'
+                       ])
+                    && request.resource.data.therapistId == resource.data.therapistId;
       allow delete: if isAdmin();
     }
 

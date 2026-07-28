@@ -12,7 +12,7 @@
 //     • ServicesPage.tsx (concierge channel grid)
 //     • booking/BookingSuccessPage.tsx (post-booking confirmation CTA)
 //     • components/home/HomeTherapistGrid.tsx (empty-state CTA)
-//     • components/AdminFloatingChat.tsx (global concierge widget)
+//     • components/admin/AdminFloatingChat.tsx (global concierge widget)
 //     • components/common/BundleSection.tsx (bundle reserve CTA)
 //     • ProfilePage.tsx (Support row)
 //   LINE + Telegram had similar spread. A founder handle change (rare

@@ -24,7 +24,7 @@ import {
   SURCHARGE_PCT,
   SURCHARGE_FLAT,
 } from "@/utils/paymentSurcharge";
-import { useDocumentMeta } from "@/utils/useDocumentMeta";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 // 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
 import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";

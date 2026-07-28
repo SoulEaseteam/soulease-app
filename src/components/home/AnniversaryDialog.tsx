@@ -27,7 +27,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { X, Check, Gift, Crown, Lock } from "phosphor-react";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 import { whatsappDeepLink } from "@/config/concierge";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { maskBookingRef } from "@/utils/bookingRef";

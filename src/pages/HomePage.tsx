@@ -48,7 +48,7 @@ import HomeFooterV2 from "@/components/home/HomeFooterV2";
 //   maxWidth: 430px cage so the home widens on tablet/desktop.
 import { responsiveShell } from "@/theme/breakpoints";
 
-import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+import { useDocumentMeta, langToLocale } from "@/hooks/useDocumentMeta";
 
 // 🆕 Round 28x.7 (audit fix #3) — optional district context. When set
 //   (via the /outcall-massage-* routes → KeywordLanding), the home page

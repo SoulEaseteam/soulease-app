@@ -23,7 +23,7 @@ import {
   Clock,
   Headphones,
 } from "phosphor-react";
-import { fonts, accents } from "@/theme";
+import { fonts, accents } from "@/theme/theme";
 
 type Feature = {
   key: string;

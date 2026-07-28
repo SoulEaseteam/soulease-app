@@ -42,7 +42,7 @@ import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/providers/AuthProvider";
-import { brand, fonts } from "@/theme";
+import { brand, fonts } from "@/theme/theme";
 // 🆕 Round 28w.20 (founder: "ในแอดมินไม่เชื่อมต่อ … แก้ฝั่งแอดมินด้วยให้เชื่อมต่อ")
 //   — wire the dialog to the live admin promo state so it never advertises a
 //   reward the booking flow wouldn't honour. `PROMOS_ENABLED` is the master

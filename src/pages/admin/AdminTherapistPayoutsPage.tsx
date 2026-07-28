@@ -405,7 +405,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
           จ่ายเงินหมอนวด
         </Typography>
         <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted, mt: "10px" }}>
-          Non-cash bookings · mark paid once the therapist's share is transferred.
+          Non-cash bookings · mark paid once the therapist&apos;s share is transferred.
         </Typography>
         <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mt: 0.25 }}>
           บุคกิ้งที่ลูกค้าจ่ายแบบโอน (ไม่ใช่เงินสด) · กดจ่ายเมื่อโอนส่วนแบ่งให้หมอแล้ว
@@ -630,7 +630,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                 ✓ All Paid · ไม่มีค้างจ่าย
               </Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.25 }}>
-                Every non-cash booking's therapist share has been transferred ({rangeNote}).
+                Every non-cash booking&apos;s therapist share has been transferred ({rangeNote}).
               </Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mt: 0.15 }}>
                 จ่ายหมอครบทุกงานที่ลูกค้าโอนมาแล้ว

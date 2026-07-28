@@ -42,11 +42,11 @@ import KeywordLanding from "@/components/common/KeywordLanding";
 //   imports framer-motion (~100 kB) and was eagerly loaded on every
 //   page. Now lazy-loaded so the homepage paint doesn't pull motion in.
 const AdminFloatingChat = React.lazy(
-  () => import("@/components/AdminFloatingChat")
+  () => import("@/components/admin/AdminFloatingChat")
 );
 
 // Route Guard
-import PrivateRoute from "@/routes/PrivateRoute";
+import PrivateRoute from "@/app/PrivateRoute";
 
 // Layouts
 import MainLayout from "@/components/layouts/MainLayout";
@@ -77,6 +77,9 @@ const PricingPage = React.lazy(() => import("@/pages/PricingPage"));
 const PromotionsPage = React.lazy(() => import("@/pages/PromotionsPage"));
 // 🆕 28s335 — /near-me hosts the "OR BROWSE BY LOCATION" map moved off home.
 const NearMePage = React.lazy(() => import("@/pages/NearMePage"));
+// 🧊 2026-07-28 — glassmorphism review surface. Unlinked + not prerendered;
+//    exists so the founder can judge the direction on a real phone.
+const StylePreviewPage = React.lazy(() => import("@/pages/StylePreviewPage"));
 const TherapistDetailPage = React.lazy(
   () => import("@/pages/TherapistDetailPage")
 );
@@ -105,7 +108,7 @@ const NotificationsPage = React.lazy(
   () => import("@/pages/NotificationsPage")
 );
 const BookingHistoryPage = React.lazy(
-  () => import("@/pages/BookingHistoryPage")
+  () => import("@/pages/booking/BookingHistoryPage")
 );
 
 const ReviewPage = React.lazy(() => import("@/pages/ReviewPage"));
@@ -232,6 +235,23 @@ const AdminPagesListPage = React.lazy(
   () => import("@/pages/admin/AdminPagesListPage")
 );
 
+/**
+ * 🧊 2026-07-28 — the concierge bubble is global (mounted above <Routes>),
+ * so it also floated over /style-preview and covered the sheet. Gated here
+ * in its own component rather than inside App() on purpose: calling
+ * useLocation() in App() would re-render the entire route tree on every
+ * navigation. This isolates that subscription to one leaf.
+ */
+function GlobalConciergeChat() {
+  const { pathname } = useLocation();
+  if (pathname === "/style-preview") return null;
+  return (
+    <Suspense fallback={null}>
+      <AdminFloatingChat />
+    </Suspense>
+  );
+}
+
 export default function App() {
   return (
     <Suspense
@@ -253,9 +273,7 @@ export default function App() {
       {/* 🆕 Round 28b29 — AdminFloatingChat lazy + null Suspense fallback
           (so the chat bubble appears AFTER the rest of the page paints
           rather than blocking it). framer-motion no longer in main bundle. */}
-      <Suspense fallback={null}>
-        <AdminFloatingChat />
-      </Suspense>
+      <GlobalConciergeChat />
 
       <MaintenanceGate>
       <Routes>
@@ -269,6 +287,13 @@ export default function App() {
         <Route path="/admin/login" element={<Navigate to="/login" replace />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/wechat-scan" element={<WeChatScanPage />} />
+        {/* 🧊 Glassmorphism review surface (2026-07-28). Deliberately
+            OUTSIDE MainLayout so the current nav / bottom-nav / concierge
+            bubble don't overlay the sheet — the point is to judge the
+            glass, not the chrome it will eventually replace. Unlinked and
+            not in prerender-routes.mjs; direct URL only. Delete once the
+            direction is settled. */}
+        <Route path="/style-preview" element={<StylePreviewPage />} />
         {/* ================= MAIN LAYOUT ================= */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />

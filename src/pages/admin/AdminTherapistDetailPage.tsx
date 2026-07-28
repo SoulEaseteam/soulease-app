@@ -46,7 +46,7 @@ import {
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
 import { endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
-import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
+import { useTherapistBookings, findActiveBooking } from "@/hooks/useTherapistBookings";
 import { computeBookingStats, type TherapistBookingStats, EMPTY_BOOKING_STATS } from "@/hooks/useTherapistBookingStats";
 import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
@@ -55,7 +55,7 @@ import {
   SectionCard, LocationPicker, FeaturesEditor, LanguagesEditor, ServicesEditor,
   CredentialsEditor, BiosEditor, GalleryEditor, AvatarUploader, fieldSx, selectMenuProps,
   FEATURE_ROWS, LANG_LABEL, LANG_LEVEL_TH, BIO_LANGS,
-} from "./therapistFormKit";
+} from "@/components/admin/therapistFormKit";
 
 type Avail = "available" | "bookable" | "resting" | "holiday";
 type StatusOverride = "Auto" | "available" | "bookable" | "resting";

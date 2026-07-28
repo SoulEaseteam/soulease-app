@@ -163,7 +163,7 @@ const AdminTonightPage: React.FC = () => {
     const c = { total: jobs.length, enroute: 0, in_session: 0, overdue: 0 };
     const now = nowBKK();
     for (const b of jobs) {
-      const st = (b.dispatchState as DispatchState) || "assigned";
+      const st = b.dispatchState! || "assigned";
       if (st === "enroute" || st === "arrived") c.enroute++;
       if (st === "in_session") {
         c.in_session++;

@@ -53,7 +53,7 @@ import {
   fromSnap,
   findActiveBooking,
   type TherapistBooking,
-} from "@/utils/useTherapistBookings";
+} from "@/hooks/useTherapistBookings";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 
 // ==========================================================

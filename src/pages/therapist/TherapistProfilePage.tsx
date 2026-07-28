@@ -61,16 +61,13 @@ import type { Therapist, Avail, StatusOverride } from "@/types/therapist";
 import { responsiveShell } from "@/theme/breakpoints";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { enhanceImage } from "@/utils/cloudinary";
+import type { Booking } from "@/types/booking";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 /** Narrow shape of a booking record we read from Firestore. */
-interface BookingDoc {
-  startAt?: Timestamp | Date | string | null;
-  status?: string;
-  reviewText?: string;
-}
+type BookingDoc = Pick<Booking, "startAt" | "status" | "reviewText">;
 
 /** Status pill colors — brand-consistent, no salmon. */
 const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> = {

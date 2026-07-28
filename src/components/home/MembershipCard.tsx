@@ -20,7 +20,7 @@ import React from "react";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Check } from "phosphor-react";
-import { fonts } from "@/theme";
+import { fonts } from "@/theme/theme";
 import { whatsappDeepLink } from "@/config/concierge";
 
 const MEMBER_IMG = "/images/hero/member.png";

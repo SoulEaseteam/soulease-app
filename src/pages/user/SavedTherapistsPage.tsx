@@ -19,7 +19,7 @@ import type { Therapist } from "@/types/therapist";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 import { responsiveShell } from "@/theme/breakpoints";
 // 🆕 Round 28r81 — accent tokens (favorite pink chip).
-import { accents } from "@/theme";
+import { accents } from "@/theme/theme";
 
 interface FavoriteTherapist {
   id: string;

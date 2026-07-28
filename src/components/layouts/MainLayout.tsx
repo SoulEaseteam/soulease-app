@@ -12,7 +12,7 @@ import RoleViewBanner from "@/components/common/RoleViewBanner";
 //   tiny centered column on desktop. Content now widens to 600/768/
 //   1200 across sm/md/lg while preserving the 430px look on <600px.
 import { responsiveShell, pageSurface } from "@/theme/breakpoints";
-import { brand } from "@/theme";
+import { brand } from "@/theme/theme";
 // 🆕 Round 28r53 — Phase 3.2. PromoStrip (built in r51) mounted in-flow
 //   directly below TopNav (NOT sticky — TopNav auto-hides on mobile
 //   scroll, so a sticky strip below it would create an orphan gap).

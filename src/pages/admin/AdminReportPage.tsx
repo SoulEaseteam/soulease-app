@@ -44,28 +44,21 @@ import {
   isNoShow, noShowCompFor,
 } from "@/utils/commission";
 // 🆕 28w.39 — admin split-table editor (therapist/shop per service × duration).
-import SplitTableEditor from "./SplitTableEditor";
+import SplitTableEditor from "@/components/admin/SplitTableEditor";
+import type { Booking as BookingBase } from "@/types/booking";
 
 const SANS  = adminFont.sans;
 const SERIF = adminFont.serif;
 
 // ── types ─────────────────────────────────────────────────────────────
+// Shared field list now lives in @/types/booking (reconciled 2026-07-27
+// restructure). `id` is required here (this page always synthesizes it
+// from doc.id before use) and `createdAt` keeps its own looser FBTS
+// shape (toDate() helper below handles raw {seconds} objects too).
 type FBTS = Timestamp | { seconds: number } | Date | string | null | undefined;
 
-interface Booking {
+interface Booking extends Omit<BookingBase, "id" | "createdAt"> {
   id: string;
-  therapistId?: string;
-  therapistName?: string;
-  serviceId?: string;        // 🆕 28s247 — needed for the tier-aware split
-  serviceName?: string;
-  servicePrice?: number;
-  duration?: number;         // 🆕 28w.39 — keys the fixed per-tier split
-  therapistShare?: number;   // 🆕 28w.43 — split frozen at confirm-time
-  shopShare?: number;        // 🆕 28w.43
-  discountAmount?: number;   // 🆕 28s247 — commission is on the post-discount price
-  taxiFee?: number;
-  totalPrice?: number;
-  status?: string;
   createdAt?: FBTS;
 }
 
