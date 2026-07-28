@@ -554,6 +554,12 @@ const BookingFlowPage: React.FC = () => {
                 therapistLive.statusOverride ?? therapist.statusOverride,
               startTime: therapistLive.startTime ?? therapist.startTime,
               endTime: therapistLive.endTime ?? therapist.endTime,
+              // 🆕 28x.116 — static therapists.ts hardcodes rating/reviews
+              //   to 0 for all 12 originals; live values only exist in
+              //   Firestore. Without this, checkout always showed "★ —
+              //   (0 reviews)" for real practitioners.
+              rating: therapistLive.rating ?? therapist.rating,
+              reviews: therapistLive.reviews ?? therapist.reviews,
             }
           : {}),
         // Always derived from live bookings — ignores any stale persisted
@@ -1869,9 +1875,18 @@ const BookingFlowPage: React.FC = () => {
                       it back out by the review count to fake a "sum" and re-smoothing
                       pulled it toward the 4.5 prior all over again: 4.7 → 4.6, and
                       4.5 flat for anyone the doc hadn't been synced for.
-                      The doc value IS the number. Show it. */}
-                  {therapist && (therapist.reviews ?? 0) > 0
-                    ? formatRating(therapist.rating)
+                      The doc value IS the number. Show it.
+
+                      🆕 28x.116 — reads therapistMerged, not the raw
+                      `therapist`: static therapists.ts hardcodes rating/
+                      reviews to 0 for all 12 original roster members
+                      (founder screenshot: Yuri showed "★ — (0 reviews)"
+                      here while the practitioner list correctly showed
+                      4.8★/36, which reads live). therapistMerged overlays
+                      the live Firestore rating/reviews same as isHoliday
+                      etc — see useTherapistLiveStatus.ts. */}
+                  {therapistMerged && (therapistMerged.reviews ?? 0) > 0
+                    ? formatRating(therapistMerged.rating)
                     : "—"}
                 </Typography>
                 <Typography
@@ -1883,7 +1898,7 @@ const BookingFlowPage: React.FC = () => {
                   }}
                 >
                   {t("booking.reviewsCount", "({{count}} reviews)", {
-                    count: therapist?.reviews ?? 0,
+                    count: therapistMerged?.reviews ?? 0,
                   })}
                 </Typography>
               </Box>

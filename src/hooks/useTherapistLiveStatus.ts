@@ -53,6 +53,12 @@ export interface TherapistLiveStatus {
   /** Working window — admin can edit live so engine respects shift. */
   startTime?: string;
   endTime?: string;
+  /** 🆕 Round 28x.116 (founder screenshot: checkout showed "★ — (0 reviews)"
+   *  for Yuri, 4.8★/36 elsewhere) — static therapists.ts hardcodes rating/
+   *  reviews to 0 for all 12 originals as unused placeholders; real values
+   *  only ever land in Firestore. Live-sync them same as the status fields. */
+  rating?: number;
+  reviews?: number;
   /** Convenience flag for callers who only need a yes/no gate. */
   exists: boolean;
   /** True while the doc is loading (first snapshot). UI can show skeleton. */
@@ -103,6 +109,9 @@ export function useTherapistLiveStatus(
             typeof data.startTime === "string" ? data.startTime : undefined,
           endTime:
             typeof data.endTime === "string" ? data.endTime : undefined,
+          rating: typeof data.rating === "number" ? data.rating : undefined,
+          reviews:
+            typeof data.reviews === "number" ? data.reviews : undefined,
           exists: true,
           loading: false,
         });
