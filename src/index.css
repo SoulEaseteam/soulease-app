@@ -132,3 +132,117 @@ html.sr-day {
   --sr-hero-scrim-xs: linear-gradient(90deg, rgba(251,247,249,0.96) 0%, rgba(251,247,249,0.90) 48%, rgba(251,247,249,0.55) 72%, rgba(251,247,249,0) 100%);
   --sr-hero-scrim-md: linear-gradient(90deg, rgba(251,247,249,0.95) 0%, rgba(251,247,249,0.74) 38%, rgba(251,247,249,0.34) 60%, rgba(251,247,249,0) 78%);
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   🧊 GLASSMORPHISM LAYER — founder direction 2026-07-28.
+   "การ์ดโปร่งแสงเบลอหลัง · ขอบเส้นบางสีขาว · เส้นคั่นบางๆ ·
+    ตัวหนังสือขาวน้ำหนักบาง · หัวข้อเซริฟ · ปุ่ม/ชิปที่เลือกเป็นสีขาวทึบ
+    ตัดกับกระจก · หน้าจองใช้รูปเต็มจอไล่เงาลงมาต่อกับชีตกระจก"
+
+   Night is the design target (prime time is 22:00–04:00, guests browse
+   in a dark room). Day keeps the SAME structure — same radii, same
+   hairlines, same blur — but inverts fill and ink so the look survives
+   DayNightSync instead of going unreadable at noon.
+
+   NOTE the `--sr-solid` pair intentionally FLIPS between modes: a
+   selected chip must out-contrast its own surface. White-on-dark-glass
+   at night; ink-on-frosted-white by day. Same component, both legible.
+
+   Consume via `src/theme/frost.ts` — do not hardcode these rgba values
+   in components, or the day/night flip silently stops working.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 🌙 NIGHT — dark glass, white ink */
+:root {
+  --sr-glass: rgba(255, 255, 255, 0.06);        /* card fill */
+  --sr-glass-raised: rgba(255, 255, 255, 0.10); /* hover / inner / nested */
+  --sr-glass-sunken: rgba(0, 0, 0, 0.18);       /* input wells */
+  --sr-glass-border: rgba(255, 255, 255, 0.16); /* thin white edge */
+  --sr-glass-border-soft: rgba(255, 255, 255, 0.10);
+  --sr-glass-line: rgba(255, 255, 255, 0.09);   /* internal hairline divider */
+  --sr-glass-blur: blur(24px) saturate(160%);
+  --sr-glass-blur-strong: blur(36px) saturate(170%);
+  --sr-glass-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
+  /* inner top highlight — the "lit edge" that sells glass */
+  --sr-glass-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+
+  /* ink on glass */
+  --sr-glass-ink: #FFFFFF;
+  --sr-glass-body: rgba(255, 255, 255, 0.76);
+  --sr-glass-muted: rgba(255, 255, 255, 0.52);
+  --sr-glass-dim: rgba(255, 255, 255, 0.34);
+
+  /* solid selected chip / primary button */
+  --sr-solid: #FFFFFF;
+  --sr-solid-ink: #17181D;
+  --sr-solid-shadow: 0 6px 20px rgba(0, 0, 0, 0.34);
+
+  /* full-bleed hero photo → scrim → glass sheet (booking surface) */
+  /* Must reach ~opaque by ~76% — that's where the sheet's top edge lands
+     (sheetTop 46dvh ÷ photoHeight 62dvh). Any lighter and the seam reads
+     as a hard cut instead of the photo flowing into the sheet. */
+  --sr-sheet-scrim: linear-gradient(
+    180deg,
+    rgba(23, 24, 29, 0) 0%,
+    rgba(23, 24, 29, 0.12) 26%,
+    rgba(23, 24, 29, 0.48) 48%,
+    rgba(23, 24, 29, 0.82) 64%,
+    rgba(23, 24, 29, 0.96) 76%,
+    rgba(23, 24, 29, 1) 100%
+  );
+  --sr-sheet-fill: rgba(23, 24, 29, 0.62);
+}
+
+/* ☀️ DAY — frosted white glass, ink text */
+html.sr-day {
+  --sr-glass: rgba(255, 255, 255, 0.62);
+  --sr-glass-raised: rgba(255, 255, 255, 0.82);
+  --sr-glass-sunken: rgba(35, 43, 54, 0.04);
+  --sr-glass-border: rgba(255, 255, 255, 0.88);
+  --sr-glass-border-soft: rgba(255, 255, 255, 0.62);
+  --sr-glass-line: rgba(35, 43, 54, 0.08);
+  --sr-glass-blur: blur(24px) saturate(180%);
+  --sr-glass-blur-strong: blur(36px) saturate(190%);
+  --sr-glass-shadow: 0 12px 40px rgba(35, 43, 54, 0.10);
+  --sr-glass-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+
+  --sr-glass-ink: #232B36;
+  --sr-glass-body: rgba(35, 43, 54, 0.72);
+  --sr-glass-muted: rgba(35, 43, 54, 0.50);
+  --sr-glass-dim: rgba(35, 43, 54, 0.32);
+
+  --sr-solid: #232B36;
+  --sr-solid-ink: #FFFFFF;
+  --sr-solid-shadow: 0 6px 20px rgba(35, 43, 54, 0.18);
+
+  --sr-sheet-scrim: linear-gradient(
+    180deg,
+    rgba(251, 247, 249, 0) 0%,
+    rgba(251, 247, 249, 0.14) 26%,
+    rgba(251, 247, 249, 0.50) 48%,
+    rgba(251, 247, 249, 0.84) 64%,
+    rgba(251, 247, 249, 0.97) 76%,
+    rgba(251, 247, 249, 1) 100%
+  );
+  --sr-sheet-fill: rgba(255, 255, 255, 0.66);
+}
+
+/* ♿ Blur is expensive on low-end Android and unreadable for some users.
+   Fall back to a flat opaque-ish fill when the guest asks for reduced
+   transparency; keep the borders so structure survives. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --sr-glass: #20222B;
+    --sr-glass-raised: #2A2D38;
+    --sr-glass-blur: none;
+    --sr-glass-blur-strong: none;
+    --sr-sheet-fill: #17181D;
+  }
+  html.sr-day {
+    --sr-glass: #FFFFFF;
+    --sr-glass-raised: #FFFFFF;
+    --sr-glass-blur: none;
+    --sr-glass-blur-strong: none;
+    --sr-sheet-fill: #FFFFFF;
+  }
+}
