@@ -1,12 +1,383 @@
-# SunRed — Multi-Language Message Templates
+# SunRed — Message Templates (canonical)
 
-**Coverage:** 8 languages — English (existing), Mandarin Simplified (CN), Mandarin Traditional (HK/TW), Japanese (JP), Korean (KR), Thai (local), Bahasa Malaysia (MY), Arabic (UAE/SA — for Middle East)
-
-**Key principle:** These are starter templates. You don't need to memorize them — copy-paste, edit `[BRACKETS]`, send. AI translation tools (Google Translate, DeepL, Gemini) can fill gaps for one-off responses, but having pre-made templates for the most common scenarios makes you 10x faster.
-
-**Solo operator hack:** Save each template as a Quick Reply in WhatsApp Business with a shortcut like `/zh-welcome`, `/jp-welcome`, `/th-welcome`. Type the shortcut, get the full template instantly.
+Copy-paste replies for WhatsApp / Telegram / LINE, in the languages our
+guests actually use. This replaces the two 2026-era template files that
+were archived on 2026-07-28 (`docs/archive/SunRed_Message_Templates.md`
+and `docs/archive/02_Multi_Language_Templates.md`) — see the banner atop
+each for why. Non-English templates below are carried over **verbatim**
+from that archive; only the price blocks were corrected.
 
 ---
+
+## Prices — the one place to check before quoting
+
+Sourced from `src/data/services.ts` (60-min bases) +
+`DURATION_PRICE_OVERRIDES` in `src/utils/servicePricing.ts`, verified
+2026-07-28. **The archived templates quoted 1,800 / 2,500-2,800 / 3,500 /
+1,500 / 2,200 — every one of those was wrong.** If a guest is quoted from
+an old copy, honour the correct price below and fix the copy.
+
+| Service | Durations | Price (THB) |
+|---|---|---|
+| Thai Massage | 60 / 90 / 120 | 1,200 / 1,600 / 2,000 |
+| Aromatherapy Massage | 60 / 90 / 120 | 1,400 / 1,800 / 2,400 |
+| Gentleman's Signature Therapy | 70 / 120 | 2,200 / 3,000 |
+| SunRed Therapeutic Experience | 70 / 120 | 3,200 / 4,000 |
+
+Gentleman's and Therapeutic run **70/120 only** — there is no 60 or 90
+option. Admin can override any price live from `/admin/promotions`
+(writes `adminSettings/publicRules`), so if a number here disagrees with
+the live site, the site wins and this table needs updating.
+
+WeChat Pay / Alipay carry a transfer fee of `round(total × 5%) + ฿200`
+(`src/utils/paymentSurcharge.ts`). Cash and PromptPay have no fee.
+
+---
+
+## Rules these templates follow
+
+Three things were stripped out of the archived versions because they
+conflict with standing founder policy — don't reintroduce them:
+
+1. **Never ask a guest for a public review.** The old template 4.1 had a
+   `[GOOGLE REVIEW LINK]`. CLAUDE.md §🚫 rules out a Google Business
+   Profile entirely, and §🔐 hard-bans any flow that makes a guest
+   publicly attribute their experience. Anonymous in-app reviews and
+   permission-based anonymous TG blurbs are the sanctioned routes.
+2. **No hotel-concierge / B2B commission outreach.** The old Section 7
+   pitched 5★ concierge desks at 20%. That's on the ❌ DOES-NOT-WORK list
+   in §6 — brand risk for the hotel, and it exposes the guest relationship.
+3. **No `samsguide.living` targeting.** The old 5.3 was built around it;
+   that channel was cancelled (฿75,000 spent, zero ROI).
+
+Register: guests are *guests*, therapists are *practitioners*, we are the
+*concierge*, and bookings are *reservations*. Use the euphemism table in
+CLAUDE.md §3 for anything adult-adjacent — never the clinical term.
+
+---
+
+## Coverage — be honest about the gaps
+
+Non-English coverage is uneven, inherited from the archive. Nothing below
+was machine-translated by us; where a language is missing a scenario,
+write it fresh and have it checked rather than guessing.
+
+| Scenario | EN | CN | HK/TW | JP | KR | TH | MY | AR |
+|---|---|---|---|---|---|---|---|---|
+| First contact | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Booking confirm | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Pricing | ✅ | ✅ | — | ✅ | — | ✅ | — | — |
+| Discretion | ✅ | ✅ | — | ✅ | — | ✅ | — | — |
+| Repeat welcome-back | ✅ | ✅ | — | ✅ | ✅ | ✅ | — | — |
+| Re-engagement | ✅ | ✅ | — | ✅ | ✅ | ✅ | — | — |
+| Pre-arrival / comfort | ✅ | — | — | — | — | — | — | — |
+| Difficult situations | ✅ | — | — | — | — | — | — | — |
+| Operational quick-replies | ✅ | — | — | — | — | — | — | — |
+
+**Two unresolved conflicts inherited from the archive**, flagged rather
+than silently decided — both need View's call:
+- **Service cutoff.** Old files variously said 2am and 4am. The templates
+  below say 2am. Confirm which is real.
+- **Practitioner languages.** The English file claimed English + Mandarin
+  only; the multi-language file promised Cantonese, Japanese, Korean,
+  Malay and basic Arabic on request. The templates below still carry the
+  latter claim — verify against the real roster before promising it.
+
+---
+
+# Part 1 — English
+
+## Section 1 — First contact
+
+### 1.1 — Generic "How does this work?" (English)
+
+```
+Hi, thanks for reaching out 🙏
+
+Quick overview of how SunRed works:
+
+✓ We dispatch a licensed therapist to your hotel room
+✓ We cover all 4-5 star hotels in Sukhumvit, Silom, Sathorn, Riverside
+✓ Sessions: 60min / 90min / 120min — Aroma, Swedish, Deep Tissue, Thai
+✓ Late-night dispatch available until 2am
+✓ English & Mandarin-speaking therapists
+
+To book, just send me:
+1. Your hotel name (room number after we confirm)
+2. Date & time you want
+3. Service & duration
+4. Any therapist preference
+
+Pricing is fixed — I'll quote you the all-in total before you confirm.
+
+What works for you?
+```
+
+### 1.2 — Price Inquiry (Direct Question)
+
+```
+Sure, here's our pricing — all prices are inclusive (travel, oils, sheets, therapist):
+
+🌿 Thai Massage — 60 / 90 / 120 min — 1,200 / 1,600 / 2,000 THB
+🌿 Aromatherapy Massage — 60 / 90 / 120 min — 1,400 / 1,800 / 2,400 THB
+🌿 Gentleman's Signature Therapy — 70 / 120 min — 2,200 / 3,000 THB
+🌿 SunRed Therapeutic Experience — 70 / 120 min — 3,200 / 4,000 THB
+
+Late-night surcharge (sessions starting after 1am): +300 THB
+
+Tips are at your discretion (typical 200-500 THB for a good session).
+
+Want me to send you available therapist profiles for the time you have in mind?
+```
+
+### 1.3 — "Are You Discreet?" Question
+
+```
+Yes — discretion is standard for us. Specifically:
+
+✓ Therapist arrives in plain clothes with a small roller bag (looks like flight crew)
+✓ No reception check-in needed at most major hotels (Marriott, Hyatt, Anantara, etc.)
+✓ Session is private and closed-door
+✓ No follow-up calls or messages unless you initiate
+✓ Booking history stays between you and us
+
+If you have a specific concern about your hotel, let me know which one and I can confirm exactly how the arrival will work there.
+```
+
+---
+
+## Section 2 — Booking confirmation
+
+### 2.1 — Booking Confirmation Template (English)
+
+```
+Booking confirmed ✅
+
+📅 Date: [DATE]
+🕐 Time: [TIME]
+🏨 Hotel: [HOTEL NAME], Room [ROOM #]
+💆 Service: [SERVICE] — [DURATION] min
+👤 Therapist: [THERAPIST NAME]
+💰 Total: [AMOUNT] THB (cash on completion)
+
+The therapist will arrive at [TIME] and message you when they're 5 min away.
+
+Cancellation policy: Free up to 1hr before. 50% charge inside 1hr. Full charge for no-show.
+
+If you need to change anything, just message me here. See you soon 🙏
+```
+
+### 2.2 — "Therapist 5-min Away" Auto-Message
+
+```
+Hi [NAME] 👋
+
+[THERAPIST] is 5 minutes from your hotel. They'll come up to room [ROOM #] directly — plain clothes, small roller bag, looks like flight crew.
+
+Please make sure the room is ready (towel, somewhere to set up the table). They'll handle everything else.
+
+See you in a few minutes 🙏
+```
+
+---
+
+## Section 3 — Pre-arrival comfort
+
+### 3.1 — First-Time Customer Reassurance
+
+```
+Welcome! Since this is your first session with us, a few things you might want to know:
+
+🛏 The therapist brings a portable massage table — needs about 2x1m of clear space
+🧴 All oils, sheets, and towels are provided
+🚿 We recommend a quick shower before the session (warm) — opens up the muscles
+👕 You can wear whatever's comfortable (shorts, towel, etc.) — therapist will give privacy to change
+💬 Communicate during the session if pressure is too soft / strong — they'll adjust immediately
+
+Any questions before they arrive?
+```
+
+### 3.2 — Customer Asking About Pressure
+
+```
+Great question — Thai therapists often default to lighter pressure than Singaporean / Hong Kong customers prefer.
+
+When the therapist starts, just say:
+- "Stronger please" / "More pressure"
+- "Lighter please" / "Soft pressure"
+- Or in Thai: "แรงๆ" (stronger) / "เบาๆ" (lighter)
+
+[THERAPIST] specializes in [STYLE] and is comfortable with firm pressure if that's what you want.
+```
+
+---
+
+## Section 4 — Post-session
+
+### 4.1 — Repeat Customer Welcome Back
+
+```
+Welcome back to Bangkok 👋
+
+Looking at our notes:
+• Last session: [DATE] with [THERAPIST]
+• You preferred [SERVICE], [PRESSURE]
+• Hotel: [HOTEL]
+
+Want to book the same again? Or change anything this time?
+```
+
+### 4.2 — VIP Repeat Customer (5+ Bookings)
+
+```
+Hey [NAME] — good to hear from you again 🙏
+
+Since this is your [N]th time with us, I've blocked [THERAPIST] for the time you mentioned. Same as always — [SERVICE] [DURATION] at [HOTEL].
+
+As a thank you for being a regular: this session is on a complimentary upgrade to [SERVICE+], no extra charge.
+
+Confirm and I'll lock it in?
+```
+
+---
+
+## Section 5 — Re-engagement
+
+### 5.1 — Customer Inactive 60-90 Days (Soft Touch)
+
+```
+Hi [NAME] — hope you've been well 🙏
+
+Saw it's been a couple months since your last visit ([LAST_DATE]). Just wanted to check in — are you back in Bangkok any time soon?
+
+If yes, I can pre-block [PREFERRED_THERAPIST] for the dates you mention. No pressure either way, just thought I'd check.
+```
+
+### 5.2 — Customer Inactive 90+ Days (Stronger Offer)
+
+```
+Hi [NAME] — it's been a while 🙏
+
+We've made some upgrades since you last visited:
+• [NEW_SERVICE] now available
+• Late-night dispatch extended to 4am
+• [Any other genuine changes]
+
+If you're heading back to Bangkok in the next few months, here's a personal note: I'd love to have you back. Use the code REPEAT2026 for 15% off your next booking with us.
+
+Otherwise, no pressure — happy to stay in touch when you're traveling next.
+```
+
+## Section 6 — Difficult situations
+
+### 6.1 — Customer Asks for Inappropriate Service
+
+```
+I appreciate the inquiry, but SunRed is a strictly professional therapeutic massage service. Our therapists provide aroma, Swedish, deep tissue, and Thai massage only — no other services available.
+
+If you're looking for therapeutic bodywork, we'd be glad to host you. If you're looking for something else, we're not the right fit and I'd rather be upfront.
+```
+
+### 6.2 — Last-Minute Cancellation by Customer (Inside 1hr)
+
+```
+Got it, no problem — I understand things come up.
+
+Per our policy, last-minute cancellations inside 1 hour carry a 50% charge to compensate the therapist who's already on the way. That's [AMOUNT] THB.
+
+You can settle via:
+• Cash next time you're in Bangkok
+• PromptPay QR (I'll send the code)
+• Bank transfer (details on request)
+
+When you're back in town, I'll prioritize your rebooking.
+```
+
+### 6.3 — Therapist Running Late (Proactive Apology)
+
+```
+Quick update — [THERAPIST] is running about 15-20 min late due to traffic on [ROAD]. So sorry for the delay.
+
+ETA is now [NEW_TIME]. As an apology for the late arrival, I'm extending your session by 15 minutes at no extra charge.
+
+If this timing no longer works for you, let me know and we'll fully reschedule, no charge.
+```
+
+### 6.4 — Complaint / Negative Feedback
+
+```
+Thank you for telling me directly — I genuinely appreciate the feedback, and I'm sorry the session didn't meet expectations.
+
+I'd like to make this right. Two options:
+
+1. Refund of [AMOUNT] THB — I can send via [METHOD] today
+2. Complimentary 90-min session on your next visit with a different therapist matched specifically to your preferences
+
+Which would you prefer? And could you share a bit more about what specifically didn't work? It helps us improve and avoids repeating the issue.
+```
+
+---
+
+## Section 7 — Forum / community engagement
+
+### 7.1 — Reddit / Forum Reply (Helpful, Non-Promotional)
+
+```
+Bangkok mobile massage scene is mature — you have real options. A few honest tips:
+
+1. Stay in Sukhumvit Soi 1-25 if convenience matters most. Densest service availability.
+2. Avoid the sub-1,000 THB market for your first booking. The 1,500-2,500 THB tier is where the value-quality ratio is best.
+3. Specify pressure preference clearly — Thai therapists default lighter than most SG/HK customers want.
+4. Top services have named therapists with profiles. If a service won't tell you who's coming, that's a flag.
+5. WhatsApp/Telegram bookings should confirm price in writing before you commit. Vague pricing is the #1 sign of an unprofessional operator.
+
+Most reputable operators will work with major hotels (Marriott, Hyatt, Anantara, etc.) without friction. If you have a specific question about a hotel, happy to share what I know.
+```
+
+### 7.2 — Forum Self-Disclosure (When Appropriate)
+
+```
+Full disclosure — I run a mobile massage service in Bangkok (SunRed), so take my views with that context. That said, the criteria above apply equally to evaluating us or any competitor. I'd rather you book the right service than the cheap one.
+```
+
+---
+
+## Section 8 — Operational quick-replies
+
+### 8.1 — "Are you available tonight?" (Quick Yes)
+
+```
+Yes 👍 What time and which hotel?
+```
+
+### 8.2 — "Are you available tonight?" (Quick No)
+
+```
+Sorry, fully booked tonight. Tomorrow is wide open — what time works?
+```
+
+### 8.3 — Customer Asking for Wrong Service (Couples / Spa Day / etc.)
+
+```
+Just to confirm — SunRed is mobile massage to your hotel room (single therapist, single client per session). 
+
+If you're looking for a couples' massage or full spa day, I'd recommend [LIST OF NEARBY HOTEL SPAS] which can do both. Happy to point you to specific contacts there if helpful.
+```
+
+### 8.4 — Customer Outside Service Area
+
+```
+Thanks for reaching out — unfortunately we don't currently dispatch to [AREA] (we cover Sukhumvit, Silom, Sathorn, Riverside).
+
+If you're staying somewhere central or moving hotels for the second part of your trip, let me know — I can confirm coverage.
+```
+
+---
+
+# Part 2 — Other languages
+
+Carried over verbatim from the archived multi-language file (price blocks
+corrected). Section numbering is the archive's own.
 
 ## SECTION 1: First-Contact "Welcome / How does this work?"
 
@@ -186,7 +557,6 @@ Bila anda nak buat tempahan?
 ```
 
 ---
-
 ## SECTION 2: Booking Confirmation
 
 ### 🇨🇳 Mandarin Simplified
@@ -323,7 +693,6 @@ Hubungi saya sekiranya ada perubahan. Terima kasih 🙏
 ```
 
 ---
-
 ## SECTION 3: Pricing Inquiry Quick Reply
 
 ### 🇨🇳 Mandarin Simplified
@@ -331,10 +700,10 @@ Hubungi saya sekiranya ada perubahan. Terima kasih 🙏
 ```
 当然可以，我们的价目表如下（全包价）：
 
-🌿 60分钟 — 1,800 泰铢（芳香 / 瑞典式）
-🌿 90分钟 — 2,500-2,800 泰铢（芳香 / 深层 / 瑞典式）
-🌿 120分钟 — 3,500 泰铢（芳香+拉伸 / 综合）
-🌿 泰式 60/90分钟 — 1,500 / 2,200 泰铢
+🌿 泰式按摩 Thai Massage — 60 / 90 / 120 分钟 — 1,200 / 1,600 / 2,000 泰铢
+🌿 芳香精油按摩 Aromatherapy — 60 / 90 / 120 分钟 — 1,400 / 1,800 / 2,400 泰铢
+🌿 Gentleman's Signature Therapy — 70 / 120 分钟 — 2,200 / 3,000 泰铢
+🌿 SunRed Therapeutic Experience — 70 / 120 分钟 — 3,200 / 4,000 泰铢
 
 凌晨1点后预约 + 300 泰铢
 小费由您自由决定（一般200-500泰铢）
@@ -347,10 +716,10 @@ Hubungi saya sekiranya ada perubahan. Terima kasih 🙏
 ```
 料金表はこちらです（込みこみ）：
 
-🌿 60分 — 1,800 バーツ（アロマ / スウェディッシュ）
-🌿 90分 — 2,500-2,800 バーツ（アロマ / ディープ / スウェディッシュ）
-🌿 120分 — 3,500 バーツ（アロマ+ストレッチ / コンボ）
-🌿 タイマッサージ 60/90分 — 1,500 / 2,200 バーツ
+🌿 タイ古式マッサージ Thai Massage — 60 / 90 / 120分 — 1,200 / 1,600 / 2,000 バーツ
+🌿 アロマオイルマッサージ Aromatherapy — 60 / 90 / 120分 — 1,400 / 1,800 / 2,400 バーツ
+🌿 Gentleman's Signature Therapy — 70 / 120分 — 2,200 / 3,000 バーツ
+🌿 SunRed Therapeutic Experience — 70 / 120分 — 3,200 / 4,000 バーツ
 
 深夜1時以降は + 300 バーツ
 チップはお気持ちで（200-500 バーツが一般的）
@@ -363,10 +732,10 @@ Hubungi saya sekiranya ada perubahan. Terima kasih 🙏
 ```
 ราคาบริการ (ครอบคลุมทุกอย่างแล้ว):
 
-🌿 60 นาที — 1,800 บาท (อโรมา / สวีดิช)
-🌿 90 นาที — 2,500-2,800 บาท (อโรมา / ดีพทิชชู่ / สวีดิช)
-🌿 120 นาที — 3,500 บาท (อโรมา + ยืดเหยียด)
-🌿 นวดไทย 60/90 นาที — 1,500 / 2,200 บาท
+🌿 นวดไทย Thai Massage — 60 / 90 / 120 นาที — 1,200 / 1,600 / 2,000 บาท
+🌿 นวดน้ำมันอโรมา Aromatherapy — 60 / 90 / 120 นาที — 1,400 / 1,800 / 2,400 บาท
+🌿 Gentleman's Signature Therapy — 70 / 120 นาที — 2,200 / 3,000 บาท
+🌿 SunRed Therapeutic Experience — 70 / 120 นาที — 3,200 / 4,000 บาท
 
 จองหลังตี 1 + 300 บาท
 ทิปแล้วแต่ความพอใจ (ปกติ 200-500 บาท)
@@ -375,7 +744,6 @@ Hubungi saya sekiranya ada perubahan. Terima kasih 🙏
 ```
 
 ---
-
 ## SECTION 4: Discretion Question
 
 ### 🇨🇳 Mandarin Simplified
@@ -421,7 +789,6 @@ Hubungi saya sekiranya ada perubahan. Terima kasih 🙏
 ```
 
 ---
-
 ## SECTION 5: Repeat Customer Welcome Back
 
 ### 🇨🇳 Mandarin Simplified
@@ -477,7 +844,6 @@ Hubungi saya sekiranya ada perubahan. Terima kasih 🙏
 ```
 
 ---
-
 ## SECTION 6: Re-Engagement (Inactive 60-90 Days)
 
 ### 🇨🇳 Mandarin Simplified
@@ -529,60 +895,6 @@ Hubungi saya sekiranya ada perubahan. Terima kasih 🙏
 ```
 
 ---
-
-## SECTION 7: AI Translation Workflow (For Anything Not Covered Above)
-
-When you receive a message in a language you don't have a template for:
-
-### Step 1: Identify the language
-- Telegram and WhatsApp don't auto-detect, but you can usually tell from the script (Cyrillic = Russian, Devanagari = Hindi, etc.)
-
-### Step 2: Translate the customer's message into your working language
-- **Best free option**: DeepL (deepl.com) — handles 30+ languages, much better than Google Translate for Asian languages
-- **Best for Asian languages**: Use Claude or ChatGPT — paste the message and ask "translate to English and explain context"
-
-### Step 3: Compose your reply in English/Thai (your working language)
-
-### Step 4: Translate your reply back to the customer's language
-- For routine messages, DeepL is fine
-- For nuanced/important messages (complaints, special requests), use Claude/ChatGPT and ask: "translate this to [language], maintaining a polite and professional service-business tone"
-
-### Step 5: Always include both languages in your final reply
-- This is the trick that makes you look bilingual: send the translated version PLUS the English version
-- Example: "[Mandarin reply text] / English: [original English text]"
-- Customers appreciate seeing the translation isn't a black box, and you maintain trust if there's a translation error
-
-### Recommended AI tools for this workflow:
-
-| Tool | Best For | Cost |
-|------|----------|------|
-| DeepL | Translation accuracy | Free up to 5,000 chars/month |
-| Claude | Context-aware nuanced translation | Free tier or $20/month Pro |
-| ChatGPT | Quick translation + tone matching | Free tier or $20/month Plus |
-| Google Translate | Quick rough translation | Free |
-| Papago (NAVER) | Best for Korean | Free |
-| Baidu Translate | Best for Mandarin | Free |
-
-**Solo operator tip**: Set up a Claude or ChatGPT chat dedicated to translations. Keep it open in a tab. When you get a message in a language you don't know, paste it, get a quick reply, send. Total handling time: 60-90 seconds vs. 5-10 minutes if you tried to figure it out manually.
-
----
-
-## SECTION 8: Voice Note Strategy (Since You Don't Take Calls)
-
-Some Asian customers (especially older Chinese, Korean, and Indian travelers) prefer voice notes over text. They'll send you a voice note even if you've never sent one.
-
-**You don't need to send voice notes back.** What you need:
-
-1. **Transcribe their voice note**: WhatsApp/Telegram both have built-in transcription. iPhone has it system-wide. Otherwise, voice-to-text apps (Otter.ai free tier, Whisper API).
-
-2. **Translate the transcript** if needed (using AI workflow above).
-
-3. **Reply with text only**, but warmly — and acknowledge the voice note: "Thanks for your voice message — I want to make sure I get your details right, so let me reply in writing..."
-
-This keeps you chat-only operationally while not turning away voice-preferring customers.
-
----
-
 ## SECTION 9: Cultural Notes Per Language
 
 Each segment has subtle preferences that change how messages should land:
@@ -626,3 +938,17 @@ Each segment has subtle preferences that change how messages should land:
 - **Female therapist option** is critical for some male customers (cultural reasons).
 - **Avoid Friday morning bookings during prayer time.**
 - **Ramadan season is huge.** Late-night sessions (after iftar, post-tarawih) are peak demand. Adjust hours April-May.
+
+---
+
+## Where these live in practice
+
+- **WhatsApp Business** → Settings → Business tools → Quick replies.
+  Naming convention: `/<lang>-<scenario>` (e.g. `/th-welcome`,
+  `/jp-price`) so language and purpose are both greppable.
+- **Telegram** → saved messages, or a bot with inline buttons.
+- **LINE OA** → the built-in auto-reply/keyword tool (Thai + Japanese
+  guests overwhelmingly prefer LINE over WhatsApp).
+
+Personalise one or two sentences before sending — a template that lands
+verbatim reads like a bot, and this is a premium, discreet service.

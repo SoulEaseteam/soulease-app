@@ -70,11 +70,22 @@ View corrected the strategic framing during this session:
 - **Rule: still match marketing to actual nightly availability**
 
 **Pricing (THB, base = 60min):**
-- `xSR-Thai` Thai Massage — 1,200
-- `SR-Aroma` Aromatherapy — 1,600
-- `SR-HJ2200` Gentleman's Signature (Aroma + HJ release) — 2,200
-- `SR-B2B3200` SunRed Therapeutic (B2B/nuru genre) — 3,200
-- 90min = base × 1.5 · 120min = base × 2.0
+Corrected 2026-07-28 against the code — the old entry here said Aroma
+1,600 and "90min = base × 1.5 · 120min = base × 2.0", both of which
+Round 28w.36 superseded with explicit per-duration prices.
+
+| Service | Durations | Price (THB) |
+|---|---|---|
+| `xSR-Thai` Thai Massage | 60 / 90 / 120 | 1,200 / 1,600 / 2,000 |
+| `SR-Aroma` Aromatherapy | 60 / 90 / 120 | 1,400 / 1,800 / 2,400 |
+| `SR-HJ2200` Gentleman's Signature (Aroma + HJ release) | 70 / 120 | 2,200 / 3,000 |
+| `SR-B2B3200` SunRed Therapeutic (B2B/nuru genre) | 70 / 120 | 3,200 / 4,000 |
+
+Note Gentleman's and Therapeutic run **70/120 only** — no 60 or 90.
+60-min bases live in `src/data/services.ts`; every other duration in
+`DURATION_PRICE_OVERRIDES` in `src/utils/servicePricing.ts`. Admin can
+override any of these live from /admin/promotions, so treat the code as
+the shape and Firestore `adminSettings/publicRules` as the live value.
 - See `src/utils/servicePricing.ts` for canonical pricing
 - **Payment surcharge (Round 28s77):** WeChat Pay + Alipay carry a
   transfer fee = `round(total × 5%) + ฿200` (FX/processor markup +

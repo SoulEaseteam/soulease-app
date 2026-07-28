@@ -1,3 +1,25 @@
+> # ⚠️ ARCHIVED 2026-07-28 — WRONG BUSINESS MODEL, DO NOT REVIVE
+>
+> **This document describes a destination spa with a physical shopfront.**
+> SunRed is outcall — a practitioner travels to the guest's hotel or residence
+> (CLAUDE.md §2). It assumes a reception desk, an in-store photo corner, BTS/MRT
+> signage, a shuttle, walk-in discovery via Google Maps, SHA+ premises
+> certification, and scouting a second location. None of that applies.
+>
+> **Its two headline KPIs are both hard-banned:**
+> - "Top 10 spa on Google Maps" — CLAUDE.md §🚫 says SunRed cannot claim a
+>   Google Business Profile at all (gray-area positioning + guest privacy).
+> - "+800 Google reviews @ 4.8★" — CLAUDE.md §🔐 hard-bans any tactic that
+>   publishes a guest's identity.
+>
+> Also recommends Klook / KKday / Trip.com / Traveloka / GetYourGuide listings
+> and a 5★-hotel concierge commission program — all on the ❌ DOES-NOT-WORK
+> list in §6. It never once mentions Telegram, which is SunRed's actual primary
+> channel. Sections 1, 3 and 8 were never filled in (`?` and `(เพิ่มเอง)`
+> placeholders throughout).
+>
+> Current strategy lives in `docs/master-strategy.md` + `docs/customer-acquisition.md`.
+
 # Sunred Upgrade Strategy — Bangkok's Top Asian Wellness Destination
 ## แผนกลยุทธ์ยกระดับ Sunred สู่สปาอันดับต้น ๆ ของ กทม. สำหรับลูกค้าเอเชีย
 

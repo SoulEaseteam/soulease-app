@@ -1,3 +1,23 @@
+> # ⚠️ ARCHIVED 2026-07-28 — SEGMENT IDEAS OK, CHANNEL PLAN INVALID
+>
+> **Three of the four channels it names as "highest-leverage" are banned:**
+> hotel concierge (25% commission program), Klook/Viator/GetYourGuide, and
+> TripAdvisor listings + review solicitation — see CLAUDE.md §6 ❌ list and
+> §🔐 hard-ban. Only the fourth (Telegram Bangkok groups) survives.
+>
+> It also treats `samsguide.living` as the base channel to defend. CLAUDE.md
+> §6 records that as the failed Singapore ad — ฿75,000 burnt over 10 months,
+> zero ROI, "cancel ASAP".
+>
+> **Worth keeping (and why it's archived rather than deleted):** the segment
+> framework itself is genuinely additive and absent from the canonical docs —
+> Bangkok-expat lifetime value, couples, marathon/event weekends, medical
+> tourists, female travellers, and the Thai-local gift-positioning angle. Mine
+> it for those ideas; ignore its channel and phasing layers.
+>
+> Note it also contradicts `sunred-upgrade-strategy.md` on nearly every
+> priority call (Korea, Hong Kong, Mainland China all ranked oppositely).
+
 # SunRed — Multi-Segment Customer Expansion Strategy
 
 **Premise:** You're at 25-30 bookings/month, 100% from one Singapore forum. You want diverse customer base. Budget: 5-15K THB/month additional. Solo operator, chat-only, AI-translation enabled.

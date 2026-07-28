@@ -1,3 +1,22 @@
+> # ⚠️ ARCHIVED 2026-07-28 — DO NOT USE AS-IS
+>
+> Superseded by **`docs/strategy/message-templates.md`**. Kept only as the
+> source the replacement was built from.
+>
+> **Why it was pulled:**
+> - **Prices are wrong.** Quotes 1,800 / 2,500-2,800 / 3,500 / 1,500 / 2,200 THB.
+>   Real prices live in `src/utils/servicePricing.ts` + `src/data/services.ts`
+>   and are 1,200-4,000 depending on service/duration. Sending these to a guest
+>   misquotes them.
+> - **Template 4.1 asks for a `[GOOGLE REVIEW LINK]`.** CLAUDE.md §🔐 hard-bans
+>   any flow that makes a guest publicly attribute their experience, and §🚫
+>   bans Google Business Profile outright. Privacy-first is the whole model.
+> - **Section 7 (Hotel Concierge / B2B outreach, 20% commission)** is on
+>   CLAUDE.md §6's ❌ DOES-NOT-WORK list — brand risk for luxury hotels.
+> - Internal contradictions: service cutoff 2am vs 4am; "English & Mandarin only"
+>   staffing vs the 7-language claims in the companion file; "pricing is fixed"
+>   vs a 15%-off REPEAT2026 code.
+
 # SunRed Message Templates — WhatsApp & Telegram
 
 **Purpose:** Copy-paste-ready replies for solo operators. Each template solves one common scenario. Edit `[BRACKETS]` with actual info before sending.

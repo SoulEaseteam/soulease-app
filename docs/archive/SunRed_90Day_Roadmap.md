@@ -1,3 +1,28 @@
+> # ⚠️ ARCHIVED 2026-07-28 — WINDOW EXPIRED + STALE ASSUMPTIONS
+>
+> The 12-week window (29 Apr – 21 Jul 2026) has closed. Archived rather than
+> refreshed because its core assumptions no longer hold:
+>
+> - **Budgets ฿45,000 (3 × ฿15,000/mo) to keep running `samsguide.living`** —
+>   the channel CLAUDE.md §6 records as ฿75,000 burnt at zero ROI, "cancel
+>   ASAP". The real spend was ฿7,500/mo, so the budget is double the actual
+>   rate for a channel that was dropped. It's the single largest line item.
+> - **"8 active therapists"** — the roster is 12 (4 full-time + 8 part-time)
+>   per CLAUDE.md §2, so the Week-11 capacity math uses the wrong denominator.
+> - **Week 6 and Week 8 are spent on hotel-concierge outreach** (20% commission)
+>   — on the ❌ DOES-NOT-WORK list.
+> - **Week 8 instructs "Get 2-3 Google reviews"** via template 4.1 — hard-banned
+>   under §🔐.
+>
+> **Worth keeping (~40% of the file is evergreen):** the CRM argument and sheet
+> schema, the quick-reply shortcut system and reply-speed target, the
+> re-engagement mechanics (60-day trigger, personalise 1-2 sentences, 5-10/day
+> not bulk-send), the three Make.com automations, the "cut budget 50% on any
+> channel under 30% of bookings" rule, the therapist-triage logic, the four
+> contingency scenarios, and the 60%-completion operating rule.
+>
+> A successor plan is still owed — see CLAUDE.md §9 pending decisions.
+
 # SunRed — 90-Day Solo Operator Roadmap
 
 **Starting baseline (April 2026):**
