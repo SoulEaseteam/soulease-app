@@ -587,6 +587,24 @@ You'll have ALL context. No re-explanation needed.
   Firestore listener registry and surfaces as "INTERNAL ASSERTION
   FAILED"). Prefer `item.labelKey` or a UUID that's guaranteed
   unique regardless of downstream edits to the array.
+- **A Firestore rule that caps field count/size on a real write path
+  must be measured from the actual payload, never guessed (28x.107→
+  28x.116).** `isSaneBookingPayload`'s `d.keys().size() <= 60` shipped
+  28x.107 with a comment claiming it was "~10x the largest real
+  booking observed" — the real `BookingFlowPage.tsx` addDoc() payload
+  is 73 keys, so the cap silently rejected EVERY non-admin (real
+  customer) booking create from the moment it deployed. It went
+  undetected because admin-created bookings bypass the check via
+  `isAdmin()`, and the rules test suite's "realistic booking" case
+  only carried ~15 hand-picked fields while claiming to be "the exact
+  document the live booking flow writes." Caught only via a founder
+  screenshot of a guest whose checkout wouldn't complete. Fixed 28x.116
+  (cap raised to 100 + the test now mirrors the real 73-key payload
+  field-for-field). Lesson: when a rule bounds a real write's shape,
+  `grep` the actual call site and count for real — don't estimate, and
+  don't trust a "realistic" test fixture without diffing it against
+  the live payload it claims to represent. See [[sunred-rules-verification]]
+  memory for the full incident writeup.
 - **A new enum value in code isn't live until every allow-list that
   gates it is updated too (28x.99).** `analytics.ts`'s `FunnelEvent`
   type grew `therapist_view`/`bundle_view`/`bundle_reserve_click`/
