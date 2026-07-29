@@ -158,10 +158,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
   // 🆕 28x.102 — a busy practitioner's pill carries her free-at time
   //   ("ว่าง 23:30") when the engine knows it, so the status genuinely
   //   tracks the booking instead of a static "จองได้".
+  // 🆕 28x.121 (founder: "เอาสถานะ มาเปลี่ยน เป็นคำว่า book now") — for the
+  //   two bookable states (available/bookable) the on-photo pill now reads
+  //   as a "BOOK NOW" action prompt instead of a status readout; color
+  //   still encodes which state it is (two colors — see the pill below).
+  //   Off-duty states (resting/holiday) keep their honest status text
+  //   since booking genuinely isn't possible there.
   const statusLabel =
-    status === "bookable" && nextFreeAt
-      ? t("therapistCard.freeAt", "Free {{time}}", { time: nextFreeAt })
-      : t(statusMeta.i18nKey, statusMeta.fallback);
+    status === "resting" || status === "holiday"
+      ? t(statusMeta.i18nKey, statusMeta.fallback)
+      : t("therapistCard.bookNow", "Book Now");
   // 🆕 Round 28s136 — Founder: "ใครหยุดก็เบลอการ์ดไป จองไม่ได้".
   //   Resting / holiday therapists render desaturated + dimmed, the
   //   Book Now button becomes inert, and tapping the card no longer
@@ -405,22 +411,34 @@ const TherapistMinimalCard: React.FC<Props> = ({
               //   carries the meaning while ivory text stays legible.
               // 🆕 28x.102 (founder "อยากให้สถานะ AVAILABLE เห็นชัด") —
               //   available breaks out of the espresso treatment: solid brand
-              //   green fill + white text + glow, so the one state that means
-              //   "ได้เลยตอนนี้" reads from across the room. Other states
-              //   keep the quiet translucent look.
+              //   green fill + white text + glow.
+              // 🆕 28x.121 (founder "เปลี่ยนปุ่ม เป็น สองสี เอาสถานะ มาเปลี่ยน
+              //   เป็นคำว่า book now") — the pill now reads "BOOK NOW" for
+              //   both bookable states, two colors doing the status-telling
+              //   instead of the text: green (#57B88B) = available right
+              //   now, coral-pink (#FF9999, matching the CTA button below)
+              //   = bookable but not free this instant. Resting keeps the
+              //   quiet dark-neutral treatment — it's the one state where
+              //   "book now" would be a lie.
               background:
-                status === "available" ? "#57B88B" : "rgba(22, 24, 30, 0.68)",
+                status === "available"
+                  ? "#57B88B"
+                  : status === "bookable"
+                    ? "#FF9999"
+                    : "rgba(22, 24, 30, 0.68)",
               backdropFilter: "blur(3px)",
               WebkitBackdropFilter: "blur(3px)",
               color: "#FFFFFF",
               border:
-                status === "available"
+                status === "available" || status === "bookable"
                   ? "1px solid rgba(255,255,255,0.45)"
                   : "1px solid rgba(255,255,255,0.16)",
               boxShadow:
                 status === "available"
                   ? "0 2px 12px rgba(87,184,139,0.55)"
-                  : "0 2px 8px rgba(0,0,0,0.32)",
+                  : status === "bookable"
+                    ? "0 2px 12px rgba(255,99,99,0.45)"
+                    : "0 2px 8px rgba(0,0,0,0.32)",
               whiteSpace: "nowrap",
             }}
             aria-label={statusLabel}
@@ -431,9 +449,11 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 height: status === "available" ? 6 : 5,
                 borderRadius: "50%",
                 background:
-                  status === "available" ? "#FFFFFF" : statusMeta.color,
+                  status === "available" || status === "bookable"
+                    ? "#FFFFFF"
+                    : statusMeta.color,
                 boxShadow:
-                  status === "available"
+                  status === "available" || status === "bookable"
                     ? "0 0 6px rgba(255,255,255,0.9)"
                     : "none",
               }}
@@ -443,7 +463,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 fontFamily: fonts.body,
                 fontSize: status === "available" ? "10.5px" : "10px",
                 fontWeight: status === "available" ? 800 : 700,
-                color: status === "available" ? "#FFFFFF" : "#F3E6DB",
+                color:
+                  status === "available" || status === "bookable"
+                    ? "#FFFFFF"
+                    : "#F3E6DB",
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
                 lineHeight: 1,
