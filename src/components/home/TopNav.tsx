@@ -445,10 +445,13 @@ const TopNav: React.FC = () => {
             its own horizontal nav + concierge CTA filling this row. */}
         {isHome && (
           <Box sx={{ display: { xs: "flex", md: "none" }, flex: 1, minWidth: 0 }}>
+            {/* 🆕 28x.145 (founder selected the hamburger icon: "ให้search
+                bar ขยับออกห่าง จาก 3 แถบ หน่อย") — right margin bumped so the
+                pill doesn't crowd the menu button's tap target. */}
             <TherapistSearchBar
               value={searchQ}
               onChange={setSearchQ}
-              m="0 10px 0 16px"
+              m="0 18px 0 16px"
               compact
             />
           </Box>

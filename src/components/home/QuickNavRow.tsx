@@ -101,6 +101,13 @@ const QuickNavRow: React.FC = () => {
         borderRadius: { xs: "22px", md: "24px" },
         border: "1px solid var(--sr-hairline)", // gold hairline (embroidery)
         boxShadow: "var(--sr-card-shadow)", // card shadow on dark
+        // 🆕 28x.144 (founder: "ทั้งเว็บเป็น glassmorphic design", again) —
+        //   this row deliberately overlaps the promo banner above it
+        //   (negative top margin, see 28u.2), so it's the one panel on
+        //   home where a translucent background actually reads as glass
+        //   instead of just a flat tint. Same blur recipe as the nav bars.
+        backdropFilter: "blur(14px) saturate(160%)",
+        WebkitBackdropFilter: "blur(14px) saturate(160%)",
         position: "relative",
         zIndex: 2, // float above the hero it overlaps
       }}

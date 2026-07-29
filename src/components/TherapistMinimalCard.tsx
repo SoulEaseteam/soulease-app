@@ -387,6 +387,64 @@ const TherapistMinimalCard: React.FC<Props> = ({
             in use — isOffDuty gating, opacity/filter dimming, the price
             badge's `!isOnHoliday` guard, and the CTA button. */}
 
+        {/* 🆕 28x.143 (founder reference screenshots + "ว่าง โชว์ now
+            ไม่ว่างโชว์ เวลาถัดไป") — small live-status chip, bottom-left of
+            the photo (mirrors the price badge's bottom-right). `nextFreeAt`
+            (the engine's "Now" / "HH:mm" string) has been computed and
+            passed into this component since 28x.102 but was never
+            rendered — the on-photo pill that would have used it was
+            removed a round later (28x.123) before it ever landed. This
+            is a NEW compact chip, not that old pill: just a dot + one
+            of two words, not a full status label. Suppressed on holiday
+            like the price badge (the blurred "Holiday" tag already owns
+            the photo's attention there) and whenever the engine has no
+            time to report. */}
+        {!isOnHoliday && nextFreeAt && (
+          <Box
+            sx={{
+              position: "absolute",
+              left: "10px",
+              bottom: "10px",
+              zIndex: 2,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "5px 10px",
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(3px)",
+              WebkitBackdropFilter: "blur(3px)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
+            }}
+          >
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                flexShrink: 0,
+                background:
+                  nextFreeAt === "Now" ? accents.availableText : "var(--sr-dim)",
+              }}
+            />
+            <Typography
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.02em",
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+                color:
+                  nextFreeAt === "Now" ? accents.availableText : "var(--sr-ink)",
+              }}
+            >
+              {nextFreeAt === "Now" ? t("therapistCard.now", "NOW") : nextFreeAt}
+            </Typography>
+          </Box>
+        )}
+
         {/* 🆕 28x.119 (founder reference screenshot) — floating price
             badge, bottom-right of the photo. Frosted-glass white chip
             (not the reference's dark chip) so it stays in SunRed's own

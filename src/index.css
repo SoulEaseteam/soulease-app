@@ -91,13 +91,15 @@ button,
   /* 🆕 28x.135 (founder: "ทั้งเว็บเป็น glassmorphic design") tried translucent
      panel tokens sitewide; 🆕 28x.136 (founder sent an exact swatch
      reference — "Off-White Mint #f4f6f5" page bg, "Pure White #ffffff"
-     card/FAQ/footer bg — "ปรับเป็นแบบนี้") reversed that back to solid.
-     The reference only gave light-theme values; reverted night back to
-     its pre-28x.135 solid colors too rather than leave the two themes
-     inconsistent (one glass, one not). */
-  --sr-panel: #20222B;       /* card / section panel */
-  --sr-panel-2: #2A2D38;     /* raised / inner / hover */
-  --sr-panel-deep: #121319;  /* footer / drawer / deep ground */
+     card/FAQ/footer bg — "ปรับเป็นแบบนี้") reversed that back to solid,
+     since a translucent "Pure White" card is a contradiction.
+     🆕 28x.144 (founder asked again, unprompted this time — "ทั้งเว็บเป็น
+     glassmorphic design") — back to translucent, same --sr-nav-scrim
+     recipe (high-alpha rgba so text stays legible without a blur behind
+     every panel). */
+  --sr-panel: rgba(32, 34, 43, 0.82);       /* card / section panel */
+  --sr-panel-2: rgba(42, 45, 56, 0.82);     /* raised / inner / hover */
+  --sr-panel-deep: rgba(18, 19, 25, 0.86);  /* footer / drawer / deep ground */
   /* text on surfaces (clear hierarchy) */
   --sr-ink: #F3F2F4;         /* headings / brightest */
   --sr-body: #BCC0CA;        /* body */
@@ -142,13 +144,12 @@ html.sr-day {
      🆕 28x.138 (founder refined the same swatch: "เปลี่ยนเป็น สี #f7f7f7") */
   --sr-bg: #F7F7F7;
   /* 🆕 28x.136 (same reference: "Pure White #ffffff — Card พื้นหลัง · FAQ
-     rows · Footer area") — panel + panel-deep both go solid pure white
-     (footer is panel-deep). panel-2 (raised/hover/chip bg) wasn't in the
-     reference; reverted to its original solid blush rather than leave it
-     as the one still-translucent oddity. */
-  --sr-panel: #FFFFFF;
-  --sr-panel-2: #FCEBF1;
-  --sr-panel-deep: #FFFFFF;
+     rows · Footer area") — panel + panel-deep went solid pure white.
+     🆕 28x.144 (founder asked for glassmorphic again, unprompted) — back
+     to translucent, high-alpha so white text-on-card contrast holds. */
+  --sr-panel: rgba(255, 255, 255, 0.72);
+  --sr-panel-2: rgba(252, 235, 241, 0.75);
+  --sr-panel-deep: rgba(255, 255, 255, 0.72);
   --sr-ink: #232B36;         /* navy-charcoal headings */
   --sr-body: #5C6573;        /* cool-gray body */
   --sr-muted: #8B93A0;       /* muted */
