@@ -9,7 +9,7 @@
 // TherapistProfileCard.tsx (1300+ lines) stays for ServiceDetail and
 // admin contexts where richer chips/specs/states are still needed.
 
-import React from "react";
+import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -103,6 +103,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
     therapist.image || therapist.gallery?.[0] || "";
   const portrait = enhanceImage(heroImage, { variant: "hero" });
 
+  // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #ff9999 ตอนกด
+  //   จะเปลี่ยนเป็นชื่อ BOOK NOW สี #13bda6") — press-state feedback on the
+  //   CTA button: idle reads AVAILABLE in coral-pink, and flashes to BOOK
+  //   NOW in teal while actually pressed (pointerdown -> pointerup/leave),
+  //   confirming the tap before the click navigates.
+  const [isPressed, setIsPressed] = useState(false);
+
   // 🆕 Round 28s139 — Founder: off-duty cards stay tappable for info
   //   ("กดดูข้อมูลได้ปกติ ยกเว้นจอง"). Only the Book Now action is
   //   gated; the whole card still routes to the detail page so guests
@@ -158,16 +165,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
   // 🆕 28x.102 — a busy practitioner's pill carries her free-at time
   //   ("ว่าง 23:30") when the engine knows it, so the status genuinely
   //   tracks the booking instead of a static "จองได้".
-  // 🆕 28x.121 (founder: "เอาสถานะ มาเปลี่ยน เป็นคำว่า book now") — for the
-  //   two bookable states (available/bookable) the on-photo pill now reads
-  //   as a "BOOK NOW" action prompt instead of a status readout; color
-  //   still encodes which state it is (two colors — see the pill below).
-  //   Off-duty states (resting/holiday) keep their honest status text
-  //   since booking genuinely isn't possible there.
+  // 🆕 28x.122 (founder: "BOOK NOW ข้างบน เอาออก") — reverted 28x.121's
+  //   on-photo "BOOK NOW" label; the pill goes back to real status text.
+  //   The BOOK NOW concept now lives as a press-state on the CTA button
+  //   below instead of a static badge here. Two-color background from
+  //   28x.121 (green/coral-pink by state) is kept — only the text reverts.
   const statusLabel =
-    status === "resting" || status === "holiday"
-      ? t(statusMeta.i18nKey, statusMeta.fallback)
-      : t("therapistCard.bookNow", "Book Now");
+    status === "bookable" && nextFreeAt
+      ? t("therapistCard.freeAt", "Free {{time}}", { time: nextFreeAt })
+      : t(statusMeta.i18nKey, statusMeta.fallback);
   // 🆕 Round 28s136 — Founder: "ใครหยุดก็เบลอการ์ดไป จองไม่ได้".
   //   Resting / holiday therapists render desaturated + dimmed, the
   //   Book Now button becomes inert, and tapping the card no longer
@@ -666,6 +672,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
             type="button"
             onClick={handleBookTap}
             disabled={isOffDuty}
+            onPointerDown={() => !isOffDuty && setIsPressed(true)}
+            onPointerUp={() => setIsPressed(false)}
+            onPointerLeave={() => setIsPressed(false)}
+            onPointerCancel={() => setIsPressed(false)}
             sx={{
               // 🆕 28x.99z — grow to fill the wrapped line on narrow cards;
               //   tighter type so the label fits without clipping.
@@ -675,17 +685,17 @@ const TherapistMinimalCard: React.FC<Props> = ({
               padding: { xs: "9px 12px", sm: "10px 20px" },
               fontSize: { xs: "12px", sm: "13.5px" },
               borderRadius: "999px",
-              // 🆕 28x.99x (founder "ปุ่ม จองตอนนี้เลย") — a currently-working
-              //   practitioner's CTA gets urgent copy.
-              // 🆕 28x.118 (founder trial: "ลองเปลี่ยนสีปุ่มหลัก แค่หน้าแรก
-              //   #FF9999") — home-page-only trial swap of the primary CTA
-              //   to a soft coral-pink. Scoped to this card (only rendered
-              //   from HomeTherapistGrid) so no other page is touched.
+              // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #ff9999
+              //   ตอนกด จะเปลี่ยนเป็นชื่อ BOOK NOW สี #13bda6") — idle state
+              //   is the 28x.118b coral-pink; pressed state flashes teal.
               //   Superseded the dusty-rose family (#E38EA5→#D97C95→
-              //   #C96F89, 28x.103) — see that round's history if this
-              //   trial gets reverted.
-              // 🆕 28x.118b (founder: "เอาสีเดียวไม่ไล่สี") — flat, no gradient.
-              background: isOffDuty ? "var(--sr-panel-2)" : "#FF9999",
+              //   #C96F89, 28x.103) and the plain flat swap (28x.118/118b)
+              //   — see those rounds' history if this trial gets reverted.
+              background: isOffDuty
+                ? "var(--sr-panel-2)"
+                : isPressed
+                  ? "#13bda6"
+                  : "#FF9999",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -694,16 +704,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
               letterSpacing: "0.04em",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
-              // 🆕 28x.118 — glow re-tinted to match the coral-pink swap.
-              boxShadow:
-                !isOffDuty && status === "available"
-                  ? "0 6px 16px rgba(255, 99, 99, 0.40)"
-                  : "none",
+              boxShadow: isOffDuty
+                ? "none"
+                : isPressed
+                  ? "0 6px 16px rgba(19, 189, 166, 0.45)"
+                  : "0 6px 16px rgba(255, 99, 99, 0.40)",
               transition: "transform 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
                 : {
-                    background: "#F27D7D",
                     transform: "translateY(-1px)",
                   },
               "&:focus-visible": {
@@ -712,9 +721,11 @@ const TherapistMinimalCard: React.FC<Props> = ({
               },
             }}
           >
-            {status === "available"
-              ? t("therapistCard.bookRightNow", "Book right now")
-              : t("therapistCard.bookNow", "Book Now")}
+            {isOffDuty
+              ? t("therapistCard.bookNow", "Book Now")
+              : isPressed
+                ? t("therapistCard.bookNow", "Book Now")
+                : t("available", "Available")}
           </Box>
         </Box>
       </Box>
