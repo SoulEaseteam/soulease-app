@@ -15,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 
 import { fonts, accents } from "@/theme";
@@ -235,7 +234,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
         background: "var(--sr-panel)",
         border: "1px solid var(--sr-hairline)",
         borderRadius: "18px",
-        overflow: "hidden",
+        // 🆕 28x.119 (founder reference screenshot: "ลองเปลี่ยนการ์ดสไตล์นี้
+        //   แต่สีเดิม") — photo is now INSET (padded frame) instead of
+        //   edge-to-edge, so overflow can no longer be hidden at the
+        //   outer card level — the photo container below owns its own
+        //   clip + radius instead.
+        padding: "10px 10px 0",
         boxShadow: "var(--sr-card-shadow)",
         // 🆕 Round 28r53 — margin dropped: parent grid supplies gap.
         // marginBottom left at 0 (was 14px for the flex-column list).
@@ -304,10 +308,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
       <Box
         sx={{
           width: "100%",
-          // 🆕 Round 28r53 — Photo container is aspect-ratio 3/4
-          //   (portrait). Height scales with width so the card
-          //   remains proportionate across every column width.
-          aspectRatio: "3 / 4",
+          // 🆕 28x.119 — reference style is a shorter, inset frame (~4:3)
+          //   rather than the previous edge-to-edge 3:4 portrait. Owns its
+          //   own radius + clip now that the outer card is padded instead
+          //   of flush.
+          aspectRatio: "4 / 3",
+          borderRadius: "14px",
+          overflow: "hidden",
           position: "relative",
           background: "var(--sr-panel-deep)",
           flexShrink: 0,
@@ -373,26 +380,17 @@ const TherapistMinimalCard: React.FC<Props> = ({
           </Box>
         )}
 
-        {/* Round 28r84 — Status pill at bottom-center of the photo.
-            🆕 Round 28r86 (founder 2026-07-08 · live screenshot) —
-            three tweaks on the pill:
-              • Uniform SMALL size across every state (was: Available
-                bigger than Bookable/Offline). Matches the Offline chip
-                size from the reference — compact, doesn't overwhelm
-                the photo.
-              • Nudged up so it sits fully INSIDE the photo instead of
-                straddling the bottom edge (was bottom:-14 → now 10).
-              • Bookable fill switched from GRAY_800 #4B4B48 to amber
-                #F5A623 — matches the amber "next slot open" register
-                that the star rating uses. */}
+        {/* Round 28r84 — Status pill, originally bottom-left of the photo.
+            🆕 28x.119 (founder reference screenshot) — moved to TOP-left
+            to match the reference card style; bottom-right is now the
+            price badge (below) so the two floating chips sit in opposite
+            corners and never collide. */}
         {!isOnHoliday && (
           <Box
             sx={{
               position: "absolute",
-              // 🆕 28s393 — status pill moved from centered to LEFT
-              //   (founder "ขยับสถานะมาไว้ด้านซ้าย").
+              top: "10px",
               left: "10px",
-              bottom: "10px",
               zIndex: 2,
               display: "inline-flex",
               alignItems: "center",
@@ -451,6 +449,41 @@ const TherapistMinimalCard: React.FC<Props> = ({
             </Typography>
           </Box>
         )}
+
+        {/* 🆕 28x.119 (founder reference screenshot) — floating price
+            badge, bottom-right of the photo. Frosted-glass white chip
+            (not the reference's dark chip) so it stays in SunRed's own
+            palette per "แต่สีเดิม" — same dusty-rose the price already
+            used in the info column below. */}
+        {!isOnHoliday && (
+          <Box
+            sx={{
+              position: "absolute",
+              right: "10px",
+              bottom: "10px",
+              zIndex: 2,
+              padding: "5px 12px",
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(3px)",
+              WebkitBackdropFilter: "blur(3px)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: fonts.heading,
+                fontSize: "13.5px",
+                fontWeight: 800,
+                color: "#D97C95",
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              ฿{startingPrice.toLocaleString("en-US")}+
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* ── Info column (rendered BELOW the portrait) ──── */}
@@ -467,21 +500,17 @@ const TherapistMinimalCard: React.FC<Props> = ({
         }}
       >
         <Box sx={{ minWidth: 0 }}>
-          {/* 🆕 Round 28r82 — Founder direction (2026-07-08 reference
-              screenshot): name typography swaps from Playfair-serif ALL
-              CAPS to Inter/Sarabun sans-heavy for a warmer, friendlier
-              register. Deepest ink #2D2D2B for high contrast against
-              the white card. Rendered on the same row as an outlined
-              PHOTOS pill (right-aligned) which opens the therapist's
-              photo gallery in a future dialog — for now it routes to
-              the detail page since the gallery view lives there. */}
+          {/* 🆕 28x.119 (founder reference screenshot: "ลองเปลี่ยนการ์ด
+              สไตล์นี้ แต่สีเดิม") — name + star rating on ONE line, tighter
+              and closer to the reference's compact header. The PHOTOS pill
+              is dropped (tapping the card already opens the detail page,
+              gallery included) — pure simplification, no functional loss. */}
           <Box
             sx={{
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              alignItems: "baseline",
               gap: "8px",
-              marginBottom: "6px",
+              marginBottom: "4px",
               minWidth: 0,
             }}
           >
@@ -491,193 +520,91 @@ const TherapistMinimalCard: React.FC<Props> = ({
               sx={{
                 fontFamily:
                   '"Inter", "Sarabun", system-ui, sans-serif',
-                // Sans-heavy · sized larger than the previous
-                //   serif-caps treatment for stronger visual weight
-                //   as the primary card headline.
-                fontSize: { xs: "20px", sm: "22px", md: "23px" },
+                fontSize: { xs: "18px", sm: "20px", md: "21px" },
                 fontWeight: 800,
                 color: "var(--sr-ink)",
                 lineHeight: 1.15,
                 letterSpacing: "-0.01em",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                flex: 1,
                 minWidth: 0,
               }}
             >
               {therapist.name}
             </Typography>
-            <Box
-              component="button"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                // Round 28r84 — Photos pill always routes to the
-                //   detail page's #gallery anchor. When the
-                //   practitioner has gallery photos, the section
-                //   scrolls into view; when she doesn't, the section
-                //   still renders an empty-state card so guests
-                //   understand there just isn't more to show yet.
-                navigate(`/therapists/${therapist.id}#gallery`);
-              }}
-              aria-label={`Photos of ${therapist.name}`}
-              sx={{
-                // Round 28r84 — Outline recolored from #4B4B48 to warm
-                //   taupe #8F8474 per founder direction (2026-07-08 —
-                //   'warm taupe on PHOTOS pill outline'). Text stays at
-                //   #4B4B48 (sitewide card text color).
-                flexShrink: 0,
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "4px 10px",
-                borderRadius: "999px",
-                background: "transparent",
-                border: "1.5px solid var(--sr-hairline)",
-                color: "var(--sr-body)",
-                fontFamily: fonts.body,
-                fontSize: "10.5px",
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                lineHeight: 1,
-                transition: "background 0.15s ease, color 0.15s ease",
-                "&:hover": {
-                  background: "rgba(210, 182, 124, 0.12)",
-                },
-                "&:focus-visible": {
-                  outline: "2px solid #D97C95",
-                  outlineOffset: 2,
-                },
-              }}
-            >
-              Photos
-            </Box>
-          </Box>
-          
-          {therapist.rating && therapist.rating > 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
+            {therapist.rating && therapist.rating > 0 ? (
               <Box
                 sx={{
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
-                  // 🕯️ 28t — gold star + ivory number in a soft-gold chip.
-                  background: "rgba(162, 160, 160, 0.15)",
-                  borderRadius: "8px",
-                  padding: "2px 8px",
+                  gap: "3px",
+                  flexShrink: 0,
                 }}
               >
-                <StarRoundedIcon
-                  sx={{ fontSize: 15, color: "#ffc31e" }}
-                />
+                <StarRoundedIcon sx={{ fontSize: 16, color: "#ffc31e" }} />
                 <Typography
                   sx={{
                     fontFamily: fonts.body,
-                    fontSize: "13px",
+                    fontSize: "14px",
                     fontWeight: 700,
                     color: "var(--sr-ink)",
+                    lineHeight: 1,
                   }}
                 >
                   {therapist.rating.toFixed(1)}
-                  {therapist.reviews && therapist.reviews > 0 ? (
-                    <Box
-                      component="span"
-                      sx={{
-                        fontWeight: 500,
-                        color: "var(--sr-muted)",
-                        marginLeft: "6px",
-                      }}
-                    >
-                      | {therapist.reviews}{" "}
-                      {t("therapistCard.reviews", "reviews")}
-                    </Box>
-                  ) : null}
                 </Typography>
               </Box>
-              {/* 🆕 28t.7 — 👁 profile-view count removed from the card
-                  (founder will relocate it elsewhere). */}
-            </Box>
-          ) : null}
+            ) : null}
+          </Box>
 
-          {(sessionCount > 0 || hasDistance) && (
-            <Box
+          {/* 🆕 28x.119 — compact meta line under the name, mirroring the
+              reference's specialty-tag row. SunRed doesn't have per-
+              therapist specialty tags (the reference's "นวดเท้า ·
+              ประคบสมุนไพร · แผนไทย" is from a different app's menu, not
+              ours) — kept honest with the real trust numbers this card
+              already tracked (reviews + sessions), just restyled to read
+              as one quiet dot-separated line instead of two chip rows. */}
+          {(therapist.reviews && therapist.reviews > 0) || sessionCount > 0 ? (
+            <Typography
               sx={{
-                display: "flex",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "10px",
-                marginTop: therapist.rating && therapist.rating > 0 ? "7px" : "3px",
+                fontFamily: fonts.body,
+                fontSize: "11.5px",
+                fontWeight: 500,
+                color: "var(--sr-muted)",
+                lineHeight: 1.4,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              {sessionCount > 0 && (
-                <Box
-                  sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
-                  aria-label={`${sessionCount} completed sessions`}
-                >
-                  <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "#2fd4b3" }} />
-                  <Typography
-                    sx={{
-                      fontFamily: fonts.body,
-                      fontSize: "11.5px",
-                      fontWeight: 700,
-                      color: "var(--sr-body)",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {formatSessionCount(sessionCount)}{" "}
-                    <Box component="span" sx={{ fontWeight: 500, color: "var(--sr-dim)" }}>
-                      {t("therapistCard.sessions", "sessions")}
-                    </Box>
-                  </Typography>
-                </Box>
-              )}
-              {distanceLabel && (
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "3px",
-                    minWidth: 0,
-                  }}
-                  aria-label={`${distanceLabel} away`}
-                >
-                  <LocationOnRoundedIcon sx={{ fontSize: 14, color: "var(--sr-muted)" }} />
-                  <Typography
-                    sx={{
-                      fontFamily: fonts.body,
-                      fontSize: "11.5px",
-                      fontWeight: 600,
-                      color: "var(--sr-muted)",
-                      lineHeight: 1,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {distanceLabel}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          )}
-
+              {[
+                therapist.reviews && therapist.reviews > 0
+                  ? `${therapist.reviews} ${t("therapistCard.reviews", "reviews")}`
+                  : null,
+                sessionCount > 0
+                  ? `${formatSessionCount(sessionCount)} ${t("therapistCard.sessions", "sessions")}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </Typography>
+          ) : null}
         </Box>
 
-        {/* 🆕 Round 28s132 — Bottom row: price label LEFT + Book Now
-            button RIGHT. Justifies space-between so card has a clear
-            "info → action" visual rhythm at the bottom edge. */}
+        {/* 🆕 28x.119 — hairline divider before the footer row, matching
+            the reference's rule between the tag line and the CTA row. */}
+        <Box sx={{ borderTop: "1px solid var(--sr-hairline)" }} />
+
+        {/* 🆕 28x.119 — footer row: distance LEFT (real GPS data, standing
+            in for the reference's ETA — SunRed doesn't compute a live
+            driving ETA on this grid, so distance is the honest
+            equivalent) + Book button RIGHT. Price moved to the floating
+            badge on the photo above, so this row is lighter than before. */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: distanceLabel ? "space-between" : "flex-end",
             gap: "10px",
             // 🆕 28x.99z (founder "ปุ่มล้น ช่วยปรับด้วย จอมือถือ") — on the
             //   2-col mobile grid the row is ~190px wide and the uppercase
@@ -687,35 +614,26 @@ const TherapistMinimalCard: React.FC<Props> = ({
             flexWrap: "wrap",
           }}
         >
-          <Box>
-            <Typography
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "9.5px",
-                fontWeight: 700,
-                color: "var(--sr-muted)",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                lineHeight: 1,
-                marginBottom: "2px",
-              }}
+          {distanceLabel && (
+            <Box
+              sx={{ display: "inline-flex", alignItems: "center", gap: "3px", minWidth: 0 }}
+              aria-label={`${distanceLabel} away`}
             >
-              {t("therapistCard.startingFrom", "Starting from")}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: fonts.heading,
-                fontSize: "16px",
-                fontWeight: 700,
-                // 🕯️ 28t.2 — price in dusty rose (founder: gold read "แก่"/dated).
-                //   Fresh, on-brand, reads young on both light + dark.
-                color: "#D97C95",
-                lineHeight: 1,
-              }}
-            >
-              ฿{startingPrice.toLocaleString("en-US")}
-            </Typography>
-          </Box>
+              <LocationOnRoundedIcon sx={{ fontSize: 14, color: "var(--sr-muted)" }} />
+              <Typography
+                sx={{
+                  fontFamily: fonts.body,
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "var(--sr-muted)",
+                  lineHeight: 1,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {distanceLabel}
+              </Typography>
+            </Box>
+          )}
           <Box
             component="button"
             type="button"
