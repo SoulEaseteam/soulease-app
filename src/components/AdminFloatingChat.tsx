@@ -764,7 +764,7 @@ const AdminFloatingChat: React.FC = () => {
           // 🆕 28w.3 — was charcoal #4B4B48→#2D2D2B (off-brand); now the
           //   dusty-rose brand gradient (matches the desktop Concierge CTA).
           background:
-            "radial-gradient(circle at 30% 30%, #E38EA5 0%, #D97C95 55%, #C96F89 100%)",
+            "radial-gradient(circle at 30% 30%, #FF9999 0%, #FF9999 55%, #FF9999 100%)",
           color: "#fff",
           cursor: "pointer",
           display: "flex",

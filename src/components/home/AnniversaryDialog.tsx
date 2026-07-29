@@ -32,7 +32,7 @@ import { whatsappDeepLink } from "@/config/concierge";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { maskBookingRef } from "@/utils/bookingRef";
 
-const ROSE = "#D97C95";
+const ROSE = "#FF9999";
 const GOLD = "#E3BE55";
 
 const PRIVILEGES_IMG = "/images/anniversary/privileges.jpg";
@@ -266,13 +266,13 @@ const ctaSx = {
   border: "none",
   borderRadius: 999,
   cursor: "pointer",
-  background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+  background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
   color: "#fff",
   fontFamily: fonts.body,
   fontSize: 14,
   fontWeight: 700,
   boxShadow: "0 6px 16px rgba(217,124,149,0.30)",
-  "&:hover": { background: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)" },
+  "&:hover": { background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)" },
 } as const;
 
 export default AnniversaryDialog;

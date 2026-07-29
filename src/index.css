@@ -85,7 +85,7 @@ button,
      A tiny runtime (DayNightSync) toggles `.sr-day` on <html> by BKK hour.
      ───────────────────────────────────────────────────────────────── */
   /* 🌙 NIGHT — clean dark charcoal + dusty-rose accent (balanced). Rose
-     #D97C95 comes from the components; these vars are grounds + text only.
+     #FF9999 comes from the components; these vars are grounds + text only.
      surfaces (deep → raised) */
   --sr-bg: #17181D;          /* page ground — deep charcoal */
   --sr-panel: #20222B;       /* card / section panel */
@@ -96,7 +96,7 @@ button,
   --sr-body: #BCC0CA;        /* body */
   --sr-muted: #878D99;       /* muted */
   --sr-dim: #5E636E;         /* dim caption */
-  --sr-gold-text: #D97C95;   /* accent (was gold — retired as dated) → rose */
+  --sr-gold-text: #FF9999;   /* accent (was gold — retired as dated) → rose */
   /* lines / shadow */
   --sr-hairline: #31343F;    /* border */
   --sr-line: #282B34;        /* divider */
@@ -120,7 +120,7 @@ button,
   --sr-tier-gold:   #E7C55A;
   --sr-tier-vip:    #FFFFFF;
   /* Money ink — the one accent that must stay readable at 13px BOLD in both
-     themes. The existing --sr-gold-text (#D97C95) is a single value shared by
+     themes. The existing --sr-gold-text (#FF9999) is a single value shared by
      day and night and only clears ~2.9:1 on the white day panel, so rate
      tables using it were the "ตัวเลขหนาทึบจนดูไม่ออก" complaint. */
   --sr-money: #E8899F;       /* bright rose on charcoal */
@@ -137,7 +137,7 @@ html.sr-day {
   --sr-body: #5C6573;        /* cool-gray body */
   --sr-muted: #8B93A0;       /* muted */
   --sr-dim: #AEB4BF;         /* dim caption */
-  --sr-gold-text: #D97C95;   /* accent (was gold — retired as dated) → rose */
+  --sr-gold-text: #FF9999;   /* accent (was gold — retired as dated) → rose */
   --sr-hairline: #EFE3E8;    /* border */
   --sr-line: #F2E9ED;        /* divider */
   --sr-card-shadow: 0 12px 40px rgba(35, 43, 54, 0.08);

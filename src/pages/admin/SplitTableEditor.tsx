@@ -221,7 +221,7 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
                     error={invalid}
                     sx={{
                       "& .MuiInputBase-input": { fontFamily: SANS, fontSize: 13, py: "6px", color: adminColor.text },
-                      "& .MuiOutlinedInput-notchedOutline": { borderColor: invalid ? "#E4557A" : (adminColor.line ?? "rgba(255,255,255,0.14)") },
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: invalid ? "#FF9999" : (adminColor.line ?? "rgba(255,255,255,0.14)") },
                     }}
                   />
                   <Typography
@@ -229,7 +229,7 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
                       fontFamily: SANS,
                       fontSize: 12,
                       fontWeight: 600,
-                      color: invalid ? "#E4557A" : shop == null ? adminColor.dim : adminColor.text,
+                      color: invalid ? "#FF9999" : shop == null ? adminColor.dim : adminColor.text,
                     }}
                   >
                     {therapist == null
@@ -257,8 +257,8 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
             fontSize: 13,
             borderRadius: "999px",
             px: 2.5,
-            background: "linear-gradient(135deg,#D97C95,#C96F89)",
-            "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" },
+            background: "linear-gradient(135deg,#FF9999,#FF9999)",
+            "&:hover": { background: "linear-gradient(135deg,#FF9999,#FF9999)" },
             "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
           }}
         >
@@ -270,7 +270,7 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
           </Typography>
         )}
         {anyInvalid && (
-          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "#E4557A", fontWeight: 600 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "#FF9999", fontWeight: 600 }}>
             มีช่องที่ค่าจ้างเกินราคา — แก้ก่อนบันทึก
           </Typography>
         )}
@@ -302,13 +302,13 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
               fontSize: 13,
               borderRadius: "999px",
               px: 2.5,
-              color: "#8A3A57",
-              borderColor: "#B8567F",
-              "&:hover": { borderColor: "#8A3A57", background: "rgba(184,86,127,0.06)" },
-              "&.Mui-disabled": { opacity: 0.4, color: "#8A3A57", borderColor: "#B8567F" },
+              color: "#FF9999",
+              borderColor: "#FF9999",
+              "&:hover": { borderColor: "#FF9999", background: "rgba(184,86,127,0.06)" },
+              "&.Mui-disabled": { opacity: 0.4, color: "#FF9999", borderColor: "#FF9999" },
             }}
           >
-            {backfilling ? <CircularProgress size={16} sx={{ color: "#8A3A57" }} /> : "🔒 ล็อกงานเก่า (เรตเดิม 60%)"}
+            {backfilling ? <CircularProgress size={16} sx={{ color: "#FF9999" }} /> : "🔒 ล็อกงานเก่า (เรตเดิม 60%)"}
           </Button>
           {backfillMsg && (
             <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.text, fontWeight: 600 }}>

@@ -541,7 +541,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
             borderRadius: "14px",
             background: "var(--sr-panel)",
             border: "1px solid #D97C9555",
-            borderLeft: "3px solid #D97C95",
+            borderLeft: "3px solid #FF9999",
             boxShadow: "var(--sr-card-shadow)",
           }}
         >
@@ -564,7 +564,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
             alignItems: "center",
           }}
         >
-          <CircularProgress size={28} sx={{ color: "#D97C95" }} />
+          <CircularProgress size={28} sx={{ color: "#FF9999" }} />
         </Box>
       ) : loadError ? (
         // 🆕 Round 28x.7 (audit fix #2) — recoverable error state. Was:

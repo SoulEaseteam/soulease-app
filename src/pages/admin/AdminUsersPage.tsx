@@ -1025,7 +1025,7 @@ const AdminUsersPage: React.FC = () => {
                           </TextField>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
                             <Button size="small" variant="contained" disabled={memberSaving} onClick={saveMemberEdit}
-                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#FF9999,#FF9999)", "&:hover": { background: "linear-gradient(135deg,#FF9999,#FF9999)" } }}>
                               บันทึก
                             </Button>
                             <Button size="small" variant="text" disabled={memberSaving} onClick={() => setMemberEditing(false)}
@@ -1070,12 +1070,12 @@ const AdminUsersPage: React.FC = () => {
                           </Box>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                             <Button size="small" variant="outlined" disabled={memberSaving} onClick={resetMemberCode}
-                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: "#8A3A57", borderColor: "#B8567F", "&:hover": { borderColor: "#8A3A57", background: "rgba(184,86,127,0.06)" } }}>
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: "#FF9999", borderColor: "#FF9999", "&:hover": { borderColor: "#FF9999", background: "rgba(184,86,127,0.06)" } }}>
                               รีเซตรหัส
                             </Button>
                             {canUpgrade && (
                               <Button size="small" variant="contained" disabled={memberSaving} onClick={upgradeMemberCode}
-                                sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
+                                sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#FF9999,#FF9999)", "&:hover": { background: "linear-gradient(135deg,#FF9999,#FF9999)" } }}>
                                 อัปเกรด → {computed}
                               </Button>
                             )}
@@ -1095,7 +1095,7 @@ const AdminUsersPage: React.FC = () => {
                           ยังไม่ได้สมัคร · เกณฑ์ปัจจุบัน: <b style={{ color: tc }}>{computed ?? "ยังไม่เข้าเกณฑ์"}</b>
                         </Typography>
                         <Button size="small" variant="contained" disabled={memberSaving} onClick={enrollGuest}
-                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
+                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#FF9999,#FF9999)", "&:hover": { background: "linear-gradient(135deg,#FF9999,#FF9999)" } }}>
                           + สมัครสมาชิก (รหัส SRD-)
                         </Button>
                       </>

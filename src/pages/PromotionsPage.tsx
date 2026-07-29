@@ -34,8 +34,8 @@ const ANNIV_IMG = "/images/anniversary/privileges.jpg";
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
 
-const ROSE = "#D97C95";
-const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
+const ROSE = "#FF9999";
+const HERO_GRADIENT = "linear-gradient(160deg, #FF9999 0%, #FF9999 100%)";
 
 /** One-line human discount label for a custom promo code. */
 function codeDiscountLabel(type: "percent" | "fixed", amount: number, capThb?: number | null): string {
@@ -247,7 +247,7 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => (
         justifyContent: "center",
         gap: 0.75,
         py: 1.1,
-        background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+        background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
         color: "#fff",
         fontFamily: SANS,
         fontSize: 13,

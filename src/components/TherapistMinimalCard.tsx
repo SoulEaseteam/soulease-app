@@ -27,7 +27,7 @@ import { fonts, accents } from "@/theme";
 //   booking/checkout flow and every other page keep the existing brand
 //   red untouched while this one card style is trialed.
 // 🕯️ 28t dark-luxury — focus ring is dusty rose; highlight ink is ivory.
-const oceanAccent = "#D97C95";
+const oceanAccent = "#FF9999";
 const oceanHighlight = "#F3E6DB";
 import { enhanceImage } from "@/utils/cloudinary";
 import type { Therapist, Avail } from "@/types/therapist";
@@ -144,11 +144,11 @@ const TherapistMinimalCard: React.FC<Props> = ({
     { label: string; bg: string; color: string }
   > = {
     // 🕯️ 28t — founder badge spec: VIP gold+brown · NEW rose+white · HOT
-    //   #F56B6B+white · TOP STAR gold+brown.
+    //   #FF9999+white · TOP STAR gold+brown.
     TOP_RATED: { label: "TOP STAR", bg: "#F4C542",     color: "#232B36" },
-    VIP:       { label: "VIP",        bg: "#B8567F",     color: "#FFFFFF" },
-    HOT:       { label: "HOT",        bg: "#F56B6B",     color: "#FFFFFF" },
-    NEW:       { label: "NEW",        bg: "#D97C95",     color: "#FFFFFF" },
+    VIP:       { label: "VIP",        bg: "#FF9999",     color: "#FFFFFF" },
+    HOT:       { label: "HOT",        bg: "#FF9999",     color: "#FFFFFF" },
+    NEW:       { label: "NEW",        bg: "#FF9999",     color: "#FFFFFF" },
   };
   const badgeKey =
     (therapist.badgeKey as keyof typeof BADGE_STYLE | null | undefined) ?? null;
@@ -412,7 +412,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 fontFamily: fonts.heading,
                 fontSize: "13.5px",
                 fontWeight: 800,
-                color: "#D97C95",
+                color: "#FF9999",
                 lineHeight: 1,
                 whiteSpace: "nowrap",
               }}
@@ -599,8 +599,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
               //   🆕 28x.125 (founder: "เอาเมาท์วาง ก็เปลี่ยน") — desktop
               //   hover (isHovered) now triggers the same teal/BOOK NOW
               //   state as an actual press, via isBookNowActive.
-              //   Superseded the dusty-rose family (#E38EA5→#D97C95→
-              //   #C96F89, 28x.103) and the plain flat swap (28x.118/118b)
+              //   Superseded the dusty-rose family (#FF9999→#FF9999→
+              //   #FF9999, 28x.103) and the plain flat swap (28x.118/118b)
               //   — see those rounds' history if this trial gets reverted.
               background: isOffDuty
                 ? "var(--sr-panel-2)"

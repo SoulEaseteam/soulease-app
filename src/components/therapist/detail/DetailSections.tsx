@@ -327,7 +327,7 @@ export const About: React.FC<{
             <GenderIcon
               sx={{
                 fontSize: 15,
-                color: g.startsWith("m") ? "#5B6473" : "#D97C95",
+                color: g.startsWith("m") ? "#5B6473" : "#FF9999",
               }}
             />
           </Box>
@@ -492,7 +492,7 @@ export const About: React.FC<{
               position: "relative",
               borderRadius: "14px",
               background: "var(--sr-panel-2)",
-              borderLeft: "4px solid #D97C95",
+              borderLeft: "4px solid #FF9999",
               padding: "14px 46px 14px 16px",
             }}
           >
@@ -529,7 +529,7 @@ export const About: React.FC<{
                 height: 28,
                 background: "var(--sr-panel)",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.14)",
-                color: "#D97C95",
+                color: "#FF9999",
                 "&:hover": { background: "var(--sr-panel)" },
                 // 🆕 28w.72 (founder "กระพริบได้ กลัวลูกค้าไม่รู้") — pulse a rose
                 //   halo while the bio is COLLAPSED so guests notice it expands.

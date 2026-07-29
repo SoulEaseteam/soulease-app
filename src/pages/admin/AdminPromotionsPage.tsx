@@ -2667,7 +2667,7 @@ const AdminPromotionsPage: React.FC = () => {
             </Box>
 
             {/* ── Badge (moved to top of copy sections, 28r104) ── */}
-            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B85874", mb: 0.75 }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#FF9999", mb: 0.75 }}>
               Badge · ป้าย
             </Typography>
             <TextField
@@ -2686,7 +2686,7 @@ const AdminPromotionsPage: React.FC = () => {
             <Box sx={{ height: 1, background: adminColor.line, mb: 2.5 }} />
 
             {/* ── Copy ── */}
-            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B85874", mb: 0.75 }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#FF9999", mb: 0.75 }}>
               Copy · เนื้อหา
             </Typography>
             <TextField
@@ -2702,7 +2702,7 @@ const AdminPromotionsPage: React.FC = () => {
             <Box sx={{ height: 1, background: adminColor.line, mb: 2.5 }} />
 
             {/* ── Schedule ── */}
-            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B85874", mb: 0.75 }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#FF9999", mb: 0.75 }}>
               Activate on · ตั้งเวลาเปิดใช้
             </Typography>
             <TextField

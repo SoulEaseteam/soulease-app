@@ -31,8 +31,8 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#D97C95";
-const ROSE_DEEP = "#C96F89";
+const ROSE = "#FF9999";
+const ROSE_DEEP = "#FF9999";
 const GREEN = "#57B88B";
 
 /** Revenue for ONE booking row: her real payout if it's a valid job, her
@@ -218,7 +218,7 @@ export const RevenueDashboard: React.FC<{ uid: string | null | undefined }> = ({
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 2 }}>
-          <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #D97C95, #C96F89)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 6px 18px rgba(217,124,149,0.42)" }}>
+          <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #FF9999, #FF9999)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 6px 18px rgba(217,124,149,0.42)" }}>
             <Wallet size={26} weight="duotone" />
           </Box>
           <Box sx={{ minWidth: 0 }}>

@@ -504,7 +504,7 @@ const StepDateTime: React.FC<Props> = ({
                   // 🆕 28t.20 — day/night rose (was navy-active / white-rest,
                   //   a light island on the now-dark sheet).
                   background: isActive
-                    ? "#D97C95"
+                    ? "#FF9999"
                     : "var(--sr-panel-2)",
                   color: isActive ? "#fff" : "var(--sr-ink)",
                   border: isActive
@@ -517,7 +517,7 @@ const StepDateTime: React.FC<Props> = ({
                   transition:
                     "background 0.2s ease, border-color 0.2s ease",
                   "&:focus-visible": {
-                    outline: "2px solid #D97C95",
+                    outline: "2px solid #FF9999",
                     outlineOffset: "2px",
                   },
                 }}
@@ -910,7 +910,7 @@ const StepDateTime: React.FC<Props> = ({
                             background: taken
                               ? "transparent"
                               : isActive
-                                ? "#D97C95"
+                                ? "#FF9999"
                                 : "var(--sr-panel-2)",
                             color: taken
                               ? "var(--sr-dim)"
@@ -944,7 +944,7 @@ const StepDateTime: React.FC<Props> = ({
                                     },
                             },
                             "&:focus-visible": {
-                              outline: "2px solid #D97C95",
+                              outline: "2px solid #FF9999",
                               outlineOffset: "2px",
                             },
                           }}

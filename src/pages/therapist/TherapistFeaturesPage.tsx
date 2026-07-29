@@ -32,10 +32,10 @@ const fieldSx = {
     fontSize: 13.5,
     "& fieldset": { borderColor: "var(--sr-hairline)" },
     "&:hover fieldset": { borderColor: "rgba(194,24,91,0.35)" },
-    "&.Mui-focused fieldset": { borderColor: "#C2185B", borderWidth: "1.5px" },
+    "&.Mui-focused fieldset": { borderColor: "#FF9999", borderWidth: "1.5px" },
   },
   "& .MuiInputLabel-root": { fontSize: 12.5, color: "var(--sr-muted)" },
-  "& .MuiInputLabel-root.Mui-focused": { color: "#C2185B" },
+  "& .MuiInputLabel-root.Mui-focused": { color: "#FF9999" },
   "& .MuiOutlinedInput-input": { color: "var(--sr-ink)" },
 } as const;
 

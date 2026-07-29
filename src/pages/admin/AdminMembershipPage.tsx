@@ -337,7 +337,7 @@ const AdminMembershipPage: React.FC = () => {
           <Button
             variant="contained" disabled={ptSaving} onClick={() => void savePoints()}
             sx={{ textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
-              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              background: "linear-gradient(135deg,#FF9999,#FF9999)",
               "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
           >
             {ptSaving ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "บันทึก"}
@@ -419,8 +419,8 @@ const AdminMembershipPage: React.FC = () => {
           variant="contained"
           sx={{
             textTransform: "none", fontFamily: SANS, fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
-            background: "linear-gradient(135deg,#D97C95,#C96F89)",
-            "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" },
+            background: "linear-gradient(135deg,#FF9999,#FF9999)",
+            "&:hover": { background: "linear-gradient(135deg,#FF9999,#FF9999)" },
             "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
           }}
         >

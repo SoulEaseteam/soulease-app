@@ -166,7 +166,7 @@ const TherapistProfilePage: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-        <CircularProgress sx={{ color: "#D97C95" }} />
+        <CircularProgress sx={{ color: "#FF9999" }} />
       </Box>
     );
   }
@@ -218,7 +218,7 @@ const TherapistProfilePage: React.FC = () => {
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
-              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #FF9999, #FF9999)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <ArrowsClockwise size={15} weight="duotone" color="#fff" />
               </Box>
               <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)" }}>
@@ -239,8 +239,8 @@ const TherapistProfilePage: React.FC = () => {
               label="Auto"
               hint="Engine decides"
               Icon={ArrowsClockwise}
-              accent="#E0708F"
-              accentTo="#B23A63"
+              accent="#FF9999"
+              accentTo="#FF9999"
               active={!therapist.statusOverride || therapist.statusOverride === "Auto"}
               disabled={savingField === "statusOverride"}
               onClick={() => void updateOverride("Auto")}
@@ -259,7 +259,7 @@ const TherapistProfilePage: React.FC = () => {
               label="In session"
               hint="Currently with a client"
               Icon={Timer}
-              accent="#EC4899"
+              accent="#FF9999"
               accentTo="#9D174D"
               active={therapist.statusOverride === "bookable"}
               disabled={savingField === "statusOverride"}
@@ -362,7 +362,7 @@ const TherapistProfilePage: React.FC = () => {
               "&:active": { background: "rgba(194,24,91,0.12)" },
             }}
           >
-            <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #FF9999, #FF9999)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <MapPin size={19} weight="duotone" color="#fff" />
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -392,7 +392,7 @@ const TherapistProfilePage: React.FC = () => {
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: canEditHoursToday ? 1.25 : 0.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
-              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #FF9999, #FF9999)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <ClockCounterClockwise size={14} weight="duotone" color="#fff" />
               </Box>
               <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)" }}>
@@ -440,7 +440,7 @@ const TherapistProfilePage: React.FC = () => {
                   textTransform: "none",
                   fontWeight: 700,
                   borderRadius: 2,
-                  background: "linear-gradient(135deg, #E0708F, #B23A63)",
+                  background: "linear-gradient(135deg, #FF9999, #FF9999)",
                   boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
                   "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
                 }}
@@ -486,7 +486,7 @@ const TherapistProfilePage: React.FC = () => {
             "&:active": { background: "rgba(194,24,91,0.08)" },
           }}
         >
-          <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #FF9999, #FF9999)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <Gear size={19} weight="duotone" color="#fff" />
           </Box>
           <Typography sx={{ flex: 1, fontFamily: SANS, fontWeight: 700, fontSize: "14px", color: "var(--sr-ink)" }}>

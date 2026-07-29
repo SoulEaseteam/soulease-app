@@ -515,8 +515,8 @@ const AdminMembersPage: React.FC = () => {
           <Button
             variant="contained" disabled={saving || !newPhone.trim()} onClick={enrol}
             sx={{ textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
-              background: "linear-gradient(135deg,#D97C95,#C96F89)",
-              "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" },
+              background: "linear-gradient(135deg,#FF9999,#FF9999)",
+              "&:hover": { background: "linear-gradient(135deg,#FF9999,#FF9999)" },
               "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
           >
             {saving ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "+ สมัคร (รหัส SRD-)"}
@@ -658,7 +658,7 @@ const AdminMembersPage: React.FC = () => {
                     {editing ? (
                       <>
                         <Button size="small" variant="contained" disabled={saving} onClick={saveEdit}
-                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)" }}>
+                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#FF9999,#FF9999)" }}>
                           บันทึก
                         </Button>
                         <Button size="small" variant="text" disabled={saving} onClick={() => setEditKey(null)}
@@ -674,12 +674,12 @@ const AdminMembersPage: React.FC = () => {
                       <>
                         {canUpgrade && (
                           <Button size="small" variant="contained" disabled={saving} onClick={() => void upgrade(phone)}
-                            sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)" }}>
+                            sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#FF9999,#FF9999)" }}>
                             อัปเกรด → {auto}
                           </Button>
                         )}
                         <Button size="small" variant="outlined" disabled={saving} onClick={() => void resetCode(phone)}
-                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: "#8A3A57", borderColor: "#B8567F" }}>
+                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: "#FF9999", borderColor: "#FF9999" }}>
                           รีเซตรหัส
                         </Button>
                         <Button size="small" variant="outlined" disabled={saving}

@@ -1733,7 +1733,7 @@ const BookingFlowPage: React.FC = () => {
                 width: 22,
                 height: 22,
                 borderRadius: "50%",
-                background: "#D97C95",
+                background: "#FF9999",
                 color: "#fff",
                 display: "inline-flex",
                 alignItems: "center",
@@ -1753,7 +1753,7 @@ const BookingFlowPage: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
-                  color: "#9F0731",
+                  color: "#FF9999",
                   lineHeight: 1,
                 }}
               >
@@ -2127,7 +2127,7 @@ const BookingFlowPage: React.FC = () => {
                     flexShrink: 0,
                     borderRadius: "7px",
                     background: "rgba(217, 124, 149, 0.12)",
-                    color: "#D97C95",
+                    color: "#FF9999",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -2491,7 +2491,7 @@ const BookingFlowPage: React.FC = () => {
                         sx={{
                           fontFamily: SANS,
                           fontSize: "10.5px",
-                          color: "#9F0731",
+                          color: "#FF9999",
                           fontWeight: 600,
                         }}
                       >
@@ -2839,7 +2839,7 @@ const BookingFlowPage: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
-                  color: "#9F0731",
+                  color: "#FF9999",
                   marginBottom: "6px",
                 }}
               >
@@ -2881,7 +2881,7 @@ const BookingFlowPage: React.FC = () => {
                   sx={{
                     fontFamily: SANS,
                     fontSize: 11,
-                    color: "#9F0731",
+                    color: "#FF9999",
                     marginTop: "6px",
                     fontWeight: 600,
                   }}
@@ -2918,7 +2918,7 @@ const BookingFlowPage: React.FC = () => {
             display: { xs: "none", md: "flex" },
             height: 52,
             borderRadius: "999px",
-            background: "#D97C95",
+            background: "#FF9999",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "15px",
@@ -2927,7 +2927,7 @@ const BookingFlowPage: React.FC = () => {
             textTransform: "none",
             boxShadow: "0 6px 20px rgba(217, 124, 149, 0.40)",
             "&:hover": {
-              background: "#C96F89",
+              background: "#FF9999",
               boxShadow: "0 10px 26px rgba(217, 124, 149, 0.46)",
             },
             "&.Mui-disabled": {

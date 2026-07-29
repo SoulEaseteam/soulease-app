@@ -66,7 +66,7 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
         boxShadow: "var(--sr-card-shadow)",
         transition: "box-shadow 0.2s ease, border-color 0.2s ease",
         "&:focus-within": {
-          borderColor: "#D97C95",
+          borderColor: "#FF9999",
           boxShadow:
             "var(--sr-card-shadow), 0 0 0 3px rgba(217, 124, 149, 0.18)",
         },

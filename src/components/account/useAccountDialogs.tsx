@@ -34,8 +34,8 @@ import { SUPPORTED_LANGS, setLangPref, langLabel, type LangCode } from "@/utils/
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#D97C95";
-const ROSE_DEEP = "#C96F89";
+const ROSE = "#FF9999";
+const ROSE_DEEP = "#FF9999";
 
 export interface AccountDialogs {
   activeLangLabel: string;

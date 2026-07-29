@@ -262,9 +262,9 @@ const HomeFooterV2: React.FC = () => {
                         color: "inherit",
                         textDecoration: "none",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#D97C95" }, // ROSE — link hover
+                        "&:hover": { color: "#FF9999" }, // ROSE — link hover
                         "&:focus-visible": {
-                          outline: "2px solid #D97C95", // ROSE focus ring
+                          outline: "2px solid #FF9999", // ROSE focus ring
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },
@@ -288,9 +288,9 @@ const HomeFooterV2: React.FC = () => {
                         color: "inherit",
                         textDecoration: "none",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#D97C95" }, // ROSE — link hover
+                        "&:hover": { color: "#FF9999" }, // ROSE — link hover
                         "&:focus-visible": {
-                          outline: "2px solid #D97C95", // ROSE focus ring
+                          outline: "2px solid #FF9999", // ROSE focus ring
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },
@@ -308,9 +308,9 @@ const HomeFooterV2: React.FC = () => {
                         cursor: "pointer",
                         color: "inherit",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#D97C95" }, // ROSE — link hover
+                        "&:hover": { color: "#FF9999" }, // ROSE — link hover
                         "&:focus-visible": {
-                          outline: "2px solid #D97C95", // ROSE focus ring
+                          outline: "2px solid #FF9999", // ROSE focus ring
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },

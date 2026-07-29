@@ -24,8 +24,9 @@ export interface SunRedWordmarkProps {
   size?: number;
   /** Text color. Defaults to `brand.text` (warm dark). */
   color?: string;
-  /** Hide the sun glyph (text-only mode). */
-  glyphOnly?: false;
+  /** 🆕 28x.134 (founder selected the sun glyph in TopNav, "เอาออก") —
+   *  hide the sun icon, text-only mode. */
+  hideGlyph?: boolean;
   /** Override className for outer wrapper if needed */
   className?: string;
 }
@@ -68,6 +69,7 @@ const SunGlyph: React.FC<{ size: number }> = ({ size }) => {
 const SunRedWordmark: React.FC<SunRedWordmarkProps> = ({
   size = 22,
   color = brand.text,
+  hideGlyph = false,
   className,
 }) => {
   return (
@@ -76,10 +78,10 @@ const SunRedWordmark: React.FC<SunRedWordmarkProps> = ({
       sx={{
         display: "inline-flex",
         alignItems: "center",
-        gap: `${Math.max(4, Math.round(size * 0.28))}px`,
+        gap: hideGlyph ? 0 : `${Math.max(4, Math.round(size * 0.28))}px`,
       }}
     >
-      <SunGlyph size={size} />
+      {!hideGlyph && <SunGlyph size={size} />}
       <Typography
         component="span"
         sx={{

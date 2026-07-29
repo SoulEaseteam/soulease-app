@@ -244,7 +244,7 @@ export const HoldCountdown: React.FC<HoldCountdownProps> = ({
             height: 30,
             paddingX: "12px",
             borderRadius: "999px",
-            background: "#D97C95",
+            background: "#FF9999",
             color: "#fff",
             fontFamily: SANS,
             fontWeight: 700,

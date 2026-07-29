@@ -141,13 +141,13 @@ const QuickNavRow: React.FC = () => {
             "&:hover .qn-icon": {
               background: "var(--sr-panel-2)", // WALNUT hover-on-panel
               borderColor: "#D2B67C", // GOLD hairline
-              color: "#D97C95", // ROSE icon accent
+              color: "#FF9999", // ROSE icon accent
             },
             "&:hover": {
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #D97C95", // ROSE focus ring
+              outline: "2px solid #FF9999", // ROSE focus ring
               outlineOffset: 3,
               borderRadius: "8px",
             },
@@ -169,7 +169,7 @@ const QuickNavRow: React.FC = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 // Rose accent at rest for the highlighted tile; muted otherwise.
-                color: highlight ? "#D97C95" : "var(--sr-muted)",
+                color: highlight ? "#FF9999" : "var(--sr-muted)",
                 transition: "background 0.18s ease, color 0.18s ease",
               }}
             >
@@ -190,7 +190,7 @@ const QuickNavRow: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   borderRadius: "999px",
-                  background: "linear-gradient(135deg, #E0879E 0%, #C96F89 100%)",
+                  background: "linear-gradient(135deg, #E0879E 0%, #FF9999 100%)",
                   color: "#fff",
                   fontFamily: fonts.body,
                   fontSize: 8,

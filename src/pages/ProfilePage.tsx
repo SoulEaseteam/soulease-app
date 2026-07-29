@@ -66,8 +66,8 @@ const SANS  = '"Inter", system-ui, sans-serif';
 // 🆕 28x.57 (founder: "เปลี่ยนสีเข้าธีม") — the page was still on the pre-Moko
 //   slate/taupe palette (#1A2B2E hero, #F4F6F5 page, #8F8474 ring). Brand rose +
 //   theme vars from here on, so it matches the rest of the site day and night.
-const ROSE = "#D97C95";
-const ROSE_DEEP = "#C96F89";
+const ROSE = "#FF9999";
+const ROSE_DEEP = "#FF9999";
 const DANGER = "#C0562E";
 
 // ── helpers ─────────────────────────────────────────────────────────
@@ -353,7 +353,7 @@ const ProfilePage: React.FC = () => {
           <Box
             onClick={() => navigate("/login")}
             sx={{
-              background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
+              background: "linear-gradient(135deg, #FF9999 0%, #FF9999 100%)",
               color: "#fff",
               borderRadius: 999,
               py: 1.6,

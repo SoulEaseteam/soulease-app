@@ -2,7 +2,7 @@
 //
 // 🆕 Round 28w.1 (2026-07-13) — audit fixes:
 //   • Retheme: retired taupe #8F8474 + brown #4B4B48 + Chonburi font +
-//     navy shadows → rose #D97C95 on day/night var(--sr-*) tokens
+//     navy shadows → rose #FF9999 on day/night var(--sr-*) tokens
 //     (matches the rest of the app). White-on-taupe subtitle → var token
 //     so it stays legible in day mode.
 //   • Removed production emoji from snackbar copy (founder no-emoji rule).
@@ -45,8 +45,8 @@ import { whatsappDeepLink } from "@/config/concierge";
 import { useAuth } from "@/providers/AuthProvider";
 
 const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
-const ROSE = "#D97C95";
-const ROSE_HOVER = "#C96F89";
+const ROSE = "#FF9999";
+const ROSE_HOVER = "#FF9999";
 
 // 🆕 28w.76 (founder "ไม่เห็นข้อมูลในกล่อง · แก้ทั้ง 2 หน้า") — the outline and
 //   label were themed but the INPUT TEXT never was, so MUI fell back to its
@@ -562,7 +562,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-              <Box sx={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Box sx={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg, #FF9999, #FF9999)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <DeviceMobile size={16} weight="duotone" color="#fff" />
               </Box>
               <Typography sx={{ fontFamily: '"Inter", system-ui, sans-serif', fontWeight: 700, fontSize: 14, color: "var(--sr-ink)" }}>
@@ -577,7 +577,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
                 startIcon={<Download size={16} weight="bold" />}
                 sx={{
                   mt: 0.5, py: 1.1, borderRadius: 999, textTransform: "none", fontWeight: 700,
-                  background: "linear-gradient(135deg, #E0708F, #B23A63)", color: "#fff",
+                  background: "linear-gradient(135deg, #FF9999, #FF9999)", color: "#fff",
                   boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
                   "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
                 }}

@@ -296,7 +296,7 @@ const AdminAccountPage: React.FC = () => {
             onClick={() => void doSaveName()}
             sx={{
               textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
-              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              background: "linear-gradient(135deg,#FF9999,#FF9999)",
               "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
             }}
           >
@@ -336,7 +336,7 @@ const AdminAccountPage: React.FC = () => {
             onClick={() => void doSavePhone()}
             sx={{
               textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
-              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              background: "linear-gradient(135deg,#FF9999,#FF9999)",
               "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
             }}
           >
@@ -386,7 +386,7 @@ const AdminAccountPage: React.FC = () => {
             variant="contained" disabled={saving} onClick={() => void changePassword()}
             sx={{
               textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
-              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              background: "linear-gradient(135deg,#FF9999,#FF9999)",
               "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
             }}
           >
@@ -446,7 +446,7 @@ const AdminAccountPage: React.FC = () => {
             onClick={() => void createAdmin()}
             sx={{
               textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
-              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              background: "linear-gradient(135deg,#FF9999,#FF9999)",
               "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
             }}
           >

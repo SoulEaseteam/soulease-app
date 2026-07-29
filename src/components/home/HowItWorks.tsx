@@ -136,7 +136,7 @@ const HowItWorks: React.FC = () => {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#D97C95",
+              color: "#FF9999",
             },
           }}
         >
@@ -219,7 +219,7 @@ const HowItWorks: React.FC = () => {
                   flexShrink: 0,
                   borderRadius: "50%",
                   background:
-                    "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)", // 28r105 rose gradient
+                    "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)", // 28r105 rose gradient
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",
@@ -329,7 +329,7 @@ const HowItWorks: React.FC = () => {
               flexShrink: 0,
               borderRadius: "12px",
               background: "rgba(217, 124, 149, 0.14)",
-              color: "#D97C95",
+              color: "#FF9999",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

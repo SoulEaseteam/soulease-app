@@ -54,12 +54,12 @@ const SANS  = '"Inter", system-ui, sans-serif';
 //   ให้สวยงามเหมือนใช้ในไอโฟน") bumped to the same vivid rose→magenta→plum
 //   family as TherapistIdentityCard/Profile (28x.101), so Jobs stops being
 //   the one screen still on the old muted dusty-rose. ─────────────────────
-const ROSE          = "#E0708F";
-const ROSE_DEEP     = "#C2185B";
+const ROSE          = "#FF9999";
+const ROSE_DEEP     = "#FF9999";
 const GREEN         = "#22C55E";
 const GREEN_TEXT    = "#15803D";
 const DANGER        = "#DC2626";
-const HERO_GRADIENT = "linear-gradient(160deg, #E0708F 0%, #C2185B 55%, #6B1541 100%)";
+const HERO_GRADIENT = "linear-gradient(160deg, #FF9999 0%, #FF9999 55%, #FF9999 100%)";
 
 type TabKey = "today" | "completed" | "cancelled";
 
@@ -546,7 +546,7 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
         {/* top row: guest identity (masked until accepted) + status pill */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 1.25 }}>
           <Box sx={{ width: 42, height: 42, borderRadius: "50%", background: ROSE, p: "2px", flexShrink: 0, boxShadow: "0 4px 12px rgba(194, 24, 91, 0.20)" }}>
-            <Avatar sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F0A8BE, #E0708F)", color: "#fff" }}>
+            <Avatar sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F0A8BE, #FF9999)", color: "#fff" }}>
               <UserCircle size={21} weight="fill" />
             </Avatar>
           </Box>

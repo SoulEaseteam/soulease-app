@@ -40,7 +40,7 @@ const SANS = '"Inter", system-ui, sans-serif';
 // Inter 700 keeps the weight (these ARE the numbers that matter to her) while
 // staying legible at 13.5px, and `tabular-nums` locks every digit to the same
 // advance width so the ฿ column actually aligns down the table instead of
-// ragging. The colour was the hardcoded #C2185B — a 2.6:1 blur on the dark
+// ragging. The colour was the hardcoded #FF9999 — a 2.6:1 blur on the dark
 // panel — and is now the theme-aware --sr-money token (index.css), which
 // clears AA in BOTH themes for the same reason the tier tokens moved to CSS
 // this round: one fixed hex cannot serve two grounds.
@@ -79,7 +79,7 @@ const TherapistServiceList: React.FC<{ value: string[]; onChange: (next: string[
             sx={{
               width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: on ? "linear-gradient(135deg, #E0708F, #C2185B)" : "var(--sr-panel)",
+              background: on ? "linear-gradient(135deg, #FF9999, #FF9999)" : "var(--sr-panel)",
               border: on ? "none" : "1.5px solid var(--sr-hairline)",
               boxShadow: on ? "0 3px 8px rgba(194,24,91,0.35)" : "none",
             }}

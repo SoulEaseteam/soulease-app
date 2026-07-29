@@ -1512,7 +1512,7 @@ const TherapistDetailPage: React.FC = () => {
                               alignItems: "center",
                               justifyContent: "center",
                               background: "rgba(217,124,149,0.12)",
-                              color: "#D97C95",
+                              color: "#FF9999",
                               "& svg": { fontSize: 19 },
                             }}
                           >
@@ -1635,21 +1635,21 @@ const TherapistDetailPage: React.FC = () => {
                   transition: "color 0.18s ease",
                   color: isActive ? "var(--sr-ink)" : "var(--sr-body)",
                   "& .tab-icon": {
-                    color: isActive ? "#D97C95" : "var(--sr-muted)",
+                    color: isActive ? "#FF9999" : "var(--sr-muted)",
                     transition: "color 0.18s ease",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   },
                   "&:hover .tab-icon": {
-                    color: isActive ? "#D97C95" : "var(--sr-body)",
+                    color: isActive ? "#FF9999" : "var(--sr-body)",
                   },
                   "&:focus-visible": {
                     // 🆕 28t.22 (founder "เลยขอบ") — rose + INSET ring. Was
                     //   teal #2EC4B0 with outlineOffset:2, which drew a box
                     //   2px OUTSIDE the tab so it spilled past the tab-bar
                     //   edge on tap. Negative offset keeps it inside.
-                    outline: "2px solid #D97C95",
+                    outline: "2px solid #FF9999",
                     outlineOffset: "-3px",
                     borderRadius: "10px",
                   },
@@ -1661,7 +1661,7 @@ const TherapistDetailPage: React.FC = () => {
                     bottom: -1,
                     height: 3,
                     borderRadius: 3,
-                    background: isActive ? "#D97C95" : "transparent",
+                    background: isActive ? "#FF9999" : "transparent",
                     transition: "background 0.18s ease",
                   },
                 }}
@@ -2118,7 +2118,7 @@ const TherapistDetailPage: React.FC = () => {
                     boxShadow: "var(--sr-card-shadow)",
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #D97C95",
+                    outline: "2px solid #FF9999",
                     outlineOffset: 2,
                   },
                 }}

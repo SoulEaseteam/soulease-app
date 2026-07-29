@@ -57,8 +57,8 @@ import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 // ─── Palette tokens ────────────────────────────────────────────────
 const SERIF         = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS          = '"Sarabun", "Inter", system-ui, -apple-system, sans-serif';
-const ROSE          = "#D97C95";
-const ROSE_GRADIENT = "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)";
+const ROSE          = "#FF9999";
+const ROSE_GRADIENT = "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)";
 const BESTSELLER_ID = "SR-HJ2200";
 
 // ─── Remaining services order (bestseller shown separately at top) ─

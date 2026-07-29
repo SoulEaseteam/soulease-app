@@ -46,7 +46,7 @@ const TherapistIdentityCard: React.FC<{
       sx={{
         position: "relative",
         padding: "24px 20px 28px",
-        background: "linear-gradient(160deg, #E0708F 0%, #C2185B 55%, #6B1541 100%)",
+        background: "linear-gradient(160deg, #FF9999 0%, #FF9999 55%, #FF9999 100%)",
         borderBottomLeftRadius: 28,
         borderBottomRightRadius: 28,
         color: "#fff",

@@ -538,7 +538,7 @@ const DetailHero: React.FC<Props> = ({
               sx={{
                 fontSize: 26,
                 // 🆕 28t.19 — rose (was Twitter-blue #1d9bf0, off-brand).
-                color: "#D97C95",
+                color: "#FF9999",
                 filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.45))",
               }}
             />

@@ -25,7 +25,7 @@ import { fmtBKK } from "@/utils/time";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
-const ROSE = "#D97C95";
+const ROSE = "#FF9999";
 
 interface ReportDoc {
   id: string;

@@ -33,7 +33,7 @@ import { formatTHB } from "@/utils/servicePricing";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#D97C95";
+const ROSE = "#FF9999";
 
 // 🆕 28x.111 — the taxi widget's in-line service picker. Bestseller (same id
 //   as ServicesPage/PricingPage/StepService) gets the ★ + is the default pick.
@@ -591,7 +591,7 @@ const TaxiEstimator: React.FC = () => {
               padding: "10px 14px",
               borderRadius: "12px",
               border: "none",
-              background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
+              background: "linear-gradient(135deg, #FF9999 0%, #FF9999 100%)",
               color: "#fff",
               fontFamily: SANS,
               fontSize: 14,
@@ -754,7 +754,7 @@ const TaxiEstimator: React.FC = () => {
                 }}
               >
                 <Box component="span" sx={{ width: 7, height: 7, borderRadius: "50%", background: "#E6197E" }} />
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "#C2185B" }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "#FF9999" }}>
                   {t("nearme.taxi.saved", "You save ฿{{n}} booking online", { n: estimate.save })}
                 </Typography>
               </Box>
@@ -795,7 +795,7 @@ const TaxiEstimator: React.FC = () => {
                       <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2 }}>
                         {isBest && "★ "}{SERVICE_SHORT[s.id] ?? s.name}
                       </Typography>
-                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: active ? "#C2185B" : "var(--sr-body)", mt: 0.2 }}>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: active ? "#FF9999" : "var(--sr-body)", mt: 0.2 }}>
                         {formatTHB(s.price)}
                       </Typography>
                     </Box>
@@ -838,7 +838,7 @@ const TaxiEstimator: React.FC = () => {
                 onClick={bookNow}
                 sx={{
                   width: "100%", py: "11px", borderRadius: "12px", border: "none", cursor: "pointer",
-                  background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
+                  background: "linear-gradient(135deg, #FF9999 0%, #FF9999 100%)",
                   color: "#fff", fontFamily: SANS, fontSize: 14, fontWeight: 800,
                   boxShadow: "0 6px 16px rgba(138,58,87,0.28)",
                 }}
@@ -891,7 +891,7 @@ const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; div
         fontWeight: 700,
         lineHeight: 1.15,
         mt: 0.35,
-        color: accent ? "#D97C95" : "var(--sr-ink)",
+        color: accent ? "#FF9999" : "var(--sr-ink)",
       }}
     >
       {value}

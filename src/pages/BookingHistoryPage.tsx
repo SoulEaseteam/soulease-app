@@ -11,7 +11,7 @@
 //     refunded, no_show, rejected, failed — each mapped to a bucket so
 //     completed/cancelled sessions actually appear instead of crashing.
 //   • Retheme: retired taupe #8F8474 + navy rgba(15,23,42) → rose
-//     #D97C95 accent on day/night var(--sr-*) tokens (matches detail
+//     #FF9999 accent on day/night var(--sr-*) tokens (matches detail
 //     page). Dark hero → rose-berry gradient (white text safe in both
 //     day + night, mode-independent).
 //   • a11y: aria-label on back button, role="tablist"/role="tab" +
@@ -81,12 +81,12 @@ const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
 
 // ── brand accents (fixed hex — day/night surfaces come from var(--sr-*)) ─
-const ROSE       = "#D97C95";
+const ROSE       = "#FF9999";
 const GREEN      = "#57B88B";
 const GREEN_TEXT = "#2E7D57";
 const AMBER_TEXT = "#C97A1F";
 // Rose-berry hero gradient: dark enough for white text in BOTH day + night.
-const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
+const HERO_GRADIENT = "linear-gradient(160deg, #FF9999 0%, #FF9999 100%)";
 
 // ── types ────────────────────────────────────────────────────────────
 type BookingStatus =
@@ -660,7 +660,7 @@ const BookingCard: React.FC<{
               sx={{
                 width: "100%",
                 height: "100%",
-                background: "linear-gradient(135deg, #E8B7C6, #D97C95)",
+                background: "linear-gradient(135deg, #E8B7C6, #FF9999)",
                 fontSize: 16,
                 fontWeight: 700,
                 fontFamily: SERIF,
@@ -858,7 +858,7 @@ const BookingCard: React.FC<{
             onClick={() => void submitReport()}
             disabled={reportBusy || !reportMsg.trim()}
             variant="contained"
-            sx={{ fontFamily: SANS, fontWeight: 700, borderRadius: 2, px: 2.5, background: ROSE, boxShadow: "none", "&:hover": { background: "#C96F89", boxShadow: "none" } }}
+            sx={{ fontFamily: SANS, fontWeight: 700, borderRadius: 2, px: 2.5, background: ROSE, boxShadow: "none", "&:hover": { background: "#FF9999", boxShadow: "none" } }}
           >
             ส่งรีพอร์ต
           </Button>

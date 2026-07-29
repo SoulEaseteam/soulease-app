@@ -253,7 +253,7 @@ const TherapistLocationPage: React.FC = () => {
   if (!isLoaded) {
     return (
       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: 10 }}>
-        <CircularProgress sx={{ color: "#E0708F" }} />
+        <CircularProgress sx={{ color: "#FF9999" }} />
         <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "var(--sr-muted)", mt: 2 }}>
           กำลังโหลดแผนที่…
         </Typography>
@@ -285,7 +285,7 @@ const TherapistLocationPage: React.FC = () => {
             background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
           }}
         >
-          <NavigationArrow size={15} weight="duotone" color="#C2185B" />
+          <NavigationArrow size={15} weight="duotone" color="#FF9999" />
           <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)" }}>
             {coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : "กำลังโหลดตำแหน่ง…"}
           </Typography>
@@ -301,7 +301,7 @@ const TherapistLocationPage: React.FC = () => {
             background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
           }}
         >
-          <House size={15} weight="duotone" color={homeCoords ? "#C2185B" : "var(--sr-dim)"} />
+          <House size={15} weight="duotone" color={homeCoords ? "#FF9999" : "var(--sr-dim)"} />
           <Typography sx={{ fontFamily: SANS, fontSize: 12, color: homeCoords ? "var(--sr-body)" : "var(--sr-muted)" }}>
             {homeCoords
               ? `จุดสแตนด์บาย · ${homeCoords.lat.toFixed(4)}, ${homeCoords.lng.toFixed(4)}`
@@ -338,7 +338,7 @@ const TherapistLocationPage: React.FC = () => {
             onClick={handleUpdateCurrentLocation}
             startIcon={<NavigationArrow size={16} weight="bold" />}
             sx={{
-              background: "linear-gradient(135deg, #E0708F, #B23A63)",
+              background: "linear-gradient(135deg, #FF9999, #FF9999)",
               color: "#fff",
               fontSize: 14,
               fontWeight: 700,
@@ -360,7 +360,7 @@ const TherapistLocationPage: React.FC = () => {
             startIcon={<House size={16} weight="bold" />}
             sx={{
               background: "var(--sr-panel)",
-              color: "#C2185B",
+              color: "#FF9999",
               fontSize: 14,
               fontWeight: 700,
               borderRadius: 999,

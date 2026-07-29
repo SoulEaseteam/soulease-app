@@ -36,15 +36,15 @@ const GRAY_800 = "var(--sr-ink)";          // heading + primary TEXT
 const GRAY_900 = "var(--sr-ink)";          // headline ink
 
 // Accent tints (FIXED both modes) — tan retired (read dated) → rose family
-const WARM_100 = "#E8A9BE";     // light rose
-const WARM_200 = "#D97C95";     // rose (skin / secondary fill)
+const WARM_100 = "#FF9999";     // light rose
+const WARM_200 = "#FF9999";     // rose (skin / secondary fill)
 const SAGE_400 = "#57B88B"; // success / online / "available" → green (founder semantic)
 
 // ── Dusty-rose primary CTA (was WARM_TAUPE) ────────────────────────
-// Founder spec: Dusty Rose #D97C95 primary, Dusty Rose Brown #C96F89
+// Founder spec: Dusty Rose #FF9999 primary, Dusty Rose Brown #FF9999
 // ribbon/hover. Names kept as WARM_TAUPE* so all CTA call-sites re-skin.
-const WARM_TAUPE       = "#D97C95"; // primary CTA fill — Vintage Rose
-const WARM_TAUPE_HOVER = "#C96F89"; // primary CTA hover — Dusty Rose Brown
+const WARM_TAUPE       = "#FF9999"; // primary CTA fill — Vintage Rose
+const WARM_TAUPE_HOVER = "#FF9999"; // primary CTA hover — Dusty Rose Brown
 
 // ── Signal-highlight accents (dark-luxury values) ──────────────────
 // Soft-gold is the single signature "embroidery" accent — NEW badges,
@@ -53,7 +53,7 @@ const TEAL_MINT           = "var(--sr-gold-text)"; // NEW badge / highlights →
 const AVAILABLE_GREEN     = "rgba(87,184,139,0.14)"; // "Available" pill bg — green tint
 const AVAILABLE_GREEN_TEXT = "#57B88B"; // "Available" text — green
 const FAVORITE_PINK       = "rgba(217,124,149,0.16)"; // heart / favorite bg — rose tint (fixed)
-const FAVORITE_PINK_TEXT  = "#D97C95"; // heart glyph — Vintage Rose (fixed)
+const FAVORITE_PINK_TEXT  = "#FF9999"; // heart glyph — Vintage Rose (fixed)
 const AMBER_STAR          = "#F4C542"; // star rating — bright gold-yellow (founder)
 
 // ── New named token trees (preferred going forward) ────────────────
@@ -146,14 +146,14 @@ export const brand = {
 // ─────────────────────────────────────────────────────────────────────
 export const gradients = {
   /** Primary CTA — dusty-rose gradient (28t dark-luxury) */
-  primary: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+  primary: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
   /** Section background — flat espresso ground */
   surface: NEUTRAL_50,
   /** Final hero CTA — dusty-rose gradient */
-  finalCta: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+  finalCta: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
 
   // legacy aliases
-  primaryHover: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)", // deeper rose on hover
+  primaryHover: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)", // deeper rose on hover
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
@@ -263,15 +263,15 @@ const theme = createTheme({
     // 28t dark-luxury — espresso ground, dusty-rose primary, gold secondary.
     mode: "dark",
     primary: {
-      main: WARM_TAUPE,          // Vintage Rose #D97C95
-      light: "#E38EA5",          // dark-mode hover tint
-      dark: WARM_TAUPE_HOVER,    // Dusty Rose Brown #C96F89
+      main: WARM_TAUPE,          // Vintage Rose #FF9999
+      light: "#FF9999",          // dark-mode hover tint
+      dark: WARM_TAUPE_HOVER,    // Dusty Rose Brown #FF9999
       contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#D97C95",           // rose (gold retired — read dated)
-      light: "#E8A9BE",
-      dark: "#C96F89",
+      main: "#FF9999",           // rose (gold retired — read dated)
+      light: "#FF9999",
+      dark: "#FF9999",
       contrastText: "#FFFFFF",
     },
     success: { main: "#57B88B" }, // Available green (founder semantic)

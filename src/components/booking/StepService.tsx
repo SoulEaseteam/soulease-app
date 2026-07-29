@@ -253,7 +253,7 @@ const StepService: React.FC<Props> = ({
               borderRadius: "14px",
               background: "var(--sr-panel)",
               border: isSelected
-                ? "1.5px solid #D97C95"
+                ? "1.5px solid #FF9999"
                 : "1px solid var(--sr-hairline)",
               boxShadow: "var(--sr-card-shadow)",
               overflow: "hidden",
@@ -268,7 +268,7 @@ const StepService: React.FC<Props> = ({
                 },
               },
               "&:focus-visible": {
-                outline: "2px solid #D97C95",
+                outline: "2px solid #FF9999",
                 outlineOffset: 2,
               },
             }}
@@ -368,7 +368,7 @@ const StepService: React.FC<Props> = ({
                   <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px", mt: "6px" }}>
                     <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
                       <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10px", color: "var(--sr-muted)", fontWeight: 600 }}>เริ่มต้น</Typography>
-                      <Typography component="span" sx={{ fontFamily: SANS, fontSize: "16px", fontWeight: 700, color: "#D97C95", lineHeight: 1 }}>{formatTHB(from)}</Typography>
+                      <Typography component="span" sx={{ fontFamily: SANS, fontSize: "16px", fontWeight: 700, color: "#FF9999", lineHeight: 1 }}>{formatTHB(from)}</Typography>
                     </Box>
                   </Box>
                 );
@@ -386,7 +386,7 @@ const StepService: React.FC<Props> = ({
                   right: 10,
                   padding: "3px 9px",
                   borderRadius: 999,
-                  background: "#D97C95",
+                  background: "#FF9999",
                   color: "#fff",
                   fontFamily: SANS,
                   fontSize: "10px",

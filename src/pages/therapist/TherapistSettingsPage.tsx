@@ -23,7 +23,7 @@ import { getThemeChoice, setThemeChoice, type ThemeChoice } from "@/components/c
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#D97C95";
+const ROSE = "#FF9999";
 const DANGER = "#C0562E";
 
 const Row: React.FC<{
@@ -166,8 +166,8 @@ const TherapistSettingsPage: React.FC = () => {
                   sx={{
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5,
                     py: 1.25, borderRadius: "12px", cursor: "pointer",
-                    background: active ? "linear-gradient(135deg, #E0708F, #B23A63)" : "#E0708F12",
-                    border: active ? "1px solid #B23A63" : "1px solid #E0708F40",
+                    background: active ? "linear-gradient(135deg, #FF9999, #FF9999)" : "#E0708F12",
+                    border: active ? "1px solid #FF9999" : "1px solid #E0708F40",
                     color: active ? "#fff" : "var(--sr-ink)",
                   }}
                 >

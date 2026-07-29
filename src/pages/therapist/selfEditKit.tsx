@@ -50,7 +50,7 @@ export const SelfEditShell: React.FC<{
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-          <CircularProgress sx={{ color: "#E0708F" }} />
+          <CircularProgress sx={{ color: "#FF9999" }} />
         </Box>
       ) : (
         <Box sx={{ px: 2 }}>
@@ -82,7 +82,7 @@ export const SelfEditShell: React.FC<{
               textTransform: "none",
               fontWeight: 700,
               borderRadius: 2,
-              background: "linear-gradient(135deg, #E0708F, #B23A63)",
+              background: "linear-gradient(135deg, #FF9999, #FF9999)",
               boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
               "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
               "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },

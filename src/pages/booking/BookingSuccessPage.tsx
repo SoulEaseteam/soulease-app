@@ -343,7 +343,7 @@ const BookingSuccessPage: React.FC = () => {
                 width: 96,
                 height: 96,
                 borderRadius: "50%",
-                background: "#D97C95",
+                background: "#FF9999",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

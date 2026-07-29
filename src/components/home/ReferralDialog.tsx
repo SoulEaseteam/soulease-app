@@ -55,8 +55,8 @@ import { getReferralConfig } from "@/utils/discount";
 const SHARE_HOST = "https://sunred.vip";
 
 // Rose theme (Round 28w) — retired the dated taupe #8F8474 banner/button.
-const ROSE = "#D97C95";
-const ROSE_DEEP = "#C96F89";
+const ROSE = "#FF9999";
+const ROSE_DEEP = "#FF9999";
 
 interface Props {
   open: boolean;

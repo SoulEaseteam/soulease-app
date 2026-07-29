@@ -24,7 +24,7 @@ import { responsiveShellNarrow } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
 import { BLOG_POSTS } from "@/data/blogPosts";
 
-const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
+const HERO_GRADIENT = "linear-gradient(160deg, #FF9999 0%, #FF9999 100%)";
 const ORIGIN = "https://sunred.vip";
 
 const BlogIndexPage: React.FC = () => {
@@ -152,7 +152,7 @@ const BlogIndexPage: React.FC = () => {
                 fontWeight: 600,
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                color: "#C96F89",
+                color: "#FF9999",
               }}
             >
               <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
@@ -195,7 +195,7 @@ const BlogIndexPage: React.FC = () => {
                 fontFamily: fonts.body,
                 fontSize: 13.5,
                 fontWeight: 600,
-                color: "#C96F89",
+                color: "#FF9999",
                 margin: "14px 0 0",
               }}
             >
@@ -221,7 +221,7 @@ const BlogIndexPage: React.FC = () => {
         <Box
           component="span"
           onClick={() => navigate("/")}
-          sx={{ color: "#C96F89", fontWeight: 600, cursor: "pointer" }}
+          sx={{ color: "#FF9999", fontWeight: 600, cursor: "pointer" }}
         >
           See tonight’s live availability →
         </Box>

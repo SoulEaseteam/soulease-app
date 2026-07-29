@@ -87,11 +87,11 @@ const neutrals = {
   n200: "var(--sr-hairline)",
 };
 const warmAccents = { w100: "var(--sr-panel-2)" };
-const accents = { teal: "#D97C95" };
+const accents = { teal: "#FF9999" };
 
 // 🆕 28w.6 — "ทำให้สวยขึ้น": rose hero band, bestseller ribbon, rose prices.
-const ROSE = "#D97C95";
-const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
+const ROSE = "#FF9999";
+const HERO_GRADIENT = "linear-gradient(160deg, #FF9999 0%, #FF9999 100%)";
 const BESTSELLER_ID = "SR-HJ2200";
 // 🆕 28w.72 (founder "Unlock Executive Benefits เฉพาะ Gentleman's กับ SunRed
 //   Therapeutic") — only these two carry the premium CTA wording.
@@ -578,7 +578,7 @@ const PricingPage: React.FC = () => {
                   borderRadius: 999,
                   border: "none",
                   cursor: "pointer",
-                  background: "#D97C95",
+                  background: "#FF9999",
                   color: "#FFFFFF",
                   fontFamily: fonts.body,
                   fontSize: 13,
@@ -589,7 +589,7 @@ const PricingPage: React.FC = () => {
                   transition:
                     "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
                   "&:hover": {
-                    background: "#C96F89",
+                    background: "#FF9999",
                     transform: "translateY(-1px)",
                     boxShadow: "0 8px 20px rgba(45, 45, 43, 0.28)",
                   },

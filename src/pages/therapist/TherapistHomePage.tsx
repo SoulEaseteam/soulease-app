@@ -137,7 +137,7 @@ const TherapistHomePage: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-        <CircularProgress sx={{ color: "#D97C95" }} />
+        <CircularProgress sx={{ color: "#FF9999" }} />
       </Box>
     );
   }
@@ -184,7 +184,7 @@ const TherapistHomePage: React.FC = () => {
       sub: "สูงสุด 9 รูป · รอแอดมินตรวจก่อนขึ้นจริง",
       Icon: GalleryTileIcon,
       to: "/therapist/gallery",
-      accent: "#EC4899",
+      accent: "#FF9999",
       accentTo: "#9D174D",
     },
     {
@@ -202,8 +202,8 @@ const TherapistHomePage: React.FC = () => {
       sub: "ส่วนสูง น้ำหนัก รูปร่าง ฯลฯ",
       Icon: Fingerprint,
       to: "/therapist/features",
-      accent: "#C2185B",
-      accentTo: "#6B1541",
+      accent: "#FF9999",
+      accentTo: "#FF9999",
     },
     {
       id: "languages",

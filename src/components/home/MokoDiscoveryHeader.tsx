@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 export type RosterFilter = "all" | "available_now" | "express";
 
 // 🕯️ 28t dark-luxury day/night — rose + gold accents fixed; text follows mode.
-const MAGENTA = "#D97C95"; // primary — Vintage Rose (active / selected / icons) — fixed
+const MAGENTA = "#FF9999"; // primary — Vintage Rose (active / selected / icons) — fixed
 const MAGENTA_TXT = "var(--sr-ink)"; // active-tab label text (flips day/night)
 const GREEN = "#57B88B"; // available / on-standby dot — green (founder semantic)
 const TEXT = "var(--sr-ink)"; // primary text
@@ -168,7 +168,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
               }}
             >
               {tab.key === "express" && (
-                <Lightning size={13} weight="fill" color={active ? "#D97C95" : "#8B7A6B"} />
+                <Lightning size={13} weight="fill" color={active ? "#FF9999" : "#8B7A6B"} />
               )}
               {tab.live && (
                 <Box

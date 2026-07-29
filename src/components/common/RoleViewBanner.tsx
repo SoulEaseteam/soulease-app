@@ -87,7 +87,7 @@ const RoleViewBanner: React.FC = () => {
   const accentBorder = isAdmin
     ? "rgba(15, 23, 42, 0.28)"
     : "rgba(22, 163, 74, 0.28)";
-  const labelInk = isAdmin ? "#9F0731" : "#15803d";
+  const labelInk = isAdmin ? "#FF9999" : "#15803d";
 
   return (
     <Box

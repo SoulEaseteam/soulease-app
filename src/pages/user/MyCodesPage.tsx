@@ -36,7 +36,7 @@ import { PROMOS_ENABLED } from "@/config/featureFlags";
 import { responsiveShell } from "@/theme/breakpoints";
 import { fonts } from "@/theme";
 
-const ROSE = "#D97C95";
+const ROSE = "#FF9999";
 
 const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Box
@@ -321,7 +321,7 @@ const MyCodesPage: React.FC = () => {
                             sx={{
                               flexShrink: 0, minHeight: 34, px: 1.75,
                               border: "none", borderRadius: 999, cursor: "pointer",
-                              background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+                              background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
                               color: "#fff", fontFamily: fonts.body, fontSize: 12.5, fontWeight: 700,
                               opacity: submitting ? 0.6 : 1,
                             }}
@@ -465,7 +465,7 @@ const ctaSx = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
   width: "100%", minHeight: 42,
   border: "none", borderRadius: 999, cursor: "pointer",
-  background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+  background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
   color: "#fff",
   fontFamily: fonts.body, fontSize: 13.5, fontWeight: 700,
 } as const;

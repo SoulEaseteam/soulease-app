@@ -59,7 +59,7 @@ const TherapistPerformancePage: React.FC = () => {
 
       {loading || stats.loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-          <CircularProgress sx={{ color: "#D97C95" }} />
+          <CircularProgress sx={{ color: "#FF9999" }} />
         </Box>
       ) : !therapist ? (
         <Box sx={{ padding: "40px 24px", textAlign: "center" }}>

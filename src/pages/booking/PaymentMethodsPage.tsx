@@ -96,7 +96,7 @@ const RECOMMENDED: PaymentOption = {
   sub: "Scan QR on arrival (Details after booking)",
   icon: <QrCodeScannerRoundedIcon />,
   iconBg: "rgba(217, 124, 149, 0.12)",
-  iconFg: "#D97C95",
+  iconFg: "#FF9999",
 };
 
 // 🆕 Round 28t (founder 2026-05-02, corrected) — Cards (Visa/Mastercard/
@@ -111,7 +111,7 @@ const LINKED_DEFAULTS: PaymentOption[] = [
     sub: "Pay with cash on arrival",
     icon: <LocalAtmRoundedIcon />,
     iconBg: "rgba(217, 124, 149, 0.10)",
-    iconFg: "#D97C95",
+    iconFg: "#FF9999",
   },
 ];
 
@@ -940,7 +940,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
         top: "12%",
         bottom: "12%",
         width: "2px",
-        background: "#D97C95",
+        background: "#FF9999",
         borderRadius: "2px",
         opacity: 0,
         transition: "opacity 220ms ease",

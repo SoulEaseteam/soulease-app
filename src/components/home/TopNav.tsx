@@ -405,7 +405,7 @@ const TopNav: React.FC = () => {
             flexShrink: 0,
             marginRight: { md: "auto" },
             "&:focus-visible": {
-              outline: "2px solid #D97C95",
+              outline: "2px solid #FF9999",
               outlineOffset: 2,
             },
           }}
@@ -415,7 +415,7 @@ const TopNav: React.FC = () => {
               is replaced by the shared SunRedWordmark (sun glyph + italic
               serif), the same mark that used to ONLY live in the drawer
               header (now removed there — see the Drawer section below). */}
-          <SunRedWordmark size={22} color={fg} />
+          <SunRedWordmark size={22} color={fg} hideGlyph />
         </Box>
 
         {/* 🆕 28x.132 — practitioner search, moved here from
@@ -541,7 +541,7 @@ const TopNav: React.FC = () => {
             alignItems: "center",
             gap: "8px",
             // 🕯️ 28t — dusty-rose gradient concierge pill (both home + inner).
-            background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+            background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
             border: "none",
             color: "#FFF7F0",
             fontFamily: SANS,
@@ -612,7 +612,7 @@ const TopNav: React.FC = () => {
               width: 44,
               height: 44,
               "&:focus-visible": {
-                outline: "2px solid #D97C95",
+                outline: "2px solid #FF9999",
                 outlineOffset: 2,
               },
             }}
@@ -672,7 +672,7 @@ const TopNav: React.FC = () => {
               "&:hover": { transform: "translateY(-1px)" },
               transition: "transform 0.15s ease",
               "&:focus-visible": {
-                outline: "2px solid #D97C95",
+                outline: "2px solid #FF9999",
                 outlineOffset: 2,
               },
             }}
@@ -683,7 +683,7 @@ const TopNav: React.FC = () => {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: "#D97C95",
+                background: "#FF9999",
                 color: "#FFFFFF",
                 display: "inline-flex",
                 alignItems: "center",
@@ -731,7 +731,7 @@ const TopNav: React.FC = () => {
               aria-hidden
               sx={{
                 fontSize: 18,
-                color: "#D97C95",
+                color: "#FF9999",
                 fontWeight: 800,
                 flexShrink: 0,
               }}
@@ -825,7 +825,7 @@ const TopNav: React.FC = () => {
                 borderRadius: "12px",
                 background: "transparent",
                 border: "none",
-                color: "#D97C95",
+                color: "#FF9999",
                 fontFamily: SANS,
                 fontSize: 14,
                 fontWeight: 600,
@@ -833,12 +833,12 @@ const TopNav: React.FC = () => {
                 cursor: "pointer",
                 "&:hover": { background: "rgba(243,230,219,0.07)" },
                 "&:focus-visible": {
-                  outline: "2px solid #D97C95",
+                  outline: "2px solid #FF9999",
                   outlineOffset: 2,
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 0, color: "#D97C95" }}>
+              <ListItemIcon sx={{ minWidth: 0, color: "#FF9999" }}>
                 <LogoutRoundedIcon />
               </ListItemIcon>
               {t("nav.signOut", "Sign out")}
@@ -856,7 +856,7 @@ const TopNav: React.FC = () => {
                 padding: "12px 14px",
                 borderRadius: "12px",
                 background:
-                  "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+                  "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
                 border: "none",
                 color: "#FFF7F0",
                 fontFamily: SANS,
@@ -869,7 +869,7 @@ const TopNav: React.FC = () => {
                   boxShadow: "0 8px 20px rgba(0, 0, 0, 0.5)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #D97C95",
+                  outline: "2px solid #FF9999",
                   outlineOffset: 2,
                 },
               }}
@@ -963,7 +963,7 @@ function renderNavRow(
               : "rgba(243,230,219,0.07)",
           },
           "&:focus-visible": {
-            outline: "2px solid #D97C95",
+            outline: "2px solid #FF9999",
             outlineOffset: 2,
           },
         }}
@@ -971,7 +971,7 @@ function renderNavRow(
         <ListItemIcon
           sx={{
             minWidth: 0,
-            color: active ? "#D97C95" : "var(--sr-muted)",
+            color: active ? "#FF9999" : "var(--sr-muted)",
           }}
         >
           {item.icon}
