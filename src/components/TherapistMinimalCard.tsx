@@ -563,14 +563,18 @@ const TherapistMinimalCard: React.FC<Props> = ({
               ประคบสมุนไพร · แผนไทย" is from a different app's menu, not
               ours) — kept honest with the real trust numbers this card
               already tracked (reviews + sessions), just restyled to read
-              as one quiet dot-separated line instead of two chip rows. */}
+              as one quiet dot-separated line instead of two chip rows.
+              🆕 28x.147 (founder side-by-side vs. cbody.vip: "ทำไมไม่เด่น
+              เท่าเขา") — cbody's "700+ การจอง" trust stat is bold and dark,
+              ours was small and muted; bumped weight/size/color so the
+              real numbers actually land instead of reading as fine print. */}
           {(therapist.reviews && therapist.reviews > 0) || sessionCount > 0 ? (
             <Typography
               sx={{
                 fontFamily: fonts.body,
-                fontSize: "11.5px",
-                fontWeight: 500,
-                color: "var(--sr-muted)",
+                fontSize: "12.5px",
+                fontWeight: 700,
+                color: "var(--sr-body)",
                 lineHeight: 1.4,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -614,11 +618,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
           }}
         >
           {!isOnHoliday && (
+            // 🆕 28x.147 (founder: cbody.vip comparison, "ทำไมไม่เด่น") —
+            //   the price shrank to 13px when it moved into this row
+            //   (28x.146). Bumped back up so it reads as a headline
+            //   number, not fine print next to the Book button.
             <Box sx={{ display: "inline-flex", alignItems: "center", minWidth: 0 }}>
               <Typography
                 sx={{
                   fontFamily: fonts.heading,
-                  fontSize: "13px",
+                  fontSize: "17px",
                   fontWeight: 800,
                   color: "#FF9999",
                   lineHeight: 1,
