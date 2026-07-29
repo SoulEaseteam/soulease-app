@@ -4851,13 +4851,29 @@ export const onBookingDispatchChange = onDocumentUpdated(
   {
     document: "bookings/{bookingId}",
     region: "asia-southeast1",
+    // 🆕 28x.149 — this trigger now sends Telegram on a schedule change
+    //   (see below), so it needs the bot token secret it never used before.
+    secrets: [TELEGRAM_BOT_TOKEN],
   },
   async (event) => {
     const before = event.data?.before.data() as
-      | { therapistId?: string; dispatchState?: string }
+      | {
+          therapistId?: string;
+          dispatchState?: string;
+          startAt?: Timestamp;
+          date?: string;
+          time?: string;
+        }
       | undefined;
     const after = event.data?.after.data() as
-      | { therapistId?: string; dispatchState?: string }
+      | {
+          therapistId?: string;
+          dispatchState?: string;
+          startAt?: Timestamp;
+          date?: string;
+          time?: string;
+          therapistName?: string;
+        }
       | undefined;
     if (!after) return;
 
@@ -4865,6 +4881,68 @@ export const onBookingDispatchChange = onDocumentUpdated(
     // phone / time) that can't move a practitioner's live busy status.
     const idChanged = (before?.therapistId ?? null) !== (after.therapistId ?? null);
     const stateChanged = (before?.dispatchState ?? null) !== (after.dispatchState ?? null);
+
+    // 🆕 28x.149 (founder: "ลค จะเปลี่ยนเวลา ระบบก็ต้องลิ้งตามกันสิ") — a pure
+    //   schedule edit (therapist + dispatchState both unchanged) used to hit
+    //   the early-return two lines down with ZERO notification to anyone.
+    //   The admin edit form only toasts the ADMIN who made the change; the
+    //   assigned therapist found out only if her Jobs page happened to be
+    //   open live at that exact moment (onSnapshot has no badge/push when
+    //   it isn't). Detect a real startAt change here, ahead of both early
+    //   returns, and fire a Telegram notice to the admin group (always —
+    //   the channel already proven reliable) and the therapist's personal
+    //   DM (if she's on the DISPATCH pilot list, same gate onBookingCreate
+    //   uses). Fire-and-forget: a notify failure must never block the
+    //   busy-status sync below, which is this function's real job.
+    const beforeStartMs = before?.startAt?.toMillis?.() ?? null;
+    const afterStartMs = after.startAt?.toMillis?.() ?? null;
+    const scheduleChanged =
+      beforeStartMs !== null && afterStartMs !== null && beforeStartMs !== afterStartMs;
+    if (scheduleChanged) {
+      try {
+        const token = TELEGRAM_BOT_TOKEN.value();
+        if (!token) {
+          logger.error(
+            "[onBookingDispatchChange] TELEGRAM_BOT_TOKEN missing — schedule-change notice skipped"
+          );
+        } else {
+          const bookingId = event.params.bookingId;
+          const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+          const oldWhen =
+            before?.date && before?.time ? `${before.date} ${before.time}` : "—";
+          const newWhen = after.date && after.time ? `${after.date} ${after.time}` : "—";
+          await sendTelegramIfEnabled(
+            token,
+            TELEGRAM_CHAT_ID,
+            [
+              `🕐 เปลี่ยนเวลานัด · ${refCode}`,
+              `Therapist: ${after.therapistName ?? "—"}`,
+              `${oldWhen}  →  ${newWhen}`,
+            ].join("\n")
+          );
+          if (therapistDmEnabled(after.therapistId) && after.therapistId) {
+            const tSnap = await getFirestore()
+              .collection("therapists")
+              .doc(after.therapistId)
+              .get();
+            const chatId = (tSnap.data() as TherapistDocLiteForTelegram | undefined)
+              ?.telegramChatId;
+            if (chatId) {
+              await sendTelegramIfEnabled(
+                token,
+                String(chatId),
+                [
+                  `🕐 งานของคุณเปลี่ยนเวลา · ${refCode}`,
+                  `${oldWhen}  →  ${newWhen}`,
+                ].join("\n")
+              );
+            }
+          }
+        }
+      } catch (err) {
+        logger.error("[onBookingDispatchChange] schedule-change notice failed", err);
+      }
+    }
 
     // 🆕 28x.66 — keep therapistUid in step with a reassignment, BEFORE the
     //   early return below. Reassigning a job must also move who can read it:
