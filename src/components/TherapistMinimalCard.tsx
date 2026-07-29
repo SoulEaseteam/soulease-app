@@ -213,22 +213,25 @@ const TherapistMinimalCard: React.FC<Props> = ({
       }}
       aria-label={`View ${therapist.name}`}
       sx={{
-        // 🆕 28x.127 (founder: "ลองทำการ์ดแนวนอน") — back to a horizontal
-        //   row (photo LEFT, info RIGHT), same shape the card had before
-        //   28r53 restacked it vertical. Grid above (HomeTherapistGrid)
-        //   switched to a single-column list to match — a horizontal
-        //   card doesn't tile into multi-column grid cells the way the
-        //   vertical portrait card did.
+        // 🆕 Round 28r53 — Phase 3.2 responsive grid. Card restacked
+        //   from horizontal (row-reverse, fixed 150×190) to vertical
+        //   portrait so it scales cleanly from a 2-col 375px mobile
+        //   grid (~180px wide) all the way up to a 5-col 1200px
+        //   desktop grid (~220px wide). Photo on TOP with
+        //   aspect-ratio 3/4, info stacked BELOW. Every info element
+        //   from the horizontal design is preserved.
         display: "flex",
-        flexDirection: "row",
+        flexDirection: "column",
         // 🕯️ 28t — panel + gold "embroidery" hairline (flips day/night).
         background: "var(--sr-panel)",
         border: "1px solid var(--sr-hairline)",
         borderRadius: "18px",
-        // 🆕 28x.127 — even padding on all sides now that the photo sits
-        //   inset on the left instead of flush across the top.
-        padding: "10px",
-        gap: "12px",
+        // 🆕 28x.119 (founder reference screenshot: "ลองเปลี่ยนการ์ดสไตล์นี้
+        //   แต่สีเดิม") — photo is now INSET (padded frame) instead of
+        //   edge-to-edge, so overflow can no longer be hidden at the
+        //   outer card level — the photo container below owns its own
+        //   clip + radius instead.
+        padding: "10px 10px 0",
         boxShadow: "var(--sr-card-shadow)",
         // 🆕 Round 28r53 — margin dropped: parent grid supplies gap.
         // marginBottom left at 0 (was 14px for the flex-column list).
@@ -293,16 +296,18 @@ const TherapistMinimalCard: React.FC<Props> = ({
           bottom-center location but with warm neutral fills.
           Holiday cards still suppress the pill (the Holiday badge on
           the blurred portrait carries the meaning — 28s146). */}
-      {/* ── Portrait on the LEFT (28x.127 horizontal card) ──── */}
+      {/* ── Portrait on TOP (Round 28r53 vertical portrait card) ──── */}
       <Box
         sx={{
-          // 🆕 28x.127 (founder: "ลองทำการ์ดแนวนอน") — fixed-width column
-          //   instead of width:100%; height follows from aspect-ratio, so
-          //   the row's height is driven by this column. Kept the 3/4
-          //   portrait ratio from 28x.120 (founder wanted to actually see
-          //   the practitioner, not a tight crop) — just narrower now
-          //   that it's a side column instead of the full card width.
-          width: { xs: 108, sm: 128 },
+          width: "100%",
+          // 🆕 28x.119 — inset frame instead of edge-to-edge; owns its own
+          //   radius + clip now that the outer card is padded instead of
+          //   flush.
+          // 🆕 28x.120 (founder: "ทำการ์ดให้สูงขึ้น ให้เห็นรูปพนักงาน") —
+          //   the 4:3 landscape crop cut off too much of the (mostly
+          //   full-body, portrait-shot) practitioner photos. Back to a
+          //   taller 3:4 portrait frame, same ratio the card used before
+          //   28x.119, now inset instead of edge-to-edge.
           aspectRatio: "3 / 4",
           borderRadius: "14px",
           overflow: "hidden",
@@ -416,16 +421,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
         )}
       </Box>
 
-      {/* ── Info column (28x.127: now sits beside the portrait, not below it) ──── */}
+      {/* ── Info column (rendered BELOW the portrait) ──── */}
       <Box
         sx={{
           flex: 1,
           minWidth: 0,
-          // 🆕 28x.127 — no horizontal padding of its own now; the row's
-          //   `gap: 12px` (outer card) already separates it from the
-          //   photo, and the outer card's own 10px padding handles the
-          //   right/vertical edges.
-          padding: "2px 0",
+          padding: "12px 14px 12px 14px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
