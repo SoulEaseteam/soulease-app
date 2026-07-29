@@ -24,10 +24,6 @@ import { trackHomeView, consumeLandingArea } from "@/utils/analytics";
 
 // 🆕 Round 28s326 (founder 2026-07-08) — Home hero rebuilt to the
 //   "Simple · Pure · Balanced" spa mockup ("ปรับหน้าโฮม แบบนี้").
-//   Replaces the inline Nordic-gray hero band (r70/r76): serif headline
-//   + Thai subtitle, an auto-rotating serene image carousel, and
-//   Book Now / View Services CTAs. See HomeHero.tsx for the full notes.
-import HomeHero from "@/components/home/HomeHero";
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 // 🆕 Round 28r58 (Phase 2) — customer-facing Bundle Packages surface.
 //   Self-hides when no active bundles, so safe to mount unconditionally
@@ -153,19 +149,13 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
           : "SunRed · Luxury outcall massage in Bangkok, delivered to your hotel"}
       </Box>
 
-      {/* 🆕 28x.130 (founder selected the anniversary banner + search bar,
-          "เอาไปวางบน hiro") — anniversary/promo banner moved above the
-          hero, now the first visual on the page. Was between QuickNavRow
-          and BundleSection (28w.37 placement). */}
+      {/* 🆕 28x.131 (founder selected the hero image, "ลบ แทนที่ด้วย pomo")
+          — HomeHero removed entirely; the anniversary/promo banner
+          (moved above hero in 28x.130) is now the page's sole top
+          visual, no separate hero section underneath it. */}
       <Box sx={{ px: { xs: 3, sm: 3.5, md: 2 }, mt: 1, mb: 1 }}>
         <AnniversaryBanner variant="home" />
       </Box>
-
-      {/* 🆕 Round 28s326 (founder 2026-07-08) — "Simple · Pure · Balanced"
-          spa hero (serif headline + Thai subtitle + serene image
-          carousel + Book Now / View Services). Replaces the r70/r76
-          inline Nordic-gray hero band. */}
-      <HomeHero />
 
       {/* 🆕 Round 28x.7 (audit fix #3) — district landing band. Only
           renders on the /outcall-massage-* SEO routes (district prop set);
