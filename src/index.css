@@ -88,6 +88,13 @@ button,
      #FF9999 comes from the components; these vars are grounds + text only.
      surfaces (deep → raised) */
   --sr-bg: #17181D;          /* page ground — deep charcoal */
+  /* 🆕 28x.135 (founder: "ทั้งเว็บเป็น glassmorphic design") tried translucent
+     panel tokens sitewide; 🆕 28x.136 (founder sent an exact swatch
+     reference — "Off-White Mint #f4f6f5" page bg, "Pure White #ffffff"
+     card/FAQ/footer bg — "ปรับเป็นแบบนี้") reversed that back to solid.
+     The reference only gave light-theme values; reverted night back to
+     its pre-28x.135 solid colors too rather than leave the two themes
+     inconsistent (one glass, one not). */
   --sr-panel: #20222B;       /* card / section panel */
   --sr-panel-2: #2A2D38;     /* raised / inner / hover */
   --sr-panel-deep: #121319;  /* footer / drawer / deep ground */
@@ -129,10 +136,19 @@ button,
 /* ☀️ DAY — High-Key Korean Wellness (Apple / Aesop / Laneige / Sulwhasoo).
    Clean near-white grounds + near-black ink. Founder tokens. */
 html.sr-day {
-  --sr-bg: #FBF7F9;          /* faint rose-white page (so white cards pop) */
-  --sr-panel: #FFFFFF;       /* white cards */
-  --sr-panel-2: #FCEBF1;     /* soft blush — sections / chips */
-  --sr-panel-deep: #F8EEF2;  /* footer / drawer — soft rose */
+  /* 🆕 28x.136 (founder swatch reference: "Off-White Mint #f4f6f5 —
+     Background หลักทั้งเพจ · อุ่นเล็กน้อย มี hint เขียว") — exact page-bg value,
+     was #FBF7F9 (rose-white).
+     🆕 28x.138 (founder refined the same swatch: "เปลี่ยนเป็น สี #f7f7f7") */
+  --sr-bg: #F7F7F7;
+  /* 🆕 28x.136 (same reference: "Pure White #ffffff — Card พื้นหลัง · FAQ
+     rows · Footer area") — panel + panel-deep both go solid pure white
+     (footer is panel-deep). panel-2 (raised/hover/chip bg) wasn't in the
+     reference; reverted to its original solid blush rather than leave it
+     as the one still-translucent oddity. */
+  --sr-panel: #FFFFFF;
+  --sr-panel-2: #FCEBF1;
+  --sr-panel-deep: #FFFFFF;
   --sr-ink: #232B36;         /* navy-charcoal headings */
   --sr-body: #5C6573;        /* cool-gray body */
   --sr-muted: #8B93A0;       /* muted */

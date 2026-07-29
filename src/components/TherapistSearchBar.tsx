@@ -29,6 +29,10 @@ export interface TherapistSearchBarProps {
   m?: string;
   /** Auto-focus on mount (e.g., when /therapists?focus=search). */
   autoFocus?: boolean;
+  /** 🆕 28x.137 (founder: "search bar ย่อลง เพราะมันบัง") — shorter pill
+   *  (less vertical padding, smaller icon) for tight spaces like the
+   *  TopNav row, where the full-size bar was overlapping content below. */
+  compact?: boolean;
 }
 
 const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
@@ -43,6 +47,7 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
   placeholder = "Find your practitioner…",
   m = "0 14px 12px",
   autoFocus = false,
+  compact = false,
 }) => {
   const hasValue = value.length > 0;
 
@@ -50,7 +55,7 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
     <Box
       sx={{
         margin: m,
-        padding: "13px 16px",
+        padding: compact ? "7px 14px" : "13px 16px",
         display: "flex",
         alignItems: "center",
         gap: "10px",
@@ -75,7 +80,11 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
       {/* 🆕 Round 28s167 — Founder: "สีอ่อนลง". Magnifier was brand
           red — too loud against the muted page. Soft cool gray now. */}
       <SearchRoundedIcon
-        sx={{ fontSize: 20, color: "var(--sr-muted)", flexShrink: 0 }}
+        sx={{
+          fontSize: compact ? 18 : 20,
+          color: "var(--sr-muted)",
+          flexShrink: 0,
+        }}
       />
       <Box
         component="input"

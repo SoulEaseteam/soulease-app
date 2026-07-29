@@ -424,7 +424,12 @@ const TopNav: React.FC = () => {
             its own horizontal nav + concierge CTA filling this row. */}
         {isHome && (
           <Box sx={{ display: { xs: "flex", md: "none" }, flex: 1, minWidth: 0 }}>
-            <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 10px" />
+            <TherapistSearchBar
+              value={searchQ}
+              onChange={setSearchQ}
+              m="0 10px"
+              compact
+            />
           </Box>
         )}
 
