@@ -308,11 +308,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
       <Box
         sx={{
           width: "100%",
-          // 🆕 28x.119 — reference style is a shorter, inset frame (~4:3)
-          //   rather than the previous edge-to-edge 3:4 portrait. Owns its
-          //   own radius + clip now that the outer card is padded instead
-          //   of flush.
-          aspectRatio: "4 / 3",
+          // 🆕 28x.119 — inset frame instead of edge-to-edge; owns its own
+          //   radius + clip now that the outer card is padded instead of
+          //   flush.
+          // 🆕 28x.120 (founder: "ทำการ์ดให้สูงขึ้น ให้เห็นรูปพนักงาน") —
+          //   the 4:3 landscape crop cut off too much of the (mostly
+          //   full-body, portrait-shot) practitioner photos. Back to a
+          //   taller 3:4 portrait frame, same ratio the card used before
+          //   28x.119, now inset instead of edge-to-edge.
+          aspectRatio: "3 / 4",
           borderRadius: "14px",
           overflow: "hidden",
           position: "relative",
