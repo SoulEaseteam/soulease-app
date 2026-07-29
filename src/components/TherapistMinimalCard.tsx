@@ -732,18 +732,18 @@ const TherapistMinimalCard: React.FC<Props> = ({
               borderRadius: "999px",
               // 🆕 28x.99x (founder "ปุ่ม จองตอนนี้เลย") — a currently-working
               //   practitioner's CTA gets urgent copy.
-              // 🆕 28x.103 (founder "ไม่ใช่สีนี้ ดูสีที่แอดมินกับสีแถบบาร์ล่าง")
-              //   — supersedes 28x.102's Moko magenta (#F050A0→#E6197E, too
-              //   loud): available now wears the SAME dusty-rose gradient as
-              //   the concierge FAB (28w.3) and the bottom-bar active pill —
-              //   #E38EA5→#D97C95→#C96F89 + the FAB's rose glow. Distinct
-              //   from the flat matte #D97C95 bookable button via gradient +
-              //   shadow + urgent label, but one family with the shop.
+              // 🆕 28x.118 (founder trial: "ลองเปลี่ยนสีปุ่มหลัก แค่หน้าแรก
+              //   #FF9999") — home-page-only trial swap of the primary CTA
+              //   to a soft coral-pink. Scoped to this card (only rendered
+              //   from HomeTherapistGrid) so no other page is touched.
+              //   Superseded the dusty-rose family (#E38EA5→#D97C95→
+              //   #C96F89, 28x.103) — see that round's history if this
+              //   trial gets reverted.
               background: isOffDuty
                 ? "var(--sr-panel-2)"
                 : status === "available"
-                  ? "linear-gradient(135deg, #E38EA5 0%, #D97C95 55%, #C96F89 100%)"
-                  : "#D97C95",
+                  ? "linear-gradient(135deg, #FFB0B0 0%, #FF9999 55%, #F27D7D 100%)"
+                  : "#FF9999",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -752,22 +752,21 @@ const TherapistMinimalCard: React.FC<Props> = ({
               letterSpacing: "0.04em",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
-              // 🆕 28x.103 — available gets the FAB's rose glow so the CTA
-              //   reads "on" the same way the concierge bubble does.
+              // 🆕 28x.118 — glow re-tinted to match the coral-pink swap.
               boxShadow:
                 !isOffDuty && status === "available"
-                  ? "0 6px 16px rgba(138, 58, 87, 0.40)"
+                  ? "0 6px 16px rgba(255, 99, 99, 0.40)"
                   : "none",
               transition: "transform 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
                 : status === "available"
                   ? {
-                      background: "linear-gradient(135deg, #D97C95 0%, #C96F89 55%, #B36079 100%)",
+                      background: "linear-gradient(135deg, #FF9999 0%, #F27D7D 55%, #E56666 100%)",
                       transform: "translateY(-1px)",
                     }
                   : {
-                      background: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)",
+                      background: "linear-gradient(135deg,#F27D7D 0%,#E56666 100%)",
                       transform: "translateY(-1px)",
                     },
               "&:focus-visible": {
