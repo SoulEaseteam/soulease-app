@@ -62,25 +62,6 @@ interface Props {
   eager?: boolean;
 }
 
-// 🆕 Round 28s138 — Founder: split "Bookable" back out as its own
-//   visible state (orange dot · "Bookable" label). Three states now:
-//   • Available (green) — free right now, dispatch immediately
-//   • Bookable  (orange) — busy now / has appt, but next slot reservable
-//   • Offline   (grey)   — resting / holiday, can't book
-//   `i18nKey` resolves via existing translation keys (available /
-//   bookable / resting / holiday). Resting + holiday share the same
-//   visual treatment but keep their own translation so e.g. TH reads
-//   "วันหยุด" vs "พักวันนี้" if View ever wants to split them later.
-const STATUS_DOT: Record<
-  Avail,
-  { color: string; i18nKey: string; fallback: string }
-> = {
-  available: { color: "#57B88B", i18nKey: "available", fallback: "Available" }, // green
-  bookable:  { color: "#F29D38", i18nKey: "bookable",  fallback: "Bookable"  }, // busy — orange
-  resting:   { color: "#C8C8C8", i18nKey: "offline",   fallback: "Offline"   }, // offline — grey
-  holiday:   { color: "#C8C8C8", i18nKey: "offline",   fallback: "Offline"   },
-};
-
 // 🆕 Round 28r81 — When the therapist is `available` (free right now),
 //   the pill switches from the default translucent-white background to
 //   a soft mint-green tint (accents.availableBg) with darker green text
@@ -129,7 +110,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
   };
 
   const status = computedStatus ?? "bookable";
-  const statusMeta = STATUS_DOT[status];
 
   // 🚨 Round 28r66 HOTFIX — Bug 2b. Founder set `badgeKey: "NEW"` on a
   //   Firestore therapist doc via /admin/* but the card never rendered
@@ -159,21 +139,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
     (therapist.badgeKey as keyof typeof BADGE_STYLE | null | undefined) ?? null;
   const badgeMeta =
     badgeKey && badgeKey in BADGE_STYLE ? BADGE_STYLE[badgeKey] : null;
-  // 🆕 Round 28s138 — Label flows through i18n so the pill speaks
-  //   the visitor's language (EN/TH/ZH/JA/KO). Falls back to English
-  //   if the bundle hasn't loaded yet.
-  // 🆕 28x.102 — a busy practitioner's pill carries her free-at time
-  //   ("ว่าง 23:30") when the engine knows it, so the status genuinely
-  //   tracks the booking instead of a static "จองได้".
-  // 🆕 28x.122 (founder: "BOOK NOW ข้างบน เอาออก") — reverted 28x.121's
-  //   on-photo "BOOK NOW" label; the pill goes back to real status text.
-  //   The BOOK NOW concept now lives as a press-state on the CTA button
-  //   below instead of a static badge here. Two-color background from
-  //   28x.121 (green/coral-pink by state) is kept — only the text reverts.
-  const statusLabel =
-    status === "bookable" && nextFreeAt
-      ? t("therapistCard.freeAt", "Free {{time}}", { time: nextFreeAt })
-      : t(statusMeta.i18nKey, statusMeta.fallback);
   // 🆕 Round 28s136 — Founder: "ใครหยุดก็เบลอการ์ดไป จองไม่ได้".
   //   Resting / holiday therapists render desaturated + dimmed, the
   //   Book Now button becomes inert, and tapping the card no longer
@@ -396,92 +361,14 @@ const TherapistMinimalCard: React.FC<Props> = ({
           </Box>
         )}
 
-        {/* Round 28r84 — Status pill, originally bottom-left of the photo.
-            🆕 28x.119 (founder reference screenshot) — moved to TOP-left
-            to match the reference card style; bottom-right is now the
-            price badge (below) so the two floating chips sit in opposite
-            corners and never collide. */}
-        {!isOnHoliday && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: "10px",
-              left: "10px",
-              zIndex: 2,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              padding: status === "available" ? "6px 16px" : "5px 14px",
-              borderRadius: "999px",
-              // 🕯️ 28t — unified translucent espresso pill; colour-coded dot
-              //   carries the meaning while ivory text stays legible.
-              // 🆕 28x.102 (founder "อยากให้สถานะ AVAILABLE เห็นชัด") —
-              //   available breaks out of the espresso treatment: solid brand
-              //   green fill + white text + glow.
-              // 🆕 28x.121 (founder "เปลี่ยนปุ่ม เป็น สองสี เอาสถานะ มาเปลี่ยน
-              //   เป็นคำว่า book now") — the pill now reads "BOOK NOW" for
-              //   both bookable states, two colors doing the status-telling
-              //   instead of the text: green (#57B88B) = available right
-              //   now, coral-pink (#FF9999, matching the CTA button below)
-              //   = bookable but not free this instant. Resting keeps the
-              //   quiet dark-neutral treatment — it's the one state where
-              //   "book now" would be a lie.
-              background:
-                status === "available"
-                  ? "#57B88B"
-                  : status === "bookable"
-                    ? "#FF9999"
-                    : "rgba(22, 24, 30, 0.68)",
-              backdropFilter: "blur(3px)",
-              WebkitBackdropFilter: "blur(3px)",
-              color: "#FFFFFF",
-              border:
-                status === "available" || status === "bookable"
-                  ? "1px solid rgba(255,255,255,0.45)"
-                  : "1px solid rgba(255,255,255,0.16)",
-              boxShadow:
-                status === "available"
-                  ? "0 2px 12px rgba(87,184,139,0.55)"
-                  : status === "bookable"
-                    ? "0 2px 12px rgba(255,99,99,0.45)"
-                    : "0 2px 8px rgba(0,0,0,0.32)",
-              whiteSpace: "nowrap",
-            }}
-            aria-label={statusLabel}
-          >
-            <Box
-              sx={{
-                width: status === "available" ? 6 : 5,
-                height: status === "available" ? 6 : 5,
-                borderRadius: "50%",
-                background:
-                  status === "available" || status === "bookable"
-                    ? "#FFFFFF"
-                    : statusMeta.color,
-                boxShadow:
-                  status === "available" || status === "bookable"
-                    ? "0 0 6px rgba(255,255,255,0.9)"
-                    : "none",
-              }}
-            />
-            <Typography
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: status === "available" ? "10.5px" : "10px",
-                fontWeight: status === "available" ? 800 : 700,
-                color:
-                  status === "available" || status === "bookable"
-                    ? "#FFFFFF"
-                    : "#F3E6DB",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                lineHeight: 1,
-              }}
-            >
-              {statusLabel}
-            </Typography>
-          </Box>
-        )}
+        {/* 🆕 28x.123 (founder: selected the status pill, "เอาออก") — the
+            on-photo status pill (and its STATUS_DOT/statusMeta/statusLabel
+            plumbing, 28s138) is removed entirely. Status/availability
+            communication now lives on the CTA button below (28x.122's
+            AVAILABLE/#FF9999 idle -> BOOK NOW/#13bda6 press state) instead
+            of a separate badge here. `status` itself is still very much
+            in use — isOffDuty gating, opacity/filter dimming, the price
+            badge's `!isOnHoliday` guard, and the CTA button. */}
 
         {/* 🆕 28x.119 (founder reference screenshot) — floating price
             badge, bottom-right of the photo. Frosted-glass white chip
