@@ -720,23 +720,22 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
           return (
             <Box
               sx={{
-                // 🆕 Round 28r53 — Phase 3.2 responsive grid. Previous
-                //   single-column flex list stayed 1-wide at every
-                //   viewport (dead space on tablet/desktop). Grid now
-                //   scales 2 (phone) → 3 (small tablet) → 3 (tablet)
-                //   → 4 (desktop) → 5 (wide desktop). Card is a
-                //   vertical portrait card (28r53 restack), aspect
-                //   3/4 photo on top, so each column reflows
-                //   proportionately as the column width scales.
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "repeat(2, 1fr)",
-                  sm: "repeat(3, 1fr)",
-                  md: "repeat(3, 1fr)",
-                  lg: "repeat(4, 1fr)",
-                  xl: "repeat(5, 1fr)",
-                },
+                // 🆕 28x.127 (founder: "ลองทำการ์ดแนวนอน") — the card is
+                //   now a horizontal row (fixed-size photo left, info
+                //   right, 28x.127 in TherapistMinimalCard.tsx), which
+                //   doesn't tile into a multi-column grid the way the
+                //   28r53 vertical portrait card did — a horizontal card
+                //   squeezed into a ~180px grid column has no room for
+                //   its own text. Single-column stacked list instead, one
+                //   card per row at every breakpoint, same list pattern
+                //   as Grab/foodpanda-style provider lists. Widened up to
+                //   a max-width on large screens so rows don't stretch
+                //   edge-to-edge on desktop.
+                display: "flex",
+                flexDirection: "column",
                 gap: { xs: 1.5, md: 2 },
+                maxWidth: { md: 720 },
+                marginX: { md: "auto" },
                 padding: {
                   xs: "0 14px 16px",
                   sm: "0 8px 20px",
