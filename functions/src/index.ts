@@ -4570,6 +4570,232 @@ export const getBookingPublic = onCall(
   }
 );
 
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.140 — booking-gated guest ↔ practitioner chat.
+//
+// Founder (2026-07-29): "ต้องจองแล้วเท่านั้นถึงจะแชทกับพนักงานเพื่อคอนเฟิร์ม
+//   ออเดอได้". Before this, a guest's only way to reach anyone was to leave
+//   the site for LINE / WhatsApp / Telegram (AdminFloatingChat is a set of
+//   deep links, not a thread) — the exact step where a foreign guest who
+//   doesn't use those apps drops out, right after she has already committed.
+//
+// The chat is a subcollection of the reservation, so "has booked" is not a
+// flag anyone checks — it is the only address a message can have.
+//
+// THE GUEST-IDENTITY PROBLEM this callable solves:
+//   A guest is typically not signed in (BookingFlowPage writes userId: null
+//   for the common case), so there is no uid for rules to match on. What she
+//   does hold is the `accessToken` minted at checkout and carried in her
+//   success-page URL — the same capability `getBookingPublic` verifies.
+//   Rules cannot read a client-supplied secret, so the secret is checked HERE
+//   and exchanged for a Firebase custom token whose claim (`bookingChat`)
+//   rules CAN read. The token never touches Firestore.
+//
+//   The minted uid is derived from the booking, not the person: one thread,
+//   one identity. Two devices opening the same reservation link are the same
+//   guest as far as this chat is concerned — which is correct, they are.
+interface BookingChatSettings {
+  bookingChatEnabled?: boolean;
+  bookingChatTherapistEnabled?: boolean;
+}
+async function getBookingChatSettings(): Promise<{
+  enabled: boolean;
+  therapistEnabled: boolean;
+}> {
+  try {
+    const snap = await getFirestore()
+      .collection("adminSettings")
+      .doc("advanced")
+      .get();
+    const d = (snap.data() ?? {}) as BookingChatSettings;
+    return {
+      // Both default ON when unset, so an empty settings doc behaves the way
+      // the feature shipped. The kill switches exist for one reason: a direct
+      // guest↔practitioner line is also how a guest and a practitioner could
+      // arrange the NEXT booking without the shop. Flip
+      // `bookingChatTherapistEnabled: false` and the thread stays open with
+      // the concierge only — no code change, no redeploy.
+      enabled: d.bookingChatEnabled !== false,
+      therapistEnabled: d.bookingChatTherapistEnabled !== false,
+    };
+  } catch (err) {
+    logger.warn("[bookingChat] settings read failed, defaulting to on", err);
+    return { enabled: true, therapistEnabled: true };
+  }
+}
+
+export const claimBookingChat = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const data = request.data as
+      | { bookingId?: string; token?: string }
+      | undefined;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    const token = String(data?.token ?? "").trim();
+    if (!bookingId) {
+      throw new HttpsError("invalid-argument", "bookingId is required.");
+    }
+
+    const settings = await getBookingChatSettings();
+    if (!settings.enabled) {
+      throw new HttpsError("failed-precondition", "Chat is closed.");
+    }
+
+    const db = getFirestore();
+    const snap = await db.collection("bookings").doc(bookingId).get();
+    if (!snap.exists) {
+      // Identical to the bad-token error below — a distinguishable not-found
+      // would confirm which booking ids are real. Same reasoning as
+      // getBookingPublic; keep the two in step.
+      throw new HttpsError("permission-denied", "Booking not found.");
+    }
+    const b = snap.data() as Record<string, unknown>;
+
+    const uid = request.auth?.uid ?? null;
+    const storedToken =
+      typeof b.accessToken === "string" ? b.accessToken.trim() : "";
+    const tokenOk = storedToken.length > 0 && token === storedToken;
+    const ownerOk = uid != null && b.userId === uid;
+    if (!tokenOk && !ownerOk) {
+      throw new HttpsError("permission-denied", "Booking not found.");
+    }
+
+    // A signed-in owner already matches the `userId` branch in rules with her
+    // own session — minting a second identity for her would only invite the
+    // client to sign her out of it. She gets the metadata, not a token.
+    const customToken = ownerOk
+      ? null
+      : await getAuth().createCustomToken(`bkgchat_${bookingId}`, {
+          bookingChat: bookingId,
+        });
+
+    const status = typeof b.status === "string" ? b.status : "pending";
+    return {
+      ok: true,
+      customToken,
+      // Drives the panel header: before assignment there is no practitioner
+      // to name, and the guest is talking to the concierge alone.
+      therapistName: settings.therapistEnabled
+        ? ((b.therapistName as string | null) ?? null)
+        : null,
+      assigned: settings.therapistEnabled && Boolean(b.therapistId),
+      status,
+    };
+  }
+);
+
+// 🆕 Round 28x.140 — a guest message has to reach a human who is not looking
+//   at the admin panel. Staff live in Telegram (§5 of CLAUDE.md: View runs
+//   everything from her phone), so that is where the alert goes.
+//
+//   Only GUEST messages notify. A reply from View or the practitioner lands in
+//   the guest's open panel in real time — pinging Telegram for our own
+//   outbound text would just be the shop notifying itself.
+export const onBookingChatMessage = onDocumentCreated(
+  {
+    document: "bookings/{bookingId}/messages/{messageId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+  },
+  async (event) => {
+    const bookingId = event.params.bookingId;
+    const msg = event.data?.data() as
+      | { text?: string; sender?: string; senderName?: string }
+      | undefined;
+    if (!msg?.text || !msg.sender) return;
+
+    const db = getFirestore();
+    const bookingSnap = await db.collection("bookings").doc(bookingId).get();
+    const booking = bookingSnap.data() as Record<string, unknown> | undefined;
+    if (!booking) return;
+
+    // ── 1. Thread summary, so the job list can show an unread dot from one
+    //   query instead of a listener per job. Written here rather than onto the
+    //   booking document on purpose: a booking write would re-trigger
+    //   onBookingWriteSyncStats + syncTherapistDailyCount on every single
+    //   chat message, which is a lot of recomputation for a "hi".
+    const preview = msg.text.slice(0, 80);
+    try {
+      await db
+        .collection("bookingChatMeta")
+        .doc(bookingId)
+        .set(
+          {
+            bookingId,
+            therapistUid: booking.therapistUid ?? null,
+            therapistId: booking.therapistId ?? null,
+            lastMessageAt: FieldValue.serverTimestamp(),
+            lastFrom: msg.sender,
+            lastTextPreview: preview,
+            messageCount: FieldValue.increment(1),
+            ...(msg.sender === "guest"
+              ? { lastGuestMessageAt: FieldValue.serverTimestamp() }
+              : {}),
+          },
+          { merge: true }
+        );
+    } catch (err) {
+      logger.error("[onBookingChatMessage] meta write failed", { bookingId, err });
+    }
+
+    if (msg.sender !== "guest") return;
+
+    const botToken = TELEGRAM_BOT_TOKEN.value();
+    if (!botToken) return;
+
+    const who =
+      (booking.contactName as string | undefined) ??
+      (booking.customerName as string | undefined) ??
+      "ลูกค้า";
+    const serviceName = (booking.serviceName as string | undefined) ?? "—";
+    const text =
+      `💬 <b>ข้อความใหม่จากลูกค้า</b>\n` +
+      `${escapeTelegramHtml(who)} · ${escapeTelegramHtml(serviceName)}\n` +
+      `Booking: <code>${escapeTelegramHtml(bookingId)}</code>\n\n` +
+      `“${escapeTelegramHtml(preview)}${msg.text.length > 80 ? "…" : ""}”`;
+
+    try {
+      await sendTelegramIfEnabled(botToken, await getReportChatId(), text);
+    } catch (err) {
+      logger.error("[onBookingChatMessage] admin notify failed", { bookingId, err });
+    }
+
+    // Practitioner DM — best-effort and independent of the admin copy above,
+    // which is why it gets its own try. Unlike dispatch DMs (gated behind the
+    // 28x.61 pilot allowlist because they REPLACE View's manual dispatch),
+    // this one only tells her a guest is waiting in a thread she can already
+    // open in the staff app, so it isn't gated the same way.
+    const settings = await getBookingChatSettings();
+    const therapistId = booking.therapistId as string | undefined;
+    if (!settings.therapistEnabled || !therapistId) return;
+    try {
+      const tSnap = await db.collection("therapists").doc(therapistId).get();
+      const chatId = (tSnap.data() as { telegramChatId?: string | number } | undefined)
+        ?.telegramChatId;
+      if (!chatId) {
+        logger.info("[onBookingChatMessage] therapist has no telegramChatId", {
+          therapistId,
+        });
+        return;
+      }
+      await sendTelegramIfEnabled(
+        botToken,
+        String(chatId),
+        `💬 ลูกค้าทักมาในงานของคุณ\n` +
+          `Booking: <code>${escapeTelegramHtml(bookingId)}</code>\n\n` +
+          `“${escapeTelegramHtml(preview)}${msg.text.length > 80 ? "…" : ""}”\n\n` +
+          `ตอบกลับได้ในแอปพนักงาน → My Jobs`
+      );
+    } catch (err) {
+      logger.error("[onBookingChatMessage] therapist notify failed", {
+        bookingId,
+        therapistId,
+        err,
+      });
+    }
+  }
+);
+
 export const createAdminAccount = onCall(
   { region: "asia-southeast1" },
   async (request) => {

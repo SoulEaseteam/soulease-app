@@ -52,6 +52,8 @@ import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { bookingRef } from "@/utils/bookingRef";
+// 🆕 Round 28x.140 — in-page thread with the concierge / assigned practitioner.
+import BookingChatThread from "@/components/chat/BookingChatThread";
 // 🆕 Round 28s90 (CRO audit) — multi-channel confirm row. Chinese
 //   tourists (WeChat) + the Telegram-first audience were being dumped
 //   into a LINE-only button and bailing at the finish line. Same
@@ -1096,6 +1098,33 @@ const BookingSuccessPage: React.FC = () => {
                 Bridge ribbon below the button shows the refCode +
                 copy-to-clipboard for users who prefer their own
                 channel. */}
+            {/* 🆕 Round 28x.140 (founder: "ต้องจองแล้วเท่านั้นถึงจะแชทกับ
+                พนักงานเพื่อคอนเฟิร์มออเดอได้") — the thread opens here and
+                nowhere earlier, because this is the first screen where a
+                reservation exists to hang it off.
+
+                It sits BELOW the concierge deep-links on purpose: a guest who
+                already lives in LINE or WhatsApp should keep using them, and
+                those channels reach View directly. This is for the guest who
+                has neither — until now her only options were to install an app
+                or to abandon a booking she had already committed to.
+
+                Renders nothing at all if the claim fails (old link without a
+                capability token, or chat switched off in admin settings), so
+                nothing here needs to guard on that. */}
+            {id && (
+              <Box sx={{ marginTop: "22px" }}>
+                <BookingChatThread
+                  bookingId={id}
+                  mode="guest"
+                  accessToken={accessToken}
+                  therapistNameHint={
+                    (booking?.therapistName as string | undefined) ?? undefined
+                  }
+                />
+              </Box>
+            )}
+
             <Box
               sx={{
                 marginTop: "22px",

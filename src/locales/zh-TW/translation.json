@@ -681,5 +681,13 @@
   "chat.greet.title.off": "禮賓將於 09:00 恢復",
   "chat.greet.body.off": "留言給我們 · 清晨為您確認",
   "chat.status.off": "09:00 起回覆",
-  "chat.status.live": "在線 · 數分鐘內回覆"
+  "chat.status.live": "在線 · 數分鐘內回覆",
+  "bookingChat.withPractitioner": "與{{name}}對話",
+  "bookingChat.withConcierge": "與禮賓專員對話",
+  "bookingChat.empty": "您的預約已由禮賓專員確認。如需調整時間、地址或其他細節，請在此留言。",
+  "bookingChat.placeholder": "輸入訊息…",
+  "bookingChat.send": "傳送",
+  "bookingChat.sending": "傳送中…",
+  "bookingChat.err.listen": "無法載入對話，請重新整理頁面。",
+  "bookingChat.err.send": "訊息未送出，請再試一次。"
 }
