@@ -49,6 +49,11 @@ import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
+// 🆕 28x.151 — the 2×2 quick-action grid (Chat / Track / Calendar / Reschedule).
+import ChatBubbleRoundedIcon from "@mui/icons-material/ChatBubbleRounded";
+import PinDropRoundedIcon from "@mui/icons-material/PinDropRounded";
+import EventRoundedIcon from "@mui/icons-material/EventRounded";
+import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { bookingRef } from "@/utils/bookingRef";
@@ -244,6 +249,83 @@ const BookingSuccessPage: React.FC = () => {
   const holdState = (booking?.holdState as string | undefined) ?? undefined;
   const therapistIdForRebook =
     (booking?.therapistId as string | undefined) ?? undefined;
+
+  // 🆕 28x.151 (founder: "ที่ว่าให้ลูกค้าแชทได้ ทำยัง" — the "Chat with
+  //   {name}" / "Reschedule" tiles this page's own header comment already
+  //   documented but was never actually built) — deliberately NOT a real
+  //   direct-to-therapist channel: both open the SAME concierge Telegram
+  //   DM the rest of this page already uses, just with a different
+  //   pre-filled message. This keeps the founder as the single point of
+  //   contact (brand voice, safety visibility, no off-platform rebooking
+  //   risk) while still giving the guest a one-tap way to reach someone
+  //   about this specific booking.
+  const place =
+    (booking?.locationName as string | undefined)?.trim() ||
+    (booking?.address as string | undefined)?.trim() ||
+    "";
+  const mapHref = place
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`
+    : null;
+
+  const chatMessage = encodeURIComponent(
+    t(
+      "success.msg.chatTherapist",
+      "Hi SunRed concierge, I have a question about my reservation {{ref}} with {{name}}.",
+      { ref: refCode, name: therapistName }
+    )
+  );
+  const rescheduleMessage = encodeURIComponent(
+    t(
+      "success.msg.reschedule",
+      "Hi SunRed concierge, I'd like to reschedule my reservation {{ref}}. Could you help me pick a new time?",
+      { ref: refCode }
+    )
+  );
+  // 🆕 28x.34/28x.132 — same Telegram DM handle the "Confirm with concierge"
+  //   channel row below already deep-links to (t.me/SunRedvip_bkk), not the
+  //   public @SunRed_BKK broadcast channel.
+  const chatHref = `https://t.me/SunRedvip_bkk?text=${chatMessage}`;
+  const rescheduleHref = `https://t.me/SunRedvip_bkk?text=${rescheduleMessage}`;
+
+  // 🆕 28x.151 — "Add to calendar" — a plain client-side .ics download, no
+  //   backend involved. duration defaults to 60min when the field is
+  //   missing (older docs) so the event never renders as a single instant.
+  const handleAddToCalendar = () => {
+    if (!startAt) return;
+    const durationMin =
+      typeof booking?.duration === "number" ? (booking.duration as number) : 60;
+    const endAt = new Date(startAt.getTime() + durationMin * 60000);
+    const stamp = (d: Date) =>
+      d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const summary = `${getServiceLabel(
+      booking?.serviceId as string | undefined,
+      booking?.serviceName as string | undefined
+    )} · ${therapistName} · SunRed`;
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//SunRed//Booking//EN",
+      "BEGIN:VEVENT",
+      `UID:${id ?? refCode}@sunred.vip`,
+      `DTSTAMP:${stamp(new Date())}`,
+      `DTSTART:${stamp(startAt)}`,
+      `DTEND:${stamp(endAt)}`,
+      `SUMMARY:${summary}`,
+      place ? `LOCATION:${place.replace(/\n/g, ", ")}` : null,
+      `DESCRIPTION:SunRed reservation ${refCode}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ]
+      .filter((l) => l !== null)
+      .join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sunred-${refCode}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // 🆕 Round 28b59 (founder 2026-05-05) — Stripped 4 dead handlers
   //   (onChat / onTrack / onAddToCalendar / onReschedule) that were
@@ -603,6 +685,50 @@ const BookingSuccessPage: React.FC = () => {
               </Box>
             </Box>
               </Box>{/* end hero cluster */}
+
+            {/* 🆕 28x.151 (founder reference screenshot + "ที่ว่าให้ลูกค้า
+                แชทได้ ทำยัง") — 2×2 quick-action grid. See the handlers
+                built above (chatHref/rescheduleHref/mapHref/
+                handleAddToCalendar) for what each tile actually does and
+                why Chat/Reschedule route through the concierge, not a
+                real therapist-direct channel. */}
+            <Box
+              sx={{
+                marginTop: "18px",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+              }}
+            >
+              <ActionTile
+                icon={<ChatBubbleRoundedIcon />}
+                label={t("success.action.chat", "Chat with {{name}}", {
+                  name: therapistName,
+                })}
+                sub={t("success.action.chatSub", "Via concierge")}
+                href={chatHref}
+              />
+              <ActionTile
+                icon={<PinDropRoundedIcon />}
+                label={t("success.action.track", "Track arrival")}
+                sub={t("success.action.trackSub", "Live map")}
+                href={mapHref ?? undefined}
+                disabled={!mapHref}
+              />
+              <ActionTile
+                icon={<EventRoundedIcon />}
+                label={t("success.action.calendar", "Add to calendar")}
+                sub={t("success.action.calendarSub", ".ics file")}
+                onClick={startAt ? handleAddToCalendar : undefined}
+                disabled={!startAt}
+              />
+              <ActionTile
+                icon={<AutorenewRoundedIcon />}
+                label={t("success.action.reschedule", "Reschedule")}
+                sub={t("success.action.rescheduleSub", "Free")}
+                href={rescheduleHref}
+              />
+            </Box>
 
             {/* 🆕 Round 28s90 (CRO audit) — Multi-channel confirm row.
                 Was a single LINE-only gradient button that dropped
@@ -1215,5 +1341,97 @@ const PrepLine: React.FC<{
     </Typography>
   </Box>
 );
+
+// ─── Quick-action tile (2×2 grid) ───────────────────────────────────────
+// 🆕 28x.151 — either an external link (href — chat/track/reschedule) or a
+//   local handler (onClick — add to calendar). `disabled` dims the tile
+//   and swaps it from an <a> to a plain <div> so it isn't a dead link.
+const ActionTile: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  sub: string;
+  href?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}> = ({ icon, label, sub, href, onClick, disabled }) => {
+  const content = (
+    <>
+      <Box
+        aria-hidden
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: "50%",
+          background: "rgba(255,153,153,0.12)",
+          color: "#FF9999",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          "& svg": { fontSize: 18 },
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "12.5px",
+            fontWeight: 700,
+            color: "var(--sr-ink)",
+            lineHeight: 1.25,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {label}
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "11px",
+            color: "var(--sr-muted)",
+            marginTop: "1px",
+          }}
+        >
+          {sub}
+        </Typography>
+      </Box>
+    </>
+  );
+
+  const sx = {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "12px 14px",
+    borderRadius: "16px",
+    background: "var(--sr-panel)",
+    border: "1px solid var(--sr-hairline)",
+    boxShadow: "var(--sr-card-shadow)",
+    textDecoration: "none",
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.5 : 1,
+    transition: "transform 0.15s ease",
+    "&:hover": disabled ? undefined : { transform: "translateY(-1px)" },
+  } as const;
+
+  if (disabled) {
+    return <Box sx={sx}>{content}</Box>;
+  }
+  if (onClick) {
+    return (
+      <Box component="button" type="button" onClick={onClick} sx={{ ...sx, border: sx.border, textAlign: "left" }}>
+        {content}
+      </Box>
+    );
+  }
+  return (
+    <Box component="a" href={href} target="_blank" rel="noopener noreferrer" sx={sx}>
+      {content}
+    </Box>
+  );
+};
 
 export default BookingSuccessPage;
