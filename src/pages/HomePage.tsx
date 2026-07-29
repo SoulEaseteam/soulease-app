@@ -153,6 +153,14 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
           : "SunRed · Luxury outcall massage in Bangkok, delivered to your hotel"}
       </Box>
 
+      {/* 🆕 28x.130 (founder selected the anniversary banner + search bar,
+          "เอาไปวางบน hiro") — anniversary/promo banner moved above the
+          hero, now the first visual on the page. Was between QuickNavRow
+          and BundleSection (28w.37 placement). */}
+      <Box sx={{ px: { xs: 3, sm: 3.5, md: 2 }, mt: 1, mb: 1 }}>
+        <AnniversaryBanner variant="home" />
+      </Box>
+
       {/* 🆕 Round 28s326 (founder 2026-07-08) — "Simple · Pure · Balanced"
           spa hero (serif headline + Thai subtitle + serene image
           carousel + Book Now / View Services). Replaces the r70/r76
@@ -228,14 +236,6 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
           just as useful as breadcrumbs on desktop). Therapists tap
           scrolls to the `#therapist-grid` wrapper below. */}
       <QuickNavRow />
-
-      {/* 🆕 28w.37 (founder 2026-07-14) — 1st-anniversary banner, tap → /pricing */}
-      {/* 🆕 28x.14 (founder: "ขยับ ขอบเข้าอีกนิด") — pulled the anniversary
-          banner's side edges in a touch (more horizontal inset) so it sits
-          slightly narrower and doesn't reach as close to the screen edges. */}
-      <Box sx={{ px: { xs: 3, sm: 3.5, md: 2 }, mt: 1.5, mb: 0.5 }}>
-        <AnniversaryBanner variant="home" />
-      </Box>
 
       {/* 🆕 Round 28r58 — Bundle Packages between the hero and the
           therapist grid. Self-hides on empty, so no layout impact
