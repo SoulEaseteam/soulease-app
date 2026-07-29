@@ -67,7 +67,7 @@ class ErrorBoundary extends React.Component<Props, State> {
         <div
           role="status"
           aria-live="polite"
-          style={{ minHeight: "100vh", background: "#8F8474" }}
+          style={{ minHeight: "100vh", background: "#F7F7F7" }}
         />
       );
     }
@@ -86,8 +86,8 @@ class ErrorBoundary extends React.Component<Props, State> {
           alignItems: "center",
           justifyContent: "center",
           padding: "32px",
-          background: "#8F8474",
-          color: "#fff",
+          background: "#F7F7F7",
+          color: "#232B36",
           fontFamily:
             "'Trebuchet MS', system-ui, -apple-system, Segoe UI, sans-serif",
           textAlign: "center",
@@ -140,7 +140,7 @@ class ErrorBoundary extends React.Component<Props, State> {
                 padding: "10px 18px",
                 borderRadius: 999,
                 border: "none",
-                background: "#8F8474",
+                background: "#FF9999",
                 color: "#fff",
                 fontWeight: 700,
                 cursor: "pointer",

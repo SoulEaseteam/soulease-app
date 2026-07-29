@@ -14,7 +14,7 @@
 
 import React from "react";
 import { Box } from "@mui/material";
-import { MapPin, Lightning } from "phosphor-react";
+import { MapPin } from "phosphor-react";
 import { fonts } from "@/theme";
 import { useTranslation } from "react-i18next";
 
@@ -22,18 +22,9 @@ export type RosterFilter = "all" | "available_now" | "express";
 
 // 🕯️ 28t dark-luxury day/night — rose + gold accents fixed; text follows mode.
 const MAGENTA = "#FF9999"; // primary — Vintage Rose (active / selected / icons) — fixed
-const MAGENTA_TXT = "var(--sr-ink)"; // active-tab label text (flips day/night)
 const GREEN = "#57B88B"; // available / on-standby dot — green (founder semantic)
 const TEXT = "var(--sr-ink)"; // primary text
 const MUTED = "var(--sr-muted)"; // muted text
-
-interface TabDef {
-  key: RosterFilter;
-  label: string;
-  count: number;
-  /** live availability dot */
-  live?: boolean;
-}
 
 interface Props {
   value: RosterFilter;
@@ -48,11 +39,15 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
   //   files carry Thai like any other language.
   const { t } = useTranslation();
 
-  const tabs: TabDef[] = [
-    { key: "all", label: t("home.filter.all", "All"), count: counts.all },
-    { key: "available_now", label: t("home.filter.availableNow", "Available now"), count: counts.availableNow, live: true },
-    { key: "express", label: t("home.filter.express", "Near me"), count: counts.express },
-  ];
+  // 🆕 28x.140 (founder selected the filter-tab row + tonight banner,
+  //   "เอาออก") — category filter tabs (All / Available now / Near me)
+  //   removed, same call as the earlier 28s166 removal this Moko header
+  //   had reintroduced. value/onChange/counts kept as props so the
+  //   parent's rosterFilter plumbing doesn't need touching — it just
+  //   stays fixed at "all" with no visible chip to change it.
+  void value;
+  void onChange;
+  void counts;
 
   return (
     <Box sx={{ margin: "0 14px 14px" }}>
@@ -120,89 +115,8 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
       {/* 🆕 28x.129 (founder selected the scrolling notice bar, "เอาออก") —
           removed entirely. */}
 
-      {/* ── Category filter tabs (horizontal scroll, magenta active) ─ */}
-      <Box
-        role="tablist"
-        aria-label="Filter practitioners"
-        sx={{
-          display: "flex",
-          gap: "8px",
-          marginTop: "12px",
-          overflowX: "auto",
-          paddingBottom: "2px",
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
-        }}
-      >
-        {tabs.map((tab) => {
-          const active = value === tab.key;
-          return (
-            <Box
-              key={tab.key}
-              component="button"
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onChange(tab.key)}
-              sx={{
-                flexShrink: 0,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                cursor: "pointer",
-                touchAction: "manipulation",
-                WebkitTapHighlightColor: "transparent",
-                border: active
-                  ? `1.5px solid ${MAGENTA}`
-                  : "1.5px solid var(--sr-hairline)",
-                background: active ? "rgba(217,124,149,0.18)" : "var(--sr-panel)",
-                borderRadius: "999px",
-                padding: "7px 14px",
-                fontFamily: fonts.body,
-                fontSize: "12.5px",
-                fontWeight: 700,
-                color: active ? MAGENTA_TXT : TEXT,
-                transition:
-                  "background 0.16s ease, border-color 0.16s ease, color 0.16s ease",
-                "&:focus-visible": { outline: `2px solid ${MAGENTA}`, outlineOffset: 2 },
-              }}
-            >
-              {tab.key === "express" && (
-                <Lightning size={13} weight="fill" color={active ? "#FF9999" : "#8B7A6B"} />
-              )}
-              {tab.live && (
-                <Box
-                  component="span"
-                  sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: tab.count > 0 ? GREEN : "var(--sr-dim)",
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-              {tab.label}
-              <Box
-                component="span"
-                sx={{
-                  fontFamily: fonts.body,
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  color: active ? MAGENTA_TXT : MUTED,
-                  background: active ? "rgba(217,124,149,0.22)" : "var(--sr-panel-2)",
-                  borderRadius: "999px",
-                  padding: "1px 7px",
-                  minWidth: 18,
-                  textAlign: "center",
-                }}
-              >
-                {tab.count}
-              </Box>
-            </Box>
-          );
-        })}
-      </Box>
+      {/* 🆕 28x.140 (founder: "เอาออก") — category filter tabs
+          (All / Available now / Near me) removed entirely. */}
     </Box>
   );
 };

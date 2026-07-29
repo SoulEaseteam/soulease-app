@@ -93,14 +93,13 @@ const HomeFooterV2: React.FC = () => {
     { label: t("footer.outcallNearMe", "Outcall near me"), to: "/outcall-massage-near-me" },
   ];
 
+  // 🆕 28x.141 (founder: "เอาแค่อันที่ไม่ซ้ำ") — this column had its own
+  //   "Contact us" link (→ WhatsApp) that duplicated the entire dedicated
+  //   "Contact us" column (LINE/Call/Telegram) sitting right next to it.
   const helpLinks: FooterLink[] = [
     { label: t("footer.howToBook", "How to book"), to: "/services?tab=how" },
     { label: t("footer.payment", "Payment"), to: "/services?tab=how" },
     { label: t("footer.faq", "FAQ"), to: "/services?tab=how" },
-    {
-      label: t("footer.contact", "Contact us"),
-      href: CONCIERGE.whatsappUrl,
-    },
   ];
 
   const contactLinks: FooterLink[] = [

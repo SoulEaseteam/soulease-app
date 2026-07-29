@@ -54,7 +54,6 @@ import ReferralDialog from "@/components/home/ReferralDialog";
 //   soon" — so drawer + dialog never disagree.
 import { PROMOS_ENABLED } from "@/config/featureFlags";
 import { getReferralConfig } from "@/utils/discount";
-import SunRedWordmark from "@/components/common/SunRedWordmark";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 // 🆕 28x.132 (founder annotated arrow: "search bar ย้ายไปตามลูกศร") —
 // practitioner search moved from HomeTherapistGrid into this site-wide bar.
@@ -410,12 +409,34 @@ const TopNav: React.FC = () => {
             },
           }}
         >
-          {/* 🆕 28x.132 (founder selected the drawer's icon+wordmark, "ย้ายไป
-              แทน แถบบาร์") — the two-tone "SUN"/"RED" caps text (28s163/28s335)
-              is replaced by the shared SunRedWordmark (sun glyph + italic
-              serif), the same mark that used to ONLY live in the drawer
-              header (now removed there — see the Drawer section below). */}
-          <SunRedWordmark size={22} color={fg} hideGlyph />
+          {/* 🆕 28x.132 swapped this to the italic SunRedWordmark; 🆕 28x.139
+              (founder selected the italic nav wordmark + sent a reference
+              screenshot of the old two-tone caps treatment, "เปลี่ยน เอาโลโก้
+              นี้") — restored, #FF9999 instead of the old #D97C95 to match
+              the sitewide 28x.134 color unification. 🆕 28x.142 (founder:
+              "ปรับหน่อย" → spacing / font size / letter-spacing / overall
+              alignment) — 0.22em read as too wide next to the compact search
+              bar it now shares the row with; tightened tracking + size and
+              gave it explicit breathing room instead of relying on the
+              search bar's own margin. */}
+          <Box
+            component="span"
+            sx={{
+              fontFamily: '"Playfair Display", "Fraunces", Georgia, serif',
+              fontSize: { xs: "18px", md: "23px" },
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Box component="span" sx={{ color: fg }}>
+              SUN
+            </Box>
+            <Box component="span" sx={{ color: "#FF9999" }}>
+              RED
+            </Box>
+          </Box>
         </Box>
 
         {/* 🆕 28x.132 — practitioner search, moved here from
@@ -427,7 +448,7 @@ const TopNav: React.FC = () => {
             <TherapistSearchBar
               value={searchQ}
               onChange={setSearchQ}
-              m="0 10px"
+              m="0 10px 0 16px"
               compact
             />
           </Box>
