@@ -631,7 +631,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
             }}
           >
             {isOffDuty
-              ? t("therapistCard.bookNow", "Book Now")
+              ? // 🆕 28x.126 (founder selected the disabled button:
+                //   "ปุ่มพัก ก็ ชื่อ พักผ่อน") — a disabled off-duty button
+                //   said "Book Now" (misleading — nothing to book). Now
+                //   states the real reason it's disabled.
+                isOnHoliday
+                ? t("holiday", "Holiday")
+                : t("resting", "Resting")
               : isBookNowActive
                 ? t("therapistCard.bookNow", "Book Now")
                 : t("available", "Available")}
