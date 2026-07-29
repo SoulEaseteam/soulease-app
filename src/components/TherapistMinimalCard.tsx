@@ -445,18 +445,21 @@ const TherapistMinimalCard: React.FC<Props> = ({
           </Box>
         )}
 
-        {/* 🆕 28x.119 (founder reference screenshot) — floating price
-            badge, bottom-right of the photo. Frosted-glass white chip
-            (not the reference's dark chip) so it stays in SunRed's own
-            palette per "แต่สีเดิม" — same dusty-rose the price already
-            used in the info column below. */}
-        {!isOnHoliday && (
+        {/* 🆕 28x.146 (founder arrow: "สลับ กัน") — swapped with the price,
+            which used to float here and now lives in the footer row
+            below. Same frosted-glass pill treatment the price had. Only
+            shown once the guest has granted location (same gate the
+            footer distance text used before the swap). */}
+        {!isOnHoliday && distanceLabel && (
           <Box
             sx={{
               position: "absolute",
               right: "10px",
               bottom: "10px",
               zIndex: 2,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "3px",
               padding: "5px 12px",
               borderRadius: "999px",
               background: "rgba(255,255,255,0.92)",
@@ -464,18 +467,20 @@ const TherapistMinimalCard: React.FC<Props> = ({
               WebkitBackdropFilter: "blur(3px)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
             }}
+            aria-label={`${distanceLabel} away`}
           >
+            <LocationOnRoundedIcon sx={{ fontSize: 14, color: "var(--sr-muted)" }} />
             <Typography
               sx={{
-                fontFamily: fonts.heading,
-                fontSize: "13.5px",
-                fontWeight: 800,
-                color: "#FF9999",
+                fontFamily: fonts.body,
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "var(--sr-ink)",
                 lineHeight: 1,
                 whiteSpace: "nowrap",
               }}
             >
-              ฿{startingPrice.toLocaleString("en-US")}+
+              {distanceLabel}
             </Typography>
           </Box>
         )}
@@ -590,16 +595,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
             the reference's rule between the tag line and the CTA row. */}
         <Box sx={{ borderTop: "1px solid var(--sr-hairline)" }} />
 
-        {/* 🆕 28x.119 — footer row: distance LEFT (real GPS data, standing
-            in for the reference's ETA — SunRed doesn't compute a live
-            driving ETA on this grid, so distance is the honest
-            equivalent) + Book button RIGHT. Price moved to the floating
-            badge on the photo above, so this row is lighter than before. */}
+        {/* 🆕 28x.146 (founder arrow: "สลับ กัน") — footer row: price LEFT
+            (swapped in from the floating photo badge) + Book button
+            RIGHT. Distance swapped the other way, onto the photo — see
+            the badge above. */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: distanceLabel ? "space-between" : "flex-end",
+            justifyContent: !isOnHoliday ? "space-between" : "flex-end",
             gap: "10px",
             // 🆕 28x.99z (founder "ปุ่มล้น ช่วยปรับด้วย จอมือถือ") — on the
             //   2-col mobile grid the row is ~190px wide and the uppercase
@@ -609,23 +613,19 @@ const TherapistMinimalCard: React.FC<Props> = ({
             flexWrap: "wrap",
           }}
         >
-          {distanceLabel && (
-            <Box
-              sx={{ display: "inline-flex", alignItems: "center", gap: "3px", minWidth: 0 }}
-              aria-label={`${distanceLabel} away`}
-            >
-              <LocationOnRoundedIcon sx={{ fontSize: 14, color: "var(--sr-muted)" }} />
+          {!isOnHoliday && (
+            <Box sx={{ display: "inline-flex", alignItems: "center", minWidth: 0 }}>
               <Typography
                 sx={{
-                  fontFamily: fonts.body,
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--sr-muted)",
+                  fontFamily: fonts.heading,
+                  fontSize: "13px",
+                  fontWeight: 800,
+                  color: "#FF9999",
                   lineHeight: 1,
                   whiteSpace: "nowrap",
                 }}
               >
-                {distanceLabel}
+                ฿{startingPrice.toLocaleString("en-US")}+
               </Typography>
             </Box>
           )}
