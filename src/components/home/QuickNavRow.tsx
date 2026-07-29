@@ -197,14 +197,8 @@ const QuickNavRow: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.06em",
                   boxShadow: "0 2px 7px rgba(201,111,137,0.55)",
-                  animation: "qnBadgePulse 1.9s ease-in-out infinite",
-                  "@keyframes qnBadgePulse": {
-                    "0%, 100%": { transform: "scale(1)" },
-                    "50%": { transform: "scale(1.14)" },
-                  },
-                  "@media (prefers-reduced-motion: reduce)": {
-                    animation: "none",
-                  },
+                  // 🆕 28x.133 (founder: "สีของ ปุ่ม วิ่งไปมา") — the pulsing
+                  // scale animation read as the badge's color moving. Static now.
                 }}
               >
                 NEW
