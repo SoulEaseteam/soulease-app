@@ -739,11 +739,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
               //   Superseded the dusty-rose family (#E38EA5→#D97C95→
               //   #C96F89, 28x.103) — see that round's history if this
               //   trial gets reverted.
-              background: isOffDuty
-                ? "var(--sr-panel-2)"
-                : status === "available"
-                  ? "linear-gradient(135deg, #FFB0B0 0%, #FF9999 55%, #F27D7D 100%)"
-                  : "#FF9999",
+              // 🆕 28x.118b (founder: "เอาสีเดียวไม่ไล่สี") — flat, no gradient.
+              background: isOffDuty ? "var(--sr-panel-2)" : "#FF9999",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -760,15 +757,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
               transition: "transform 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
-                : status === "available"
-                  ? {
-                      background: "linear-gradient(135deg, #FF9999 0%, #F27D7D 55%, #E56666 100%)",
-                      transform: "translateY(-1px)",
-                    }
-                  : {
-                      background: "linear-gradient(135deg,#F27D7D 0%,#E56666 100%)",
-                      transform: "translateY(-1px)",
-                    },
+                : {
+                    background: "#F27D7D",
+                    transform: "translateY(-1px)",
+                  },
               "&:focus-visible": {
                 outline: "2px solid #F3E6DB",
                 outlineOffset: 2,
