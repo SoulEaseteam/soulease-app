@@ -90,6 +90,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
   //   NOW in teal while actually pressed (pointerdown -> pointerup/leave),
   //   confirming the tap before the click navigates.
   const [isPressed, setIsPressed] = useState(false);
+  // 🆕 28x.125 (founder: "เอาเมาท์วาง ก็เปลี่ยน") — desktop hover now also
+  // triggers the BOOK NOW/#13bda6 state, not just an actual press/tap.
+  const [isHovered, setIsHovered] = useState(false);
+  const isBookNowActive = isPressed || isHovered;
 
   // 🆕 Round 28s139 — Founder: off-duty cards stay tappable for info
   //   ("กดดูข้อมูลได้ปกติ ยกเว้นจอง"). Only the Book Now action is
@@ -572,8 +576,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
             disabled={isOffDuty}
             onPointerDown={() => !isOffDuty && setIsPressed(true)}
             onPointerUp={() => setIsPressed(false)}
-            onPointerLeave={() => setIsPressed(false)}
+            onPointerLeave={() => {
+              setIsPressed(false);
+              setIsHovered(false);
+            }}
             onPointerCancel={() => setIsPressed(false)}
+            onMouseEnter={() => !isOffDuty && setIsHovered(true)}
             sx={{
               // 🆕 28x.99z — grow to fill the wrapped line on narrow cards;
               //   tighter type so the label fits without clipping.
@@ -586,12 +594,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
               // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #ff9999
               //   ตอนกด จะเปลี่ยนเป็นชื่อ BOOK NOW สี #13bda6") — idle state
               //   is the 28x.118b coral-pink; pressed state flashes teal.
+              //   🆕 28x.125 (founder: "เอาเมาท์วาง ก็เปลี่ยน") — desktop
+              //   hover (isHovered) now triggers the same teal/BOOK NOW
+              //   state as an actual press, via isBookNowActive.
               //   Superseded the dusty-rose family (#E38EA5→#D97C95→
               //   #C96F89, 28x.103) and the plain flat swap (28x.118/118b)
               //   — see those rounds' history if this trial gets reverted.
               background: isOffDuty
                 ? "var(--sr-panel-2)"
-                : isPressed
+                : isBookNowActive
                   ? "#13bda6"
                   : "#FF9999",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
@@ -604,7 +615,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               whiteSpace: "nowrap",
               boxShadow: isOffDuty
                 ? "none"
-                : isPressed
+                : isBookNowActive
                   ? "0 6px 16px rgba(19, 189, 166, 0.45)"
                   : "0 6px 16px rgba(255, 99, 99, 0.40)",
               transition: "transform 0.15s ease, background 0.15s ease",
@@ -621,7 +632,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
           >
             {isOffDuty
               ? t("therapistCard.bookNow", "Book Now")
-              : isPressed
+              : isBookNowActive
                 ? t("therapistCard.bookNow", "Book Now")
                 : t("available", "Available")}
           </Box>
