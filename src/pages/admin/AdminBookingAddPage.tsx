@@ -55,6 +55,7 @@ import {
 } from "phosphor-react";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
+import { parseDateTimeBKK } from "@/utils/time";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { useAdminIdentity } from "@/hooks/useAdminIdentity";
 import { bookingAuthor } from "@/utils/bookingAuthor";
@@ -360,9 +361,17 @@ const AdminBookingAddPage: React.FC = () => {
     if (!validate()) { toast.warning("กรุณากรอกข้อมูลให้ครบ"); return; }
     if (!selectedService) return;
 
+    // 🚨 Round 28x.148 HOTFIX — same tz bug as AdminBookingListPage's edit
+    //   form (see that file's saveEdit comment): a bare `dayjs(...)` parses
+    //   in the admin's BROWSER timezone, not Asia/Bangkok, so the wall-clock
+    //   time typed here isn't necessarily what gets written to Firestore.
+    //   `parseDateTimeBKK` (utils/time.ts) anchors it correctly.
+    const parsedStart = parseDateTimeBKK(date, time);
+    if (!parsedStart) { toast.error("วันที่/เวลาไม่ถูกต้อง"); return; }
+
     try {
       setSaving(true);
-      const startAt   = dayjs(`${date} ${time}`, "YYYY-MM-DD HH:mm").toDate();
+      const startAt   = parsedStart.toDate();
       const endAt     = dayjs(startAt).add(duration, "minute").toDate();
       const therapist = therapists.find((t) => t.id === therapistId);
       const mapUrl    = loc.mapUrl ?? buildMapUrl(loc.placeName || loc.address, loc.lat, loc.lng);

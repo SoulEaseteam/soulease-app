@@ -84,7 +84,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { db } from "@/lib/firebase";
-import { fmtBKK } from "@/utils/time";
+import { fmtBKK, parseDateTimeBKK } from "@/utils/time";
 import { formatTHB, priceForDuration, durationsFor } from "@/utils/servicePricing";
 // 🆕 28s263 (founder: "เปลี่ยนบริการได้ด้วยสิ มันทั้งหมดของบิล") — same
 //   service catalog + pricing helpers AdminBookingAddPage uses to create a
@@ -1889,7 +1889,22 @@ const DetailPanel: React.FC<{
   }, [editDiscountAmount, computedTotal]);
 
   const saveEdit = () => {
-    const startAt = Timestamp.fromDate(dayjs(`${editForm.date} ${editForm.time}`, "YYYY-MM-DD HH:mm").toDate());
+    // 🚨 Round 28x.148 HOTFIX — founder edited a booking's time (20:30→21:30)
+    //   and the job appeared to vanish from the therapist's own page. Root
+    //   cause: this line parsed "YYYY-MM-DD HH:mm" with a bare `dayjs(...)`,
+    //   which anchors to the BROWSER's timezone, not Asia/Bangkok — the
+    //   exact bug class `parseDateTimeBKK` (utils/time.ts, Round 28s4) was
+    //   built to close, but this admin edit path never adopted it. If the
+    //   admin's device isn't set to Asia/Bangkok, the wall-clock time she
+    //   typed gets written as a different UTC instant, which can render as
+    //   the wrong hour — or the wrong calendar day — everywhere `startAt`
+    //   is displayed, including the therapist's own job list.
+    const parsedStart = parseDateTimeBKK(editForm.date, editForm.time);
+    if (!parsedStart) {
+      window.alert("Invalid date/time — save cancelled. · วันที่/เวลาไม่ถูกต้อง");
+      return;
+    }
+    const startAt = Timestamp.fromDate(parsedStart.toDate());
     const newTherapist = therapists.find((t) => t.id === editForm.therapistId);
     const oldTotal = b.totalPrice ?? b.total ?? 0;
 

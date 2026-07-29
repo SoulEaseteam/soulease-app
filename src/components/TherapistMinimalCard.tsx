@@ -29,6 +29,14 @@ import { fonts, accents } from "@/theme";
 // 🕯️ 28t dark-luxury — focus ring is dusty rose; highlight ink is ivory.
 const oceanAccent = "#FF9999";
 const oceanHighlight = "#F3E6DB";
+
+// 🆕 Round 28v.7 — short display labels for service specialty chips on cards.
+const SERVICE_TAG: Record<string, string> = {
+  "xSR-Thai":    "Thai",
+  "SR-Aroma":    "Aroma",
+  "SR-HJ2200":   "Signature",
+  "SR-B2B3200":  "Therapeutic",
+};
 import { enhanceImage } from "@/utils/cloudinary";
 import type { Therapist, Avail } from "@/types/therapist";
 // 🆕 Round 28s132 — Surface the therapist's lowest service price so
@@ -593,6 +601,46 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 .join(" · ")}
             </Typography>
           ) : null}
+
+          {/* 🆕 Round 28v.7 — service specialty chips. Up to 3 rose pill tags
+              showing which services this practitioner offers, e.g. Thai · Aroma ·
+              Signature. Uses servicesAvailable[] from the therapist doc. */}
+          {(therapist.servicesAvailable ?? []).length > 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "4px",
+                marginTop: "6px",
+              }}
+            >
+              {(therapist.servicesAvailable ?? []).slice(0, 3).map((sid) => {
+                const label = SERVICE_TAG[sid];
+                if (!label) return null;
+                return (
+                  <Box
+                    key={sid}
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      padding: "2px 8px",
+                      borderRadius: "999px",
+                      background: "rgba(255,153,153,0.12)",
+                      border: "1px solid rgba(255,153,153,0.22)",
+                      fontFamily: fonts.body,
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      color: "#FF9999",
+                      letterSpacing: "0.03em",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {label}
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
         </Box>
 
         {/* 🆕 28x.119 — hairline divider before the footer row, matching
@@ -668,11 +716,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
               //   Superseded the dusty-rose family (#FF9999→#FF9999→
               //   #FF9999, 28x.103) and the plain flat swap (28x.118/118b)
               //   — see those rounds' history if this trial gets reverted.
+              // 🆕 Round 28v.7 — idle state upgraded from flat #FF9999 to a
+              //   warm rose gradient for more visual depth on the card.
               background: isOffDuty
                 ? "var(--sr-panel-2)"
                 : isBookNowActive
                   ? "#13bda6"
-                  : "#FF9999",
+                  : "linear-gradient(135deg, #FFB5C8 0%, #FF9999 55%, #E8607E 100%)",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
