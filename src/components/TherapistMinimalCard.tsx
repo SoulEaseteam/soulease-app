@@ -29,14 +29,6 @@ import { fonts, accents } from "@/theme";
 // 🕯️ 28t dark-luxury — focus ring is dusty rose; highlight ink is ivory.
 const oceanAccent = "#FF9999";
 const oceanHighlight = "#F3E6DB";
-
-// 🆕 Round 28v.7 — short display labels for service specialty chips on cards.
-const SERVICE_TAG: Record<string, string> = {
-  "xSR-Thai":    "Thai",
-  "SR-Aroma":    "Aroma",
-  "SR-HJ2200":   "Signature",
-  "SR-B2B3200":  "Therapeutic",
-};
 import { enhanceImage } from "@/utils/cloudinary";
 import type { Therapist, Avail } from "@/types/therapist";
 // 🆕 Round 28s132 — Surface the therapist's lowest service price so
@@ -602,45 +594,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
             </Typography>
           ) : null}
 
-          {/* 🆕 Round 28v.7 — service specialty chips. Up to 3 rose pill tags
-              showing which services this practitioner offers, e.g. Thai · Aroma ·
-              Signature. Uses servicesAvailable[] from the therapist doc. */}
-          {(therapist.servicesAvailable ?? []).length > 0 && (
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "4px",
-                marginTop: "6px",
-              }}
-            >
-              {(therapist.servicesAvailable ?? []).slice(0, 3).map((sid) => {
-                const label = SERVICE_TAG[sid];
-                if (!label) return null;
-                return (
-                  <Box
-                    key={sid}
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "2px 8px",
-                      borderRadius: "999px",
-                      background: "rgba(255,153,153,0.12)",
-                      border: "1px solid rgba(255,153,153,0.22)",
-                      fontFamily: fonts.body,
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      color: "#FF9999",
-                      letterSpacing: "0.03em",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {label}
-                  </Box>
-                );
-              })}
-            </Box>
-          )}
         </Box>
 
         {/* 🆕 28x.119 — hairline divider before the footer row, matching
