@@ -100,13 +100,24 @@ const TherapistMinimalCard: React.FC<Props> = ({
     navigate(`/therapists/${therapist.id}`);
   };
 
+  // 🆕 28x.124 (founder repeated: "ตอนกด จะเปลี่ยนเป็นชื่อ BOOK NOW สี
+  //   #13bda6") — on a real tap, pointerup fires (reverting isPressed)
+  //   BEFORE the click handler navigates, so the teal "BOOK NOW" state
+  //   never actually got seen — the button was back to pink the instant
+  //   navigation happened. Now the click itself holds the pressed state
+  //   and waits one beat so BOOK NOW/teal is genuinely the last thing on
+  //   screen before the page transitions, instead of a state that only
+  //   existed in code and never rendered long enough to see.
   const handleBookTap = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isOffDuty) return; // booking blocked when resting/holiday
-    if (onBook) onBook(therapist);
-    // 🆕 28s343 — Book Now lands on the detail page's Services tab (founder
-    //   "กด book now ต้องไปที่แท็บ Services") so the guest sees the picker.
-    else navigate(`/therapists/${therapist.id}#services`);
+    setIsPressed(true);
+    window.setTimeout(() => {
+      if (onBook) onBook(therapist);
+      // 🆕 28s343 — Book Now lands on the detail page's Services tab (founder
+      //   "กด book now ต้องไปที่แท็บ Services") so the guest sees the picker.
+      else navigate(`/therapists/${therapist.id}#services`);
+    }, 220);
   };
 
   const status = computedStatus ?? "bookable";
