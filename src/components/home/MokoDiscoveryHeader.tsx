@@ -14,7 +14,7 @@
 
 import React from "react";
 import { Box } from "@mui/material";
-import { MapPin, ShieldCheck, Lightning } from "phosphor-react";
+import { MapPin, Lightning } from "phosphor-react";
 import { fonts } from "@/theme";
 import { useTranslation } from "react-i18next";
 
@@ -24,7 +24,6 @@ export type RosterFilter = "all" | "available_now" | "express";
 const MAGENTA = "#D97C95"; // primary — Vintage Rose (active / selected / icons) — fixed
 const MAGENTA_TXT = "var(--sr-ink)"; // active-tab label text (flips day/night)
 const GREEN = "#57B88B"; // available / on-standby dot — green (founder semantic)
-const PLUM = "var(--sr-body)"; // notice-marquee text on the notice panel
 const TEXT = "var(--sr-ink)"; // primary text
 const MUTED = "var(--sr-muted)"; // muted text
 
@@ -53,14 +52,6 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
     { key: "all", label: t("home.filter.all", "All"), count: counts.all },
     { key: "available_now", label: t("home.filter.availableNow", "Available now"), count: counts.availableNow, live: true },
     { key: "express", label: t("home.filter.express", "Near me"), count: counts.express },
-  ];
-
-  // Concierge notice items — brand-voice safe, no crude wording.
-  const notices = [
-    t("home.notice.reply", "Concierge replies within 5 minutes"),
-    t("home.notice.verified", "Verified practitioners on standby"),
-    t("home.notice.delivery", "Delivered to your hotel or residence, anywhere in Bangkok"),
-    t("home.notice.payment", "Pay on arrival · PromptPay · 24 hours"),
   ];
 
   return (
@@ -126,69 +117,8 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
         </Box>
       </Box>
 
-      {/* ── Scrolling concierge notice bar (blush, Moko accent) ── */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          background: "linear-gradient(180deg,var(--sr-panel) 0%,var(--sr-panel-deep) 100%)",
-          border: "1px solid var(--sr-hairline)",
-          borderRadius: "12px",
-          padding: "8px 12px",
-          overflow: "hidden",
-        }}
-      >
-        <ShieldCheck size={15} weight="fill" color={MAGENTA} style={{ flexShrink: 0 }} />
-        <Box sx={{ overflow: "hidden", flex: 1, whiteSpace: "nowrap" }}>
-          <Box
-            sx={{
-              display: "inline-block",
-              whiteSpace: "nowrap",
-              animation: "moko-marquee 22s linear infinite",
-              "@keyframes moko-marquee": {
-                "0%": { transform: "translateX(0)" },
-                "100%": { transform: "translateX(-50%)" },
-              },
-              "@media (prefers-reduced-motion: reduce)": {
-                animation: "none",
-                whiteSpace: "normal",
-              },
-            }}
-          >
-            {/* duplicated once so the loop is seamless (translate -50%) */}
-            {/* dup===1 hidden under prefers-reduced-motion — avoids showing 8 items when animation is off */}
-            {[0, 1].map((dup) => (
-              <Box
-                key={dup}
-                component="span"
-                sx={dup === 1 ? {
-                  "@media (prefers-reduced-motion: reduce)": { display: "none" },
-                } : undefined}
-              >
-                {notices.map((n, i) => (
-                  <Box
-                    component="span"
-                    key={`${dup}-${i}`}
-                    sx={{
-                      fontFamily: fonts.body,
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      color: PLUM,
-                      marginRight: "26px",
-                    }}
-                  >
-                    {n}
-                    <Box component="span" sx={{ marginLeft: "26px", opacity: 0.4 }}>
-                      ·
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      </Box>
+      {/* 🆕 28x.129 (founder selected the scrolling notice bar, "เอาออก") —
+          removed entirely. */}
 
       {/* ── Category filter tabs (horizontal scroll, magenta active) ─ */}
       <Box

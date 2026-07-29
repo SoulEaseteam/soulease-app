@@ -41,8 +41,6 @@ import BundleSection from "@/components/common/BundleSection";
 import QuickNavRow from "@/components/home/QuickNavRow";
 // 🆕 28w.37 — 1st-anniversary banner (links to /pricing).
 import AnniversaryBanner from "@/components/home/AnniversaryBanner";
-import MembershipCard from "@/components/home/MembershipCard";
-import WhySunRedSection from "@/components/home/WhySunRedSection";
 import HomeFooterV2 from "@/components/home/HomeFooterV2";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
 //   maxWidth: 430px cage so the home widens on tablet/desktop.
@@ -254,11 +252,8 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
         <HomeTherapistGrid />
       </Box>
 
-      {/* 🆕 Round 28r74 — home marketing sections. 28t.6 (founder): the
-          Moko promo banner + Editorial banner were removed — they read
-          dated. Membership → Why SunRed → Footer remain. */}
-      <MembershipCard />
-      <WhySunRedSection />
+      {/* 🆕 28x.129 (founder selected both sections, "เอาออก") — Membership
+          Benefits + Why SunRed removed. Footer remains. */}
       <HomeFooterV2 />
 
       {/* Bottom spacer keeps the footer above MainLayout's

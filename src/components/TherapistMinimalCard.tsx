@@ -240,10 +240,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
         transition: "transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, filter 0.18s ease",
         opacity: isOffDuty ? 0.82 : 1,
         filter: isOffDuty ? "grayscale(0.25)" : "none",
+        // 🆕 28x.128 (founder: "เอา เงาสีดำออก") — the hover state used to
+        // layer a heavy black shadow (rgba(0,0,0,0.52)) on top of the
+        // card's normal var(--sr-card-shadow). Just the lift now, no
+        // extra dark shadow.
         "&:hover": {
           transform: "translateY(-2px)",
-          boxShadow:
-            "0 18px 40px rgba(0, 0, 0, 0.52), 0 2px 4px rgba(0, 0, 0, 0.34)",
         },
         "&:focus-visible": {
           outline: `2px solid ${oceanAccent}`,
