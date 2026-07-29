@@ -23,7 +23,6 @@ import {
   Drawer,
   ListItemIcon,
   ListItemText,
-  Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -57,6 +56,10 @@ import { PROMOS_ENABLED } from "@/config/featureFlags";
 import { getReferralConfig } from "@/utils/discount";
 import SunRedWordmark from "@/components/common/SunRedWordmark";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+// 🆕 28x.132 (founder annotated arrow: "search bar ย้ายไปตามลูกศร") —
+// practitioner search moved from HomeTherapistGrid into this site-wide bar.
+import TherapistSearchBar from "@/components/TherapistSearchBar";
+import { useHomeSearch } from "@/context/HomeSearchContext";
 // 🆕 Round 28r79 — dead imports removed. `useConciergeMode`, `brand`,
 //   and `fonts` were only referenced in the commented-out mode-chip
 //   block (28s142 removed the visible chip). Ripping them out shrinks
@@ -230,6 +233,9 @@ const TopNav: React.FC = () => {
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // 🆕 28x.132 — shared with HomeTherapistGrid via context; the input
+  //   renders here now, only when on the home route (see isHome below).
+  const { searchQ, setSearchQ } = useHomeSearch();
   // 🆕 Round 28r7 — Refer & earn dialog state.
   const [referralOpen, setReferralOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -378,8 +384,53 @@ const TopNav: React.FC = () => {
             isHome && !scrolled ? "none" : "blur(10px) saturate(140%)",
         }}
       >
+        {/* 🆕 28x.132 (founder: "โลโก้ → search bar → แฮมเบอร์เกอร์") — brand
+            wordmark is now FIRST on mobile (was after the hamburger).
+            Clickable, routes to "/". Desktop keeps its existing left-aligned
+            position (marginRight:auto pushes the centered nav + CTA right). */}
+        <Box
+          component="button"
+          type="button"
+          // 🆕 28x.79 — the logo was a second door back into the customer
+          //   storefront from a therapist's own pages. Home means her panel now.
+          // 🆕 28x.87 — points at the new Home dashboard, not Profile.
+          onClick={() => goto(isTherapist ? "/therapist/home" : "/")}
+          aria-label={t("nav.brandHome", "SunRed home")}
+          sx={{
+            background: "transparent",
+            border: "none",
+            padding: "4px 8px",
+            cursor: "pointer",
+            borderRadius: "8px",
+            flexShrink: 0,
+            marginRight: { md: "auto" },
+            "&:focus-visible": {
+              outline: "2px solid #D97C95",
+              outlineOffset: 2,
+            },
+          }}
+        >
+          {/* 🆕 28x.132 (founder selected the drawer's icon+wordmark, "ย้ายไป
+              แทน แถบบาร์") — the two-tone "SUN"/"RED" caps text (28s163/28s335)
+              is replaced by the shared SunRedWordmark (sun glyph + italic
+              serif), the same mark that used to ONLY live in the drawer
+              header (now removed there — see the Drawer section below). */}
+          <SunRedWordmark size={22} color={fg} />
+        </Box>
+
+        {/* 🆕 28x.132 — practitioner search, moved here from
+            HomeTherapistGrid. Mobile + home-route only: it's meaningless
+            chrome on pages with no filterable list, and desktop already has
+            its own horizontal nav + concierge CTA filling this row. */}
+        {isHome && (
+          <Box sx={{ display: { xs: "flex", md: "none" }, flex: 1, minWidth: 0 }}>
+            <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 10px" />
+          </Box>
+        )}
+
         {/* Menu button — opens drawer. Hidden on desktop where the
-            inline horizontal nav takes over. */}
+            inline horizontal nav takes over. Moved to the END (right side)
+            of the row — was first/left before 28x.132. */}
         <IconButton
           aria-label={t("nav.openMenu", "Open menu")}
           onClick={() => setDrawerOpen(true)}
@@ -390,6 +441,7 @@ const TopNav: React.FC = () => {
             height: "44px",
             borderRadius: "50%",
             display: { xs: "inline-flex", md: "none" },
+            flexShrink: 0,
             // 🆕 Round 28s170 — Founder: "3 แทบ เอากรอบ ออก".
             //   Drop the white ring around the hamburger; the 3
             //   bars alone on the red bg are plenty of affordance.
@@ -410,73 +462,6 @@ const TopNav: React.FC = () => {
         >
           <MenuRoundedIcon sx={{ fontSize: 20 }} />
         </IconButton>
-
-        {/* Brand wordmark — clickable, routes to "/" */}
-        <Box
-          component="button"
-          type="button"
-          // 🆕 28x.79 — the logo was a second door back into the customer
-          //   storefront from a therapist's own pages. Home means her panel now.
-          // 🆕 28x.87 — points at the new Home dashboard, not Profile.
-          onClick={() => goto(isTherapist ? "/therapist/home" : "/")}
-          aria-label={t("nav.brandHome", "SunRed home")}
-          sx={{
-            background: "transparent",
-            border: "none",
-            padding: "4px 8px",
-            cursor: "pointer",
-            borderRadius: "8px",
-            // 🆕 Round 28r52 — Wordmark left-aligns on desktop so the
-            //   center slot is free for the horizontal nav row. Mobile
-            //   layout unchanged (space-between still centers it).
-            marginRight: { md: "auto" },
-            "&:focus-visible": {
-              outline: "2px solid #D97C95",
-              outlineOffset: 2,
-            },
-          }}
-        >
-          {/* 🆕 Round 28s163 — Wordmark replaced with the founder's
-              ROLADEX-style brand bar: "SUNRED BANGKOK" in white sans
-              caps with wide letter-spacing. SunRedWordmark sun glyph
-              kept (small, white) so the visual identity carries over,
-              but the italic serif "SunRed" wordmark is gone. */}
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
-
-            {/* 🆕 28s335 — two-tone SUN·RED wordmark (founder ref image 2):
-                "SUN" flips dark↔white with the nav, "RED" stays brand red. */}
-            <Typography
-              component="span"
-              sx={{
-                fontFamily:
-                  '"Playfair Display", "Fraunces", Georgia, serif',
-                // 🆕 28w.86 (founder: "ขยาย ชื่อแบรนด์") — 17/19 → 22/26. The
-                //   0.22em tracking makes this wordmark much wider than its
-                //   point size suggests, and it shares the mobile bar with the
-                //   burger + the icon cluster, so the size is checked against a
-                //   320px bar rather than just eyeballed.
-                fontSize: { xs: "22px", md: "26px" },
-                fontWeight: 700,
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <Box component="span" sx={{ color: fg }}>
-                SUN
-              </Box>
-              <Box component="span" sx={{ color: "#D97C95" }}>
-                RED
-              </Box>
-            </Typography>
-          </Box>
-        </Box>
 
         {/* 🆕 Round 28r52 — Desktop-only horizontal nav row. Center of
             the bar. Mobile skips this entirely and falls back to the
@@ -588,13 +573,9 @@ const TopNav: React.FC = () => {
             i18next LanguageDetector already pulls navigator/htmlTag
             so EN/TH/ZH/JA/KO auto-switch by device locale. Manual
             switcher was redundant + crowded the red TopNav.
-            Placeholder Box keeps the flex layout balanced so the
-            wordmark stays centred between menu + this slot on mobile.
-            Hidden on desktop where the concierge CTA fills the slot. */}
-        <Box
-          sx={{ width: 40, display: { xs: "block", md: "none" } }}
-          aria-hidden="true"
-        />
+            🆕 28x.132 — the balancing spacer that kept the wordmark
+            centred is gone too: the wordmark is genuinely first now
+            (not centred), so nothing needs to balance it. */}
       </Box>
 
       {/* ───────── Navigation drawer ───────── */}
@@ -611,18 +592,18 @@ const TopNav: React.FC = () => {
           },
         }}
       >
-        {/* Header — brand mark + close */}
+        {/* Header — close button only now.
+            🆕 28x.132 (founder selected this wordmark, "ลบ") — the
+            drawer's own SunRedWordmark is gone; it's now the TopNav bar's
+            wordmark instead (moved, not duplicated). */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: "flex-end",
             padding: "16px 18px 12px",
           }}
         >
-          {/* Same wordmark as the top-nav button — slightly larger
-              (24px) for the drawer header. */}
-          <SunRedWordmark size={24} />
           <IconButton
             aria-label={t("nav.closeMenu", "Close menu")}
             onClick={() => setDrawerOpen(false)}

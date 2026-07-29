@@ -15,7 +15,7 @@ import TherapistProfileCard from "@/components/TherapistProfileCard";
 //   Replaces the 2-column TherapistProfileCard layout per founder
 //   feedback ("หน้าเว็บรกมาก"). Old card kept for other surfaces.
 import TherapistMinimalCard from "@/components/TherapistMinimalCard";
-import TherapistSearchBar from "@/components/TherapistSearchBar";
+import { useHomeSearch } from "@/context/HomeSearchContext";
 import MokoDiscoveryHeader from "@/components/home/MokoDiscoveryHeader";
 import HomeMapBrowse from "@/components/home/HomeMapBrowse";
 import { matchesQuery } from "@/utils/therapistSearch";
@@ -82,7 +82,9 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
   //   permission error / network drop left the home page spinning
   //   forever. Track the failure so we can show a real error state.
   const [loadError, setLoadError] = useState(false);
-  const [searchQ, setSearchQ] = useState("");
+  // 🆕 28x.132 — search moved to TopNav (site-wide); this grid now just
+  //   reads the shared query instead of owning its own input/state.
+  const { searchQ } = useHomeSearch();
   // 🆕 Round 28r4 — current concierge mode for the grid header phrase.
   const concierge = useConciergeMode();
   const { t } = useTranslation();
@@ -506,7 +508,9 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
       {/* Round 28s2 — area chip strip removed (Sukhumvit/Asok/Thonglor
           chronically read "0", actively driving bounces). */}
 
-      <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />
+      {/* 🆕 28x.132 (founder: "โลโก้ → search bar → แฮมเบอร์เกอร์") — search
+          input moved out of the grid and into TopNav (site-wide nav bar);
+          this grid now only reads the shared query via useHomeSearch(). */}
 
       {/* 🆕 28s378 — Moko-style discovery header (location · concierge notice ·
           category filter tabs), wired to the existing rosterFilter state.

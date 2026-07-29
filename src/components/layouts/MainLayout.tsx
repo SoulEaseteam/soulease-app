@@ -20,6 +20,10 @@ import { brand } from "@/theme";
 //   is false, or when the current offer has been per-session dismissed,
 //   so unconditional mounting has zero layout cost in the "off" case.
 import PromoStrip from "@/components/common/PromoStrip";
+// 🆕 28x.132 — shared search state: TopNav's input (now the search UI)
+//   and HomeTherapistGrid's filter (still the consumer) are siblings, not
+//   parent/child, so this context bridges them.
+import { HomeSearchProvider } from "@/context/HomeSearchContext";
 
 /**
  * 🎨 Page surface — Phase 1 redesign defers all styling to the MUI theme's
@@ -50,49 +54,51 @@ import PromoStrip from "@/components/common/PromoStrip";
  */
 const MainLayout: React.FC = () => {
   return (
-    <Box
-      sx={{
-        ...pageSurface,
-        // Page surface fills the full viewport on desktop so the cool-
-        // mint background reaches the edges. The content column is
-        // centered inside via `responsiveShell` on the sticky column +
-        // per-page wrappers.
-        background: brand.bg1,
-        pb: { xs: "90px", md: "110px" },
-        position: "relative",
-      }}
-    >
-      {/* 🆕 Site-wide TopNav — wrapped in the responsive shell so on
-          desktop the nav bar widens to match the content column and no
-          longer sits as a tiny 430px strip centered in a huge empty gray
-          gutter. The sticky column still holds the RoleViewBanner above
-          TopNav so admins previewing customer pages see the bridge back
-          to backstage. Banner self-hides for guests + signed-in
-          customers.
-          🆕 Round 28r52 — swap the fixed 430px cap for `responsiveShell`. */}
+    <HomeSearchProvider>
       <Box
         sx={{
-          ...responsiveShell,
-          position: "sticky",
-          top: 0,
-          zIndex: 100,
+          ...pageSurface,
+          // Page surface fills the full viewport on desktop so the cool-
+          // mint background reaches the edges. The content column is
+          // centered inside via `responsiveShell` on the sticky column +
+          // per-page wrappers.
+          background: brand.bg1,
+          pb: { xs: "90px", md: "110px" },
+          position: "relative",
         }}
       >
-        <RoleViewBanner />
-        <TopNav />
-      </Box>
+        {/* 🆕 Site-wide TopNav — wrapped in the responsive shell so on
+            desktop the nav bar widens to match the content column and no
+            longer sits as a tiny 430px strip centered in a huge empty gray
+            gutter. The sticky column still holds the RoleViewBanner above
+            TopNav so admins previewing customer pages see the bridge back
+            to backstage. Banner self-hides for guests + signed-in
+            customers.
+            🆕 Round 28r52 — swap the fixed 430px cap for `responsiveShell`. */}
+        <Box
+          sx={{
+            ...responsiveShell,
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+          }}
+        >
+          <RoleViewBanner />
+          <TopNav />
+        </Box>
 
-      {/* 🆕 Round 28r53 — Phase 3.2 PromoStrip mount. In-flow (not sticky)
-          per audit r51 recommendation: TopNav auto-hides on scroll so a
-          sticky strip would leave a floating orphan. Sits inside the same
-          responsive shell as TopNav so it lines up on desktop widths. */}
-      <Box sx={{ ...responsiveShell }}>
-        <PromoStrip />
-      </Box>
+        {/* 🆕 Round 28r53 — Phase 3.2 PromoStrip mount. In-flow (not sticky)
+            per audit r51 recommendation: TopNav auto-hides on scroll so a
+            sticky strip would leave a floating orphan. Sits inside the same
+            responsive shell as TopNav so it lines up on desktop widths. */}
+        <Box sx={{ ...responsiveShell }}>
+          <PromoStrip />
+        </Box>
 
-      <Outlet />
-      <BottomNavGlass />
-    </Box>
+        <Outlet />
+        <BottomNavGlass />
+      </Box>
+    </HomeSearchProvider>
   );
 };
 
