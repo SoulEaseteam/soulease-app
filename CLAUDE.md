@@ -397,7 +397,12 @@ anyone from inside the site, right after committing to a booking.
 The thread is a subcollection of the reservation (`bookings/{id}/messages`), so
 "has booked" isn't a flag anything checks — it's the only address a message can
 have. Three surfaces, one component (`src/components/chat/BookingChatThread.tsx`):
-- **Guest** — `/booking/success/:id?t=…`, below the concierge deep-links.
+- **Guest** — `/booking/success/:id?t=…`. It shipped below the concierge
+  deep-links; 28x.153 then moved it INTO the 2×2 quick-action grid, where the
+  "Chat with {name}" tile (previously a Telegram redirect) toggles the thread
+  inline. 28x.152 added Grab-style one-tap quick-reply chips — those send
+  through the same `send()` and the same 4-key payload, so they needed no rules
+  change (verified against the diff, not just the commit message).
 - **Practitioner** — `/therapist/jobs`, a "แชท" button per ACCEPTED job (same
   masking rule as her address/phone: no contact before she accepts).
 - **Concierge** — the `/admin/bookings` detail drawer, so View can actually
@@ -428,6 +433,41 @@ How guest identity works — read before touching it:
   (practitioner side only — flip false and the thread stays open with the
   concierge alone). They exist because a direct guest↔practitioner line is also
   how a repeat booking could get arranged off-platform; View is in every thread.
+
+**🖼️ Every image on the site depends on ONE external CDN — Round 28x.156**
+
+Founder, 2026-07-30, with a screenshot of the home grid: "หน้าเว็บรูป เสียหมด
+แก้ด่วน" — every practitioner photo a broken-image glyph, alt text showing
+through. Nothing in the repo was wrong: all 227 files present in
+`public/images`, shipping to Vercel, CSP `img-src` permits both hosts.
+
+The cause class is architectural. EVERY image anywhere in this app — home
+cards, detail heroes, service tiles, map pins, the staff app — is rewritten by
+`enhanceImage()` (src/utils/cloudinary.ts) into a Cloudinary **fetch** URL. That
+is one metered external dependency in front of 100% of the site's photos, and
+Cloudinary's free tier is monthly-metered: run out of credits (or get the
+account restricted) and every image fails at once, site-wide, with no code
+change and no warning. **If the photos ever break everywhere again, check the
+Cloudinary dashboard's monthly credit usage FIRST** — it looks like a site bug
+and it isn't one.
+
+What 28x.156 changed so it can't blank the site again:
+- `src/utils/imageFallback.ts` — a capture-phase `error` listener (image load
+  errors don't bubble, so a normal listener never sees them). Any failed
+  Cloudinary URL has its original address decoded straight back out of it and
+  swapped in; the originals are on our own domain, so they load.
+- The first failure **latches** `cloudinaryDown`, and `enhanceImage()` reads
+  that latch — so after ONE broken image every later render goes direct,
+  instead of the guest paying a failed request per photo.
+- `VITE_CLOUDINARY_DISABLED=1` (Vercel env) turns the proxy off entirely with
+  no code change. That switch exists for the case the latch cannot see:
+  Cloudinary returning 200 but degraded (timeouts, blank placeholders), where
+  no error event ever fires.
+- Verified in a real browser: with Cloudinary requests aborted, a proxied URL
+  self-heals to its origin file and renders.
+- Trade-off while bypassed: photos are unoptimised (no WebP/AVIF, no resize,
+  heavier). Deliberate — a slow photo beats no photo on a site whose product
+  IS the photo.
 
 **Open / not done:**
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**

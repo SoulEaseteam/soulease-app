@@ -55,6 +55,15 @@ import i18n from "i18next";
 import { captureAttribution } from "@/utils/attribution";
 captureAttribution();
 
+// 🚨 Round 28x.156 HOTFIX (founder: "หน้าเว็บรูป เสียหมด แก้ด่วน") — every image
+//   on the site is proxied through one external CDN, so when that CDN stops
+//   delivering, the whole site loses its photos at once. This installs a
+//   global fallback that swaps any failed proxy URL back to the original and
+//   latches the proxy off for the rest of the session. Installed here, before
+//   render, so the very first image failure is already covered.
+import { installImageFallback } from "@/utils/imageFallback";
+installImageFallback();
+
 // GA
 const GA_ID = "G-XEMLVVPN4W";
 
