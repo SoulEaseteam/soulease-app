@@ -12,6 +12,8 @@
 //
 // Fallback ปลอดภัย: ถ้า env ไม่ตั้ง → return URL เดิม (ไม่พัง)
 
+import { isCloudinaryDown } from "@/utils/imageFallback";
+
 // 🆕 28x.24 (founder: "รูปบนเว็บไม่ชัด") — fall back to the public cloud
 //   name instead of "" when the env var is absent. Local/CLI builds don't
 //   inherit Vercel's VITE_CLOUDINARY_CLOUD_NAME, so a `vercel --prod` from
@@ -22,6 +24,31 @@
 const CLOUD_NAME =
   (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined) ||
   "dhzvzvatb";
+
+// 🔴 Round 28x.158 (founder: "ไฟล์ต้นฉบับตรง ๆ deploy") — THE PROXY IS OFF BY
+//   DEFAULT. Every image is now served straight from our own origin, and this
+//   whole module is dormant unless someone sets `VITE_CLOUDINARY_ENABLED=1`.
+//
+//   Why the default flipped, after 28x.156 traced a total site-wide image
+//   outage to this one metered dependency and 28x.157 measured the files:
+//     • The roster photos are 959–1034 × 1280 at 94–168 KB. They are already
+//       small AND already sharp — there was never much for an optimiser to win
+//       here, and 28x.157 found the proxy was actively LOSING quality by
+//       downscaling to 400px (dpr_auto is a no-op on Safari).
+//     • Serving them ourselves cannot run out of credits, cannot get an account
+//       restricted, and cannot take every photo on the site down at once. That
+//       failure already happened in production.
+//
+//   What is genuinely given up: WebP/AVIF conversion (so slightly heavier
+//   transfers), `e_improve`/`e_sharpen` auto-enhancement, and `g_face` avatar
+//   framing — the last of which already has a CSS fallback in
+//   TherapistIdentityCard. Accepted deliberately: unoptimised-but-visible beats
+//   optimised-but-gone on a site whose product IS the photograph.
+//
+//   Everything below still works — set the env var and it comes back exactly as
+//   it was, no code change.
+const CLOUDINARY_ENABLED =
+  String(import.meta.env.VITE_CLOUDINARY_ENABLED ?? "") === "1";
 
 /** ขนาดที่ใช้บ่อย */
 export type ImageVariant = "card" | "thumb" | "hero" | "full";
@@ -52,20 +79,52 @@ interface EnhanceOptions {
   zoom?: number;
 }
 
-// 🆕 Round 28b30 (founder 2026-05-04, perf #66) — PageSpeed flagged
-//   therapist cards as oversized: native fetched 500w but rendered
-//   at 324–349w. Drop card variant to 400w. `dpr_auto` (retina-
-//   aware Client-Hints) still upscales to 800w on iPhone Pro/etc.
-//   This shaves ~319 KiB off the homepage per audit.
+// 🆕 Round 28x.157 (founder: "อย่า บีบ รูป ให้คงความชัด") — widths raised so a
+//   card is never served a downscaled photo.
+//
+//   ⚠️ The 28b30 note this replaces relied on `dpr_auto` to restore retina
+//   resolution ("still upscales to 800w on iPhone Pro"). It does not: dpr_auto
+//   reads the `Sec-CH-DPR` client hint, and SAFARI HAS NEVER SENT IT. On every
+//   iPhone — which is what the founder and most guests browse on — dpr_auto
+//   silently resolves to 1x, so `w_400` really did mean a 400px file painted
+//   into a ~585px retina slot. That is the softness she has reported three
+//   times now (28x.24 "รูปบนเว็บไม่ชัด", 28x.25 "รูปทุกที่ไม่ชัด", and this
+//   round), and no amount of `e_sharpen` fixes a missing pixel.
+//
+//   Setting the base width above the source resolution is safe and cheap:
+//   `c_limit` NEVER upscales, so these numbers mean "serve the original, don't
+//   shrink it", and the roster photos are only 959–1034 × 1280 at 94–168 KB
+//   each. Full quality here costs almost nothing — the old 400px cap was
+//   trading real sharpness for a saving that was never large.
 const widthByVariant: Record<ImageVariant, number> = {
-  thumb: 160,
-  card: 400,
-  hero: 900,
-  full: 1600,
+  thumb: 320,
+  card: 800,
+  hero: 1400,
+  full: 2000,
 };
 
 /** Production domain — ใช้สำหรับสร้าง absolute URL จาก local path */
 const PROD_DOMAIN = "https://sunred.vip";
+
+/**
+ * A relative "/images/..." path made absolute.
+ *
+ * 🆕 28x.156 — extracted from enhanceImage(), which needed it because
+ * Cloudinary fetch mode requires a publicly reachable URL. It is now also the
+ * bypass path: when the proxy is off or down, this IS the src we hand the
+ * browser. A relative path would work fine in the browser, but keeping one
+ * shape means the URL the fallback listener recovers and the URL enhanceImage
+ * returns are always identical strings.
+ */
+export function absoluteImageUrl(url: string): string {
+  if (!url.startsWith("/")) return url;
+  // Runtime origin in the browser; PROD_DOMAIN during the SSR prerender pass.
+  const origin =
+    typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : PROD_DOMAIN;
+  return `${origin}${url}`;
+}
 
 /**
  * แปลง image URL ปกติ → Cloudinary fetch URL พร้อม optimization
@@ -86,6 +145,13 @@ export function enhanceImage(
   // ถ้าไม่ได้ตั้ง CLOUD_NAME → return เดิม (graceful fallback)
   if (!CLOUD_NAME) return url;
 
+  // 🔴 28x.158 — the default path: hand back the origin URL untouched.
+  //   Also covers the 28x.156 runtime latch, for the case someone re-enables
+  //   the proxy and it fails again mid-session.
+  if (!CLOUDINARY_ENABLED || isCloudinaryDown()) {
+    return absoluteImageUrl(url);
+  }
+
   // data: / blob: → Cloudinary fetch ไม่ได้, return เดิม
   if (url.startsWith("data:") || url.startsWith("blob:")) {
     return url;
@@ -96,18 +162,7 @@ export function enhanceImage(
     return url;
   }
 
-  // 🌐 ถ้าเป็น relative path "/images/..." → แปลงเป็น absolute URL ก่อน
-  // เพราะ Cloudinary fetch mode ต้องใช้ public absolute URL
-  let absoluteUrl = url;
-  if (url.startsWith("/")) {
-    // Production / local dev → ใช้ window.location.origin (run-time)
-    // SSR safe → fallback PROD_DOMAIN
-    const origin =
-      typeof window !== "undefined" && window.location.origin
-        ? window.location.origin
-        : PROD_DOMAIN;
-    absoluteUrl = `${origin}${url}`;
-  }
+  const absoluteUrl = absoluteImageUrl(url);
 
   // localhost ก็ใช้ Cloudinary fetch ไม่ได้ (Cloudinary CDN เข้าถึง localhost ไม่ได้)
   // → return เดิม สำหรับ dev environment
@@ -127,9 +182,13 @@ export function enhanceImage(
     //   sharper everywhere without a re-upload. Moderate strength keeps skin
     //   natural (not over-processed).
     "e_sharpen:100",
-    // 🆕 28x.23 — `q_auto:good` sets a higher quality floor than bare
-    //   `q_auto` (which can drop to eco/low and soften faces).
-    "q_auto:good",
+    // 🆕 Round 28x.157 (founder: "อย่า บีบ รูป ให้คงความชัด") — was
+    //   `q_auto:good`, which is still lossy re-compression on top of an
+    //   already-compressed JPEG. `q_auto:best` is Cloudinary's highest
+    //   automatic tier: visually indistinguishable from the source, and on
+    //   these files it barely moves the byte count because they are ~100 KB
+    //   originals, not multi-megabyte camera dumps.
+    "q_auto:best",
     "f_auto", // auto format (WebP/AVIF when supported)
     `w_${w}`,
     // Face mode forces a SQUARE (h_ = w_) so the circle mask has no spare
@@ -154,6 +213,10 @@ export function enhanceImageSrcSet(
 ): string {
   if (!url || !CLOUD_NAME) return "";
   const base = enhanceImage(url, { variant });
+  // 🆕 28x.158 — with the proxy off, `base` is the origin URL and carries no
+  //   `w_` to rewrite, so both densities resolve to the same full-resolution
+  //   file. That is the correct outcome (one sharp original, no upscale), not
+  //   a bug to code around.
   const x2 = base.replace(/w_\d+/, `w_${widthByVariant[variant] * 2}`);
   return `${base} 1x, ${x2} 2x`;
 }
