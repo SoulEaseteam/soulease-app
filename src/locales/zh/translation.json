@@ -681,5 +681,13 @@
   "chat.greet.title.off": "礼宾将于 09:00 恢复",
   "chat.greet.body.off": "留言给我们 · 清晨为您确认",
   "chat.status.off": "09:00 起回复",
-  "chat.status.live": "在线 · 数分钟内回复"
+  "chat.status.live": "在线 · 数分钟内回复",
+  "bookingChat.withPractitioner": "与{{name}}对话",
+  "bookingChat.withConcierge": "与礼宾专员对话",
+  "bookingChat.empty": "您的预约已由礼宾专员确认。如需调整时间、地址或其他细节，请在此留言。",
+  "bookingChat.placeholder": "输入消息…",
+  "bookingChat.send": "发送",
+  "bookingChat.sending": "发送中…",
+  "bookingChat.err.listen": "无法加载对话，请刷新页面。",
+  "bookingChat.err.send": "消息未发送，请重试。"
 }

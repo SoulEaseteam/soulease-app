@@ -449,6 +449,103 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── booking chat (28x.140) ─────────────────────────────────────
+    // Founder: "ต้องจองแล้วเท่านั้นถึงจะแชทกับพนักงานเพื่อคอนเฟิร์มออเดอได้".
+    // The thread hangs off the reservation itself, so "has booked" isn't a
+    // flag we check — it's the only path that can address a document here.
+    //
+    // Three identities may be in the room, and each proves itself differently:
+    //   • the GUEST — usually not signed in at all. She holds the same
+    //     capability token minted at checkout that `getBookingPublic` verifies
+    //     (28x.65). Rules can't read a client-supplied secret, so the
+    //     `claimBookingChat` callable checks it and mints a custom token
+    //     carrying `bookingChat: <bookingId>`. That claim is what this rule
+    //     reads — the secret never reaches Firestore.
+    //   • the assigned PRACTITIONER — uid-to-uid against `therapistUid`, the
+    //     same field `isAssignedTherapist()` uses (28x.66).
+    //   • ADMIN — always, so a thread can never become a channel View can't see.
+    //
+    // The guest branch is checked FIRST on purpose: it's the common case and
+    // it costs no document read, so the get() below only runs for staff.
+    function chatBooking(bookingId) {
+      return get(/databases/$(database)/documents/bookings/$(bookingId)).data;
+    }
+    function isChatGuest(bookingId) {
+      return isSignedIn() && request.auth.token.bookingChat == bookingId;
+    }
+    function isChatMember(bookingId) {
+      return isChatGuest(bookingId)
+             || isAdmin()
+             || (isSignedIn() && chatBooking(bookingId).userId == request.auth.uid)
+             || (isSignedIn() && chatBooking(bookingId).therapistUid == request.auth.uid);
+    }
+    // A sender may only speak AS the identity they actually proved. Without
+    // this a guest could post a message labelled `sender: 'therapist'` and the
+    // panel would render it in the practitioner's own bubble style.
+    function chatSenderOk(bookingId) {
+      return (request.resource.data.sender == 'guest'
+              && (isChatGuest(bookingId)
+                  || (isSignedIn() && chatBooking(bookingId).userId == request.auth.uid)))
+             || (request.resource.data.sender == 'therapist'
+                 && isSignedIn()
+                 && chatBooking(bookingId).therapistUid == request.auth.uid)
+             || (request.resource.data.sender == 'admin' && isAdmin());
+    }
+    match /bookings/{bookingId}/messages/{messageId} {
+      allow read: if isChatMember(bookingId);
+      // 🆕 Shape gate, measured against the real client payloads — NOT
+      //   estimated. See the 28x.116 regression in CLAUDE.md: a guessed
+      //   key-count cap on bookings rejected every real customer checkout for
+      //   days. The two senders here write exactly:
+      //     guest → {text, sender, createdAt}                     (3 keys)
+      //     staff → {text, sender, senderName, createdAt}         (4 keys)
+      //   `hasOnly` below is that list verbatim; if a field is ever added to
+      //   src/components/chat/BookingChatThread.tsx, it goes here in the SAME
+      //   round or every send silently permission-denies.
+      allow create: if chatSenderOk(bookingId)
+                    && request.resource.data.keys()
+                         .hasOnly(['text', 'sender', 'senderName', 'createdAt'])
+                    && request.resource.data.keys()
+                         .hasAll(['text', 'sender', 'createdAt'])
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() >= 1
+                    && request.resource.data.text.size() <= 1000
+                    // Server clock only — a client-set time would let either
+                    // side forge the order of a confirmation exchange.
+                    && request.resource.data.createdAt == request.time
+                    && (!('senderName' in request.resource.data)
+                        || (request.resource.data.senderName is string
+                            && request.resource.data.senderName.size() <= 60))
+                    // 28x.60 — nobody may sign a message as the shop itself.
+                    //   `claimsReservedIdentity()` is deliberately NOT reused
+                    //   here: it inspects contactName/customerName/displayName/
+                    //   username/userName/phone, none of which exist on a
+                    //   message, so calling it would have looked like a guard
+                    //   while checking nothing. `senderName` is the byline on
+                    //   this document, so that is what gets checked.
+                    && (isAdmin()
+                        || !('senderName' in request.resource.data)
+                        || !isReservedName(request.resource.data.senderName));
+      // Immutable: a confirmation exchange nobody can quietly rewrite after
+      // the fact is the entire point of putting it here instead of in DMs.
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Thread summary, written ONLY by the onBookingChatMessage function
+    // (admin SDK bypasses rules). It exists so the practitioner's job list can
+    // show an unread dot from ONE query instead of opening a listener per job.
+    // Unread state itself is client-local (last-opened in localStorage), which
+    // is why nothing here needs a client write path.
+    match /bookingChatMeta/{bookingId} {
+      allow get: if isChatMember(bookingId);
+      // No get() in the list branch — a rule read would run per document
+      // scanned and hit the rules read limit on a long job list.
+      allow list: if isAdmin()
+                  || (isSignedIn() && resource.data.therapistUid == request.auth.uid);
+      allow write: if false;
+    }
+
     // ── reviews ────────────────────────────────────────────────────
     // Round 28s1: tightened. Was open create with only rating-range
     // check — anyone could spam fake 5★ self-praise or 1★ competitor
