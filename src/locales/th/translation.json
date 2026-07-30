@@ -590,5 +590,13 @@
   "chat.greet.title.off": "ผู้ช่วยส่วนตัวกลับมา 09:00",
   "chat.greet.body.off": "ฝากข้อความไว้ · เรายืนยันให้ตอนเช้า",
   "chat.status.off": "ตอบกลับตั้งแต่ 09:00",
-  "chat.status.live": "ออนไลน์ · ตอบกลับในไม่กี่นาที"
+  "chat.status.live": "ออนไลน์ · ตอบกลับในไม่กี่นาที",
+  "bookingChat.withPractitioner": "แชทกับ {{name}}",
+  "bookingChat.withConcierge": "แชทกับคอนเซียร์จ",
+  "bookingChat.empty": "การจองของคุณอยู่กับคอนเซียร์จเรียบร้อยแล้ว หากต้องการปรับเวลา ที่อยู่ หรือรายละเอียดอื่นก่อนถึงเวลานัด ส่งข้อความไว้ที่นี่ได้เลย",
+  "bookingChat.placeholder": "พิมพ์ข้อความ…",
+  "bookingChat.send": "ส่ง",
+  "bookingChat.sending": "กำลังส่ง…",
+  "bookingChat.err.listen": "โหลดบทสนทนาไม่สำเร็จ กรุณารีเฟรชหน้าอีกครั้ง",
+  "bookingChat.err.send": "ส่งข้อความไม่สำเร็จ ลองใหม่อีกครั้ง"
 }

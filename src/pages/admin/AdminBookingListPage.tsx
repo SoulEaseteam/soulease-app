@@ -144,7 +144,11 @@ import {
   Taxi,
   Tag,
   Crown,
+  ChatCircleDots,
 } from "phosphor-react";
+
+// 🆕 Round 28x.140 — the concierge's side of the booking chat.
+import BookingChatThread from "@/components/chat/BookingChatThread";
 
 // Cap the realtime window. Pending/confirmed bookings are always recent; older
 // records live in Reports/Earnings (which are date-bounded). 500 keeps the
@@ -2557,6 +2561,28 @@ const DetailPanel: React.FC<{
             <Divider sx={{ opacity: 0.4 }} />
             <Row label="Booking ID · รหัสจอง" value={b.id} />
           </Box>
+        </Box>
+
+        {/* ── Guest chat — 🆕 Round 28x.140 (founder: "ต้องจองแล้วเท่านั้น
+            ถึงจะแชทกับพนักงานเพื่อคอนเฟิร์มออเดอได้") ─────────────────────
+            A guest message pings the Telegram report channel, but Telegram is
+            a dead end for REPLYING — the thread lives on the reservation, not
+            in a chat View can answer from her phone's bot. This is the reply
+            surface, in the one place she already opens to confirm an order.
+
+            She is in the room on every thread, including ones where the
+            practitioner is answering: the alternative is a guest↔practitioner
+            channel the shop cannot see, which is how bookings walk off the
+            platform. ── */}
+        <Box sx={{ mb: 2 }}>
+          <SectionHeader icon={<ChatCircleDots size={13} />} subtitle="แชทกับลูกค้า">Guest chat</SectionHeader>
+          <BookingChatThread
+            bookingId={b.id}
+            mode="staff"
+            sender="admin"
+            senderName="SunRed Concierge"
+            height={240}
+          />
         </Box>
 
         {/* admin note */}

@@ -587,5 +587,13 @@
   "chat.greet.title.off": "コンシェルジュは 09:00 に再開",
   "chat.greet.body.off": "メッセージを残してください · 朝にご連絡します",
   "chat.status.off": "09:00 より返信",
-  "chat.status.live": "対応中 · 数分で返信"
+  "chat.status.live": "対応中 · 数分で返信",
+  "bookingChat.withPractitioner": "{{name}}とチャット",
+  "bookingChat.withConcierge": "コンシェルジュとチャット",
+  "bookingChat.empty": "ご予約はコンシェルジュにて承っております。お時間・ご住所・その他ご要望の変更は、こちらからお知らせください。",
+  "bookingChat.placeholder": "メッセージを入力…",
+  "bookingChat.send": "送信",
+  "bookingChat.sending": "送信中…",
+  "bookingChat.err.listen": "会話を読み込めませんでした。再読み込みしてください。",
+  "bookingChat.err.send": "メッセージを送信できませんでした。もう一度お試しください。"
 }

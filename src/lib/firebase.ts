@@ -13,7 +13,10 @@ import {
   type Auth,
 } from "firebase/auth";
 
-const firebaseConfig = {
+// Exported (28x.140) so the guest-chat secondary app can initialise a SECOND
+// Firebase app from the identical config — see src/lib/bookingChat.ts for why
+// a second app is required rather than reusing this one.
+export const firebaseConfig = {
   apiKey: "AIzaSyCPJkRTNE1XuP_xkDq18bs3ygsSfk5kgRM",
   authDomain: "soulease-spa.firebaseapp.com",
   projectId: "soulease-spa",

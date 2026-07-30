@@ -36,6 +36,10 @@ import {
   query,
   where,
   getDocs,
+  // 🆕 28x.140 — booking-chat writes go through addDoc, and the rules require
+  //   the server clock, so both are needed here for the first time.
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 const PROJECT_ID = "soulease-spa";
@@ -705,6 +709,243 @@ await check("a non-admin therapist CANNOT delete a photoViews doc", () =>
 );
 await check("admin CAN delete a photoViews doc", () =>
   assertSucceeds(deleteDoc(doc(asUser(ADMIN_UID), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-a")))
+);
+
+// ── booking chat (28x.140) ────────────────────────────────────────────────
+// Founder: "ต้องจองแล้วเท่านั้นถึงจะแชทกับพนักงานเพื่อคอนเฟิร์มออเดอได้".
+//
+// The guest identity under test is the one `claimBookingChat` mints: a custom
+// token whose `bookingChat` claim names ONE booking. These tests are the only
+// place that pairing is proven — the callable checks the capability token, and
+// this checks that the claim it hands out can't reach anything else.
+console.log("\nbooking chat (28x.140)");
+
+const CHAT_TEXT = "Hi, could the practitioner arrive 30 minutes later?";
+const asChatGuest = (bookingId) =>
+  testEnv
+    .authenticatedContext(`bkgchat_${bookingId}`, { bookingChat: bookingId })
+    .firestore();
+
+await testEnv.withSecurityRulesDisabled(async (ctx) => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, "bookings", "bk-guest", "messages", "m-seed"), {
+    text: "seeded guest message",
+    sender: "guest",
+    createdAt: new Date(),
+  });
+  await setDoc(doc(db, "bookings", "bk-owned", "messages", "m-seed-owned"), {
+    text: "seeded owner message",
+    sender: "guest",
+    createdAt: new Date(),
+  });
+  await setDoc(doc(db, "bookingChatMeta", "bk-owned"), {
+    bookingId: "bk-owned",
+    therapistUid: THERAPIST_UID,
+    therapistId: THERAPIST_DOC_ID,
+    lastFrom: "guest",
+    lastTextPreview: "seeded owner message",
+  });
+});
+
+await check("logged-out stranger CANNOT read a booking's messages", () =>
+  assertFails(getDoc(doc(anon(), "bookings", "bk-guest", "messages", "m-seed")))
+);
+await check("random signed-in user CANNOT read a booking's messages", () =>
+  assertFails(getDoc(doc(asUser(GUEST_UID), "bookings", "bk-guest", "messages", "m-seed")))
+);
+await check("token-claim guest CAN read her own booking's messages", () =>
+  assertSucceeds(
+    getDoc(doc(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages", "m-seed"))
+  )
+);
+// The whole point of scoping the claim to one booking id: holding a valid
+// chat session for YOUR reservation must not open anyone else's.
+await check("token-claim guest CANNOT read a DIFFERENT booking's messages", () =>
+  assertFails(
+    getDoc(doc(asChatGuest("bk-guest"), "bookings", "bk-owned", "messages", "m-seed-owned"))
+  )
+);
+await check("assigned practitioner CAN read her job's messages", () =>
+  assertSucceeds(
+    getDoc(doc(asUser(THERAPIST_UID), "bookings", "bk-owned", "messages", "m-seed-owned"))
+  )
+);
+await check("admin CAN read any booking's messages", () =>
+  assertSucceeds(
+    getDoc(doc(asUser(ADMIN_UID), "bookings", "bk-guest", "messages", "m-seed"))
+  )
+);
+
+// ── writes ──
+// The payloads below are byte-for-byte what BookingChatThread.tsx sends.
+// 28x.116 shipped a rules cap measured against a "realistic" fixture that
+// didn't match the live payload, and it rejected every real customer booking
+// for days. These fixtures are copied from the component, not invented.
+await check("token-claim guest CAN send a message (exact client payload)", () =>
+  assertSucceeds(
+    addDoc(collection(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages"), {
+      text: CHAT_TEXT,
+      sender: "guest",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("signed-in OWNER CAN send a message on her own booking", () =>
+  assertSucceeds(
+    addDoc(collection(asUser(OWNER_UID), "bookings", "bk-owned", "messages"), {
+      text: CHAT_TEXT,
+      sender: "guest",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("assigned practitioner CAN reply (exact staff payload)", () =>
+  assertSucceeds(
+    addDoc(collection(asUser(THERAPIST_UID), "bookings", "bk-owned", "messages"), {
+      text: "On my way, see you at 10pm.",
+      sender: "therapist",
+      senderName: "XingXing",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("stranger CANNOT send a message", () =>
+  assertFails(
+    addDoc(collection(anon(), "bookings", "bk-guest", "messages"), {
+      text: CHAT_TEXT,
+      sender: "guest",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("practitioner CANNOT reply on a job that isn't hers", () =>
+  assertFails(
+    addDoc(collection(asUser(THERAPIST_UID), "bookings", "bk-guest", "messages"), {
+      text: "hello",
+      sender: "therapist",
+      senderName: "XingXing",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+// Without this, a guest could post a message that renders in the
+// practitioner's own bubble style — impersonation inside her own thread.
+await check("guest CANNOT post a message labelled as the practitioner", () =>
+  assertFails(
+    addDoc(collection(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages"), {
+      text: "your therapist cancelled, pay me directly",
+      sender: "therapist",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("guest CANNOT post a message labelled as admin", () =>
+  assertFails(
+    addDoc(collection(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages"), {
+      text: "concierge here",
+      sender: "admin",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("a client-set createdAt is rejected (server clock only)", () =>
+  assertFails(
+    addDoc(collection(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages"), {
+      text: CHAT_TEXT,
+      sender: "guest",
+      createdAt: new Date(2000, 0, 1),
+    })
+  )
+);
+await check("an over-long message is rejected (>1000 chars)", () =>
+  assertFails(
+    addDoc(collection(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages"), {
+      text: "x".repeat(1001),
+      sender: "guest",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("an empty message is rejected", () =>
+  assertFails(
+    addDoc(collection(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages"), {
+      text: "",
+      sender: "guest",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("an unknown extra field is rejected", () =>
+  assertFails(
+    addDoc(collection(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages"), {
+      text: CHAT_TEXT,
+      sender: "guest",
+      createdAt: serverTimestamp(),
+      payload: "x".repeat(500),
+    })
+  )
+);
+// 28x.60 — the shop's own identity is not available as a byline to anyone but
+// View. A message signed "SunRed Concierge" in a practitioner's thread is the
+// exact shape a social-engineering attempt takes here.
+await check("practitioner CANNOT sign a reply as the shop", () =>
+  assertFails(
+    addDoc(collection(asUser(THERAPIST_UID), "bookings", "bk-owned", "messages"), {
+      text: "please transfer the payment to this account",
+      sender: "therapist",
+      senderName: "SunRed Concierge",
+      createdAt: serverTimestamp(),
+    })
+  )
+);
+await check("nobody CAN edit a sent message (immutable)", () =>
+  assertFails(
+    updateDoc(doc(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages", "m-seed"), {
+      text: "rewritten after the fact",
+    })
+  )
+);
+await check("admin CANNOT edit a sent message either", () =>
+  assertFails(
+    updateDoc(doc(asUser(ADMIN_UID), "bookings", "bk-guest", "messages", "m-seed"), {
+      text: "rewritten by admin",
+    })
+  )
+);
+await check("guest CANNOT delete a message", () =>
+  assertFails(
+    deleteDoc(doc(asChatGuest("bk-guest"), "bookings", "bk-guest", "messages", "m-seed"))
+  )
+);
+
+// ── thread summary ──
+await check("practitioner CAN list her own chat summaries", () =>
+  assertSucceeds(
+    getDocs(
+      query(collection(asUser(THERAPIST_UID), "bookingChatMeta"), where("therapistUid", "==", THERAPIST_UID))
+    )
+  )
+);
+await check("a stranger CANNOT list chat summaries", () =>
+  assertFails(
+    getDocs(
+      query(collection(asUser(GUEST_UID), "bookingChatMeta"), where("therapistUid", "==", THERAPIST_UID))
+    )
+  )
+);
+await check("a practitioner CANNOT list ANOTHER practitioner's summaries", () =>
+  assertFails(
+    getDocs(
+      query(collection(asUser(THERAPIST_UID), "bookingChatMeta"), where("therapistUid", "==", "someone-else"))
+    )
+  )
+);
+// Written by onBookingChatMessage with the admin SDK — no client, not even
+// View's, has a write path into it.
+await check("admin CANNOT write a chat summary (function-only)", () =>
+  assertFails(
+    setDoc(doc(asUser(ADMIN_UID), "bookingChatMeta", "bk-owned"), { messageCount: 99 })
+  )
 );
 
 await testEnv.cleanup();

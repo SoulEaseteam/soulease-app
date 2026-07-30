@@ -387,7 +387,58 @@ now prefers an explicit `?utm_source=`/`?src=` tag over referrer-guessing
 — use it for any TikTok/LINE/Telegram link since those in-app browsers
 often don't send a usable `document.referrer`.
 
+**💬 Booking chat shipped — Round 28x.140 (2026-07-29)**
+
+Founder: "ต้องจองแล้วเท่านั้นถึงจะแชทกับพนักงานเพื่อคอนเฟิร์มออเดอได้". Until
+now the only "chat" was `AdminFloatingChat` — a set of deep links OUT to LINE/
+WhatsApp/WeChat/Telegram. A guest who uses none of those had no way to reach
+anyone from inside the site, right after committing to a booking.
+
+The thread is a subcollection of the reservation (`bookings/{id}/messages`), so
+"has booked" isn't a flag anything checks — it's the only address a message can
+have. Three surfaces, one component (`src/components/chat/BookingChatThread.tsx`):
+- **Guest** — `/booking/success/:id?t=…`, below the concierge deep-links.
+- **Practitioner** — `/therapist/jobs`, a "แชท" button per ACCEPTED job (same
+  masking rule as her address/phone: no contact before she accepts).
+- **Concierge** — the `/admin/bookings` detail drawer, so View can actually
+  REPLY (Telegram only notifies her; it can't answer a thread).
+
+How guest identity works — read before touching it:
+- A guest is signed out. `claimBookingChat` (functions/src/index.ts) verifies the
+  same `accessToken` capability `getBookingPublic` uses and exchanges it for a
+  **custom token** carrying `bookingChat: <bookingId>`. Rules read that claim;
+  the secret never reaches Firestore.
+- That token signs into a **SECOND Firebase app** (`src/lib/bookingChat.ts`), not
+  the primary one — otherwise opening a guest link would sign a practitioner or
+  View out of her own session. One Auth instance per app is a Firebase limit, so
+  the second app IS the mechanism. Don't "simplify" it away.
+- Staff use their normal session; `therapistUid` (uid-to-uid, 28x.66) is the match.
+- `onBookingChatMessage` pings the Telegram report channel + the practitioner's DM
+  on GUEST messages only, and maintains `bookingChatMeta/{bookingId}` — one
+  summary doc so the job list's unread dot is ONE query, not a listener per job.
+  It deliberately does NOT write to the booking doc (that would re-trigger
+  onBookingWriteSyncStats + syncTherapistDailyCount on every "hi").
+- 25 new rules tests in `tests/rules.test.mjs` (98 total, all passing) cover the
+  claim being scoped to one booking, sender-label forgery, immutability, and the
+  exact client payloads. The message payload is pinned by `keys().hasOnly()` —
+  **adding a field to a message without updating the rule silently breaks every
+  send** (the 28x.116 failure mode, again).
+- Kill switches, both default ON, on `adminSettings/advanced`:
+  `bookingChatEnabled` (whole feature) and `bookingChatTherapistEnabled`
+  (practitioner side only — flip false and the thread stays open with the
+  concierge alone). They exist because a direct guest↔practitioner line is also
+  how a repeat booking could get arranged off-platform; View is in every thread.
+
 **Open / not done:**
+- ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
+  `createCustomToken` signs via IAM, so the functions' runtime service account
+  needs the **Service Account Token Creator** role. If guest chat is silently
+  invisible in production (the panel hides itself on any claim failure by
+  design), check the function logs for `iam.serviceAccounts.signBlob` FIRST —
+  it looks like "the feature didn't work", not like an error.
+- Booking chat was NOT visually confirmed in a live browser — typecheck, build
+  and the rules suite all pass, but nobody has watched a real message go
+  guest → Telegram → reply → guest yet.
 - GitHub PR #12 (`claude/bot-copy-and-staff-self-service`) is a few
   commits behind local `main` — not required (she deploys direct via
   vercel/firebase), just not fully synced if anyone goes looking there.

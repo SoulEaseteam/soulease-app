@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.onBookingChatMessage = exports.claimBookingChat = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -3740,6 +3740,175 @@ exports.getBookingPublic = (0, https_1.onCall)({ region: "asia-southeast1" }, as
                 : (b.holdExpiresAt ?? null),
         },
     };
+});
+async function getBookingChatSettings() {
+    try {
+        const snap = await (0, firestore_2.getFirestore)()
+            .collection("adminSettings")
+            .doc("advanced")
+            .get();
+        const d = (snap.data() ?? {});
+        return {
+            // Both default ON when unset, so an empty settings doc behaves the way
+            // the feature shipped. The kill switches exist for one reason: a direct
+            // guest↔practitioner line is also how a guest and a practitioner could
+            // arrange the NEXT booking without the shop. Flip
+            // `bookingChatTherapistEnabled: false` and the thread stays open with
+            // the concierge only — no code change, no redeploy.
+            enabled: d.bookingChatEnabled !== false,
+            therapistEnabled: d.bookingChatTherapistEnabled !== false,
+        };
+    }
+    catch (err) {
+        v2_1.logger.warn("[bookingChat] settings read failed, defaulting to on", err);
+        return { enabled: true, therapistEnabled: true };
+    }
+}
+exports.claimBookingChat = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    const data = request.data;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    const token = String(data?.token ?? "").trim();
+    if (!bookingId) {
+        throw new https_1.HttpsError("invalid-argument", "bookingId is required.");
+    }
+    const settings = await getBookingChatSettings();
+    if (!settings.enabled) {
+        throw new https_1.HttpsError("failed-precondition", "Chat is closed.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const snap = await db.collection("bookings").doc(bookingId).get();
+    if (!snap.exists) {
+        // Identical to the bad-token error below — a distinguishable not-found
+        // would confirm which booking ids are real. Same reasoning as
+        // getBookingPublic; keep the two in step.
+        throw new https_1.HttpsError("permission-denied", "Booking not found.");
+    }
+    const b = snap.data();
+    const uid = request.auth?.uid ?? null;
+    const storedToken = typeof b.accessToken === "string" ? b.accessToken.trim() : "";
+    const tokenOk = storedToken.length > 0 && token === storedToken;
+    const ownerOk = uid != null && b.userId === uid;
+    if (!tokenOk && !ownerOk) {
+        throw new https_1.HttpsError("permission-denied", "Booking not found.");
+    }
+    // A signed-in owner already matches the `userId` branch in rules with her
+    // own session — minting a second identity for her would only invite the
+    // client to sign her out of it. She gets the metadata, not a token.
+    const customToken = ownerOk
+        ? null
+        : await (0, auth_1.getAuth)().createCustomToken(`bkgchat_${bookingId}`, {
+            bookingChat: bookingId,
+        });
+    const status = typeof b.status === "string" ? b.status : "pending";
+    return {
+        ok: true,
+        customToken,
+        // Drives the panel header: before assignment there is no practitioner
+        // to name, and the guest is talking to the concierge alone.
+        therapistName: settings.therapistEnabled
+            ? (b.therapistName ?? null)
+            : null,
+        assigned: settings.therapistEnabled && Boolean(b.therapistId),
+        status,
+    };
+});
+// 🆕 Round 28x.140 — a guest message has to reach a human who is not looking
+//   at the admin panel. Staff live in Telegram (§5 of CLAUDE.md: View runs
+//   everything from her phone), so that is where the alert goes.
+//
+//   Only GUEST messages notify. A reply from View or the practitioner lands in
+//   the guest's open panel in real time — pinging Telegram for our own
+//   outbound text would just be the shop notifying itself.
+exports.onBookingChatMessage = (0, firestore_1.onDocumentCreated)({
+    document: "bookings/{bookingId}/messages/{messageId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+}, async (event) => {
+    const bookingId = event.params.bookingId;
+    const msg = event.data?.data();
+    if (!msg?.text || !msg.sender)
+        return;
+    const db = (0, firestore_2.getFirestore)();
+    const bookingSnap = await db.collection("bookings").doc(bookingId).get();
+    const booking = bookingSnap.data();
+    if (!booking)
+        return;
+    // ── 1. Thread summary, so the job list can show an unread dot from one
+    //   query instead of a listener per job. Written here rather than onto the
+    //   booking document on purpose: a booking write would re-trigger
+    //   onBookingWriteSyncStats + syncTherapistDailyCount on every single
+    //   chat message, which is a lot of recomputation for a "hi".
+    const preview = msg.text.slice(0, 80);
+    try {
+        await db
+            .collection("bookingChatMeta")
+            .doc(bookingId)
+            .set({
+            bookingId,
+            therapistUid: booking.therapistUid ?? null,
+            therapistId: booking.therapistId ?? null,
+            lastMessageAt: firestore_2.FieldValue.serverTimestamp(),
+            lastFrom: msg.sender,
+            lastTextPreview: preview,
+            messageCount: firestore_2.FieldValue.increment(1),
+            ...(msg.sender === "guest"
+                ? { lastGuestMessageAt: firestore_2.FieldValue.serverTimestamp() }
+                : {}),
+        }, { merge: true });
+    }
+    catch (err) {
+        v2_1.logger.error("[onBookingChatMessage] meta write failed", { bookingId, err });
+    }
+    if (msg.sender !== "guest")
+        return;
+    const botToken = TELEGRAM_BOT_TOKEN.value();
+    if (!botToken)
+        return;
+    const who = booking.contactName ??
+        booking.customerName ??
+        "ลูกค้า";
+    const serviceName = booking.serviceName ?? "—";
+    const text = `💬 <b>ข้อความใหม่จากลูกค้า</b>\n` +
+        `${escapeTelegramHtml(who)} · ${escapeTelegramHtml(serviceName)}\n` +
+        `Booking: <code>${escapeTelegramHtml(bookingId)}</code>\n\n` +
+        `“${escapeTelegramHtml(preview)}${msg.text.length > 80 ? "…" : ""}”`;
+    try {
+        await sendTelegramIfEnabled(botToken, await getReportChatId(), text);
+    }
+    catch (err) {
+        v2_1.logger.error("[onBookingChatMessage] admin notify failed", { bookingId, err });
+    }
+    // Practitioner DM — best-effort and independent of the admin copy above,
+    // which is why it gets its own try. Unlike dispatch DMs (gated behind the
+    // 28x.61 pilot allowlist because they REPLACE View's manual dispatch),
+    // this one only tells her a guest is waiting in a thread she can already
+    // open in the staff app, so it isn't gated the same way.
+    const settings = await getBookingChatSettings();
+    const therapistId = booking.therapistId;
+    if (!settings.therapistEnabled || !therapistId)
+        return;
+    try {
+        const tSnap = await db.collection("therapists").doc(therapistId).get();
+        const chatId = tSnap.data()
+            ?.telegramChatId;
+        if (!chatId) {
+            v2_1.logger.info("[onBookingChatMessage] therapist has no telegramChatId", {
+                therapistId,
+            });
+            return;
+        }
+        await sendTelegramIfEnabled(botToken, String(chatId), `💬 ลูกค้าทักมาในงานของคุณ\n` +
+            `Booking: <code>${escapeTelegramHtml(bookingId)}</code>\n\n` +
+            `“${escapeTelegramHtml(preview)}${msg.text.length > 80 ? "…" : ""}”\n\n` +
+            `ตอบกลับได้ในแอปพนักงาน → My Jobs`);
+    }
+    catch (err) {
+        v2_1.logger.error("[onBookingChatMessage] therapist notify failed", {
+            bookingId,
+            therapistId,
+            err,
+        });
+    }
 });
 exports.createAdminAccount = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
     if (!request.auth) {

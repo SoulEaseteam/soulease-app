@@ -39,12 +39,18 @@ import {
   CheckCircle,
   XCircle,
   UserCircle,
+  ChatCircleDots,
 } from "phosphor-react";
 
 import { app, auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { formatTHB } from "@/utils/servicePricing";
 import { useOwnBookingsSnapshot } from "@/hooks/useOwnBookingsSnapshot";
+// 🆕 Round 28x.140 (founder: "ต้องจองแล้วเท่านั้นถึงจะแชทกับพนักงานเพื่อ
+//   คอนเฟิร์มออเดอได้") — the practitioner's half of the booking chat.
+import BookingChatThread from "@/components/chat/BookingChatThread";
+import { useBookingChatUnread } from "@/hooks/useBookingChatUnread";
+import { useTherapistSelf } from "@/hooks/useTherapistSelf";
 import { membershipChipSx, MEMBERSHIP_LABELS_EN, isTestLocationBooking, type MembershipTier } from "@/utils/membership";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
@@ -205,6 +211,13 @@ const TherapistJobsPage: React.FC = () => {
     null,
     () => [],
   );
+
+  // 🆕 Round 28x.140 — one query over the thread summaries, not a listener per
+  //   job (see useBookingChatUnread for why that distinction matters here).
+  //   `therapist?.name` is the byline the guest sees on every reply.
+  const chatUnread = useBookingChatUnread(uid);
+  const { therapist } = useTherapistSelf();
+  const chatSenderName = therapist?.name;
 
   const buckets = useMemo(() => {
     const all = jobs ?? [];
@@ -428,10 +441,10 @@ const TherapistJobsPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.05 }}
               >
-                <JobCard job={j} tab={tab} busy={busyId === j.id} onRespond={respond} onAdvance={advanceStatus} />
+                <JobCard job={j} tab={tab} busy={busyId === j.id} onRespond={respond} onAdvance={advanceStatus} chatUnread={chatUnread.has(j.id)} chatSenderName={chatSenderName} />
               </motion.div>
             ) : (
-              <JobCard key={j.id} job={j} tab={tab} busy={busyId === j.id} onRespond={respond} onAdvance={advanceStatus} />
+              <JobCard key={j.id} job={j} tab={tab} busy={busyId === j.id} onRespond={respond} onAdvance={advanceStatus} chatUnread={chatUnread.has(j.id)} chatSenderName={chatSenderName} />
             ),
           )
         )}
@@ -469,9 +482,21 @@ interface JobCardProps {
   busy: boolean;
   onRespond: (id: string, action: "accept" | "decline") => void;
   onAdvance: (id: string, arrivalPhotoUrl?: string) => void;
+  /** 🆕 28x.140 — a boolean, not the unread Set: a fresh Set every render
+   *  would defeat the React.memo this card exists inside. */
+  chatUnread?: boolean;
+  chatSenderName?: string;
 }
 
-const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvance }: JobCardProps) {
+const JobCard = React.memo(function JobCard({
+  job,
+  tab,
+  busy,
+  onRespond,
+  onAdvance,
+  chatUnread = false,
+  chatSenderName,
+}: JobCardProps) {
   const answered = job.therapistResponse;
   const accepted = answered === "accepted";
   // 🆕 28x.69/74 — identity + address + phone stay hidden until she has
@@ -504,6 +529,12 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
   // getJobGuestTier in functions/src/index.ts). Most bookings are admin-
   // booked with no linked account (`userId` unset) — those simply have no
   // tier to show, which is the common case, not an error.
+  // 🆕 Round 28x.140 — the thread is collapsed by default. It only opens on a
+  //   job she has ACCEPTED, for the same reason her guest's name and address
+  //   are masked until then (28x.69/74): a job still awaiting her answer, or
+  //   one she declined, must not put her in contact with that guest.
+  const [chatOpen, setChatOpen] = useState(false);
+
   const [tier, setTier] = useState<MembershipTier | null>(null);
   useEffect(() => {
     if (!revealed || !job.userId) {
@@ -676,6 +707,24 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
                     เปิดแผนที่
                   </motion.button>
                 )}
+                {/* 🆕 28x.140 — chat sits BEFORE the call button on purpose.
+                    Most guests here are foreign tourists on roaming SIMs;
+                    a Thai voice call is the option that most often fails,
+                    and it was the only one she had. */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setChatOpen((v) => !v)}
+                  aria-label="แชทกับลูกค้า"
+                  style={{ position: "relative", height: 38, padding: "0 14px", borderRadius: 999, background: chatOpen ? ROSE_DEEP : "rgba(224, 112, 143, 0.12)", color: chatOpen ? "#fff" : ROSE_DEEP, fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                >
+                  <ChatCircleDots size={14} weight="fill" /> แชท
+                  {chatUnread && !chatOpen && (
+                    <span
+                      aria-label="มีข้อความใหม่"
+                      style={{ position: "absolute", top: 6, right: 8, width: 8, height: 8, borderRadius: "50%", background: DANGER }}
+                    />
+                  )}
+                </motion.button>
                 {job.phone && (
                   <motion.button
                     whileTap={{ scale: 0.97 }}
@@ -690,6 +739,20 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
             )}
           </Box>
         </Box>
+
+        {/* 🆕 28x.140 — mounted only while open, so a list of 20 accepted jobs
+            opens 0 message listeners until she taps one. */}
+        {tab === "today" && accepted && chatOpen && (
+          <Box sx={{ mt: 1.5 }}>
+            <BookingChatThread
+              bookingId={job.id}
+              mode="staff"
+              sender="therapist"
+              senderName={chatSenderName}
+              height={260}
+            />
+          </Box>
+        )}
       </Box>
     </Box>
   );

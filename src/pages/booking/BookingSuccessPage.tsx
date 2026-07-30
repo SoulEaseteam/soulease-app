@@ -49,7 +49,7 @@ import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
-// 🆕 28x.151 — the 2×2 quick-action grid (Chat / Track / Calendar / Reschedule).
+// 🆕 28x.153 — the 2×2 quick-action grid (Chat / Track / Calendar / Reschedule).
 import ChatBubbleRoundedIcon from "@mui/icons-material/ChatBubbleRounded";
 import PinDropRoundedIcon from "@mui/icons-material/PinDropRounded";
 import EventRoundedIcon from "@mui/icons-material/EventRounded";
@@ -57,6 +57,8 @@ import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { bookingRef } from "@/utils/bookingRef";
+// 🆕 Round 28x.140 — in-page thread with the concierge / assigned practitioner.
+import BookingChatThread from "@/components/chat/BookingChatThread";
 // 🆕 Round 28s90 (CRO audit) — multi-channel confirm row. Chinese
 //   tourists (WeChat) + the Telegram-first audience were being dumped
 //   into a LINE-only button and bailing at the finish line. Same
@@ -250,15 +252,14 @@ const BookingSuccessPage: React.FC = () => {
   const therapistIdForRebook =
     (booking?.therapistId as string | undefined) ?? undefined;
 
-  // 🆕 28x.151 (founder: "ที่ว่าให้ลูกค้าแชทได้ ทำยัง" — the "Chat with
-  //   {name}" / "Reschedule" tiles this page's own header comment already
-  //   documented but was never actually built) — deliberately NOT a real
-  //   direct-to-therapist channel: both open the SAME concierge Telegram
-  //   DM the rest of this page already uses, just with a different
-  //   pre-filled message. This keeps the founder as the single point of
-  //   contact (brand voice, safety visibility, no off-platform rebooking
-  //   risk) while still giving the guest a one-tap way to reach someone
-  //   about this specific booking.
+  // 🆕 28x.153 (founder reference screenshot, "แบบนี้" — confirming the 2×2
+  //   tile layout, second time she's sent it) — reconciles the tile grid
+  //   (28x.151) with the real chat thread 28x.140 mounted lower on this
+  //   page: "Chat with {name}" now toggles the SAME BookingChatThread
+  //   inline (moved up, see below) instead of a Telegram deep-link. Track/
+  //   Calendar/Reschedule are unchanged from 28x.151 — chat is the only
+  //   tile 28x.140 gave a real answer for.
+  const [chatOpen, setChatOpen] = useState(false);
   const place =
     (booking?.locationName as string | undefined)?.trim() ||
     (booking?.address as string | undefined)?.trim() ||
@@ -266,14 +267,6 @@ const BookingSuccessPage: React.FC = () => {
   const mapHref = place
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`
     : null;
-
-  const chatMessage = encodeURIComponent(
-    t(
-      "success.msg.chatTherapist",
-      "Hi SunRed concierge, I have a question about my reservation {{ref}} with {{name}}.",
-      { ref: refCode, name: therapistName }
-    )
-  );
   const rescheduleMessage = encodeURIComponent(
     t(
       "success.msg.reschedule",
@@ -281,15 +274,7 @@ const BookingSuccessPage: React.FC = () => {
       { ref: refCode }
     )
   );
-  // 🆕 28x.34/28x.132 — same Telegram DM handle the "Confirm with concierge"
-  //   channel row below already deep-links to (t.me/SunRedvip_bkk), not the
-  //   public @SunRed_BKK broadcast channel.
-  const chatHref = `https://t.me/SunRedvip_bkk?text=${chatMessage}`;
   const rescheduleHref = `https://t.me/SunRedvip_bkk?text=${rescheduleMessage}`;
-
-  // 🆕 28x.151 — "Add to calendar" — a plain client-side .ics download, no
-  //   backend involved. duration defaults to 60min when the field is
-  //   missing (older docs) so the event never renders as a single instant.
   const handleAddToCalendar = () => {
     if (!startAt) return;
     const durationMin =
@@ -686,12 +671,10 @@ const BookingSuccessPage: React.FC = () => {
             </Box>
               </Box>{/* end hero cluster */}
 
-            {/* 🆕 28x.151 (founder reference screenshot + "ที่ว่าให้ลูกค้า
-                แชทได้ ทำยัง") — 2×2 quick-action grid. See the handlers
-                built above (chatHref/rescheduleHref/mapHref/
-                handleAddToCalendar) for what each tile actually does and
-                why Chat/Reschedule route through the concierge, not a
-                real therapist-direct channel. */}
+            {/* 🆕 28x.151/153 (founder reference screenshot, sent twice —
+                "แบบนี้") — 2×2 quick-action grid. Chat opens the real
+                BookingChatThread (28x.140) inline right below; the other
+                three are unchanged from 28x.151. */}
             <Box
               sx={{
                 marginTop: "18px",
@@ -705,8 +688,12 @@ const BookingSuccessPage: React.FC = () => {
                 label={t("success.action.chat", "Chat with {{name}}", {
                   name: therapistName,
                 })}
-                sub={t("success.action.chatSub", "Via concierge")}
-                href={chatHref}
+                sub={
+                  chatOpen
+                    ? t("success.action.chatSubOpen", "Tap to close")
+                    : t("success.action.chatSub", "Message here")
+                }
+                onClick={() => setChatOpen((v) => !v)}
               />
               <ActionTile
                 icon={<PinDropRoundedIcon />}
@@ -729,6 +716,22 @@ const BookingSuccessPage: React.FC = () => {
                 href={rescheduleHref}
               />
             </Box>
+
+            {/* 🆕 28x.140/153 — the real chat thread, revealed by the "Chat
+                with {{name}}" tile above instead of always-mounted, so the
+                page matches the founder's tile-first reference exactly. */}
+            {chatOpen && id && (
+              <Box sx={{ marginTop: "10px" }}>
+                <BookingChatThread
+                  bookingId={id}
+                  mode="guest"
+                  accessToken={accessToken}
+                  therapistNameHint={
+                    (booking?.therapistName as string | undefined) ?? undefined
+                  }
+                />
+              </Box>
+            )}
 
             {/* 🆕 Round 28s90 (CRO audit) — Multi-channel confirm row.
                 Was a single LINE-only gradient button that dropped
@@ -1222,6 +1225,11 @@ const BookingSuccessPage: React.FC = () => {
                 Bridge ribbon below the button shows the refCode +
                 copy-to-clipboard for users who prefer their own
                 channel. */}
+            {/* 🆕 28x.153 — the chat thread (28x.140) moved up: it now
+                mounts right below the 2×2 tile grid, revealed by the "Chat
+                with {{name}}" tile instead of always-visible here. See the
+                chatOpen block right after the hero cluster. */}
+
             <Box
               sx={{
                 marginTop: "22px",
@@ -1343,9 +1351,10 @@ const PrepLine: React.FC<{
 );
 
 // ─── Quick-action tile (2×2 grid) ───────────────────────────────────────
-// 🆕 28x.151 — either an external link (href — chat/track/reschedule) or a
-//   local handler (onClick — add to calendar). `disabled` dims the tile
-//   and swaps it from an <a> to a plain <div> so it isn't a dead link.
+// 🆕 28x.151/153 — either an external link (href — track/reschedule) or a
+//   local handler (onClick — chat toggle/add to calendar). `disabled` dims
+//   the tile and swaps it from an <a>/<button> to a plain <div> so it isn't
+//   a dead control.
 const ActionTile: React.FC<{
   icon: React.ReactNode;
   label: string;

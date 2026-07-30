@@ -587,5 +587,13 @@
   "chat.greet.title.off": "Concierge resumes at 09:00",
   "chat.greet.body.off": "Leave a message · we'll confirm at sunrise.",
   "chat.status.off": "Replies from 09:00",
-  "chat.status.live": "Live · replies in minutes"
+  "chat.status.live": "Live · replies in minutes",
+  "bookingChat.withPractitioner": "Chat with {{name}}",
+  "bookingChat.withConcierge": "Chat with your concierge",
+  "bookingChat.empty": "Your reservation is confirmed with the concierge. Send a message here if you'd like to adjust the time, the address, or anything else before arrival.",
+  "bookingChat.placeholder": "Write a message…",
+  "bookingChat.send": "Send",
+  "bookingChat.sending": "sending…",
+  "bookingChat.err.listen": "Couldn't load the conversation. Please refresh.",
+  "bookingChat.err.send": "Message not sent. Please try again."
 }
