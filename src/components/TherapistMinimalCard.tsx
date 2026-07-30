@@ -445,45 +445,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
           </Box>
         )}
 
-        {/* 🆕 28x.146 (founder arrow: "สลับ กัน") — swapped with the price,
-            which used to float here and now lives in the footer row
-            below. Same frosted-glass pill treatment the price had. Only
-            shown once the guest has granted location (same gate the
-            footer distance text used before the swap). */}
-        {!isOnHoliday && distanceLabel && (
-          <Box
-            sx={{
-              position: "absolute",
-              right: "10px",
-              bottom: "10px",
-              zIndex: 2,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "3px",
-              padding: "5px 12px",
-              borderRadius: "999px",
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(3px)",
-              WebkitBackdropFilter: "blur(3px)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
-            }}
-            aria-label={`${distanceLabel} away`}
-          >
-            <LocationOnRoundedIcon sx={{ fontSize: 14, color: "var(--sr-muted)" }} />
-            <Typography
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "var(--sr-ink)",
-                lineHeight: 1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {distanceLabel}
-            </Typography>
-          </Box>
-        )}
+        {/* 🆕 28x.154 (founder: "เอา โลเคชั่นลงมา ช่องเดียวกับราคา") —
+            distance moved off the photo, down into the footer's price box
+            (see below). The 28x.146 floating badge here is gone. */}
       </Box>
 
       {/* ── Info column (rendered BELOW the portrait) ──── */}
@@ -623,7 +587,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
             //   the price shrank to 13px when it moved into this row
             //   (28x.146). Bumped back up so it reads as a headline
             //   number, not fine print next to the Book button.
-            <Box sx={{ display: "inline-flex", alignItems: "center", minWidth: 0 }}>
+            // 🆕 28x.154 (founder: "เอา โลเคชั่นลงมา ช่องเดียวกับราคา") —
+            //   distance now sits in the SAME box as price, stacked
+            //   just below it, instead of floating on the photo.
+            <Box sx={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
               <Typography
                 sx={{
                   fontFamily: fonts.heading,
@@ -636,6 +603,26 @@ const TherapistMinimalCard: React.FC<Props> = ({
               >
                 ฿{startingPrice.toLocaleString("en-US")}+
               </Typography>
+              {distanceLabel && (
+                <Box
+                  sx={{ display: "inline-flex", alignItems: "center", gap: "2px" }}
+                  aria-label={`${distanceLabel} away`}
+                >
+                  <LocationOnRoundedIcon sx={{ fontSize: 12, color: "var(--sr-muted)" }} />
+                  <Typography
+                    sx={{
+                      fontFamily: fonts.body,
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "var(--sr-muted)",
+                      lineHeight: 1,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {distanceLabel}
+                  </Typography>
+                </Box>
+              )}
             </Box>
           )}
           <Box
