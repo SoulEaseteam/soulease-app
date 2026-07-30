@@ -47,6 +47,16 @@ const MAX_LEN = 1000;
 /** A confirmation thread is short-lived; 200 covers any real exchange. */
 const MAX_MESSAGES = 200;
 
+// 🆕 28x.152 (founder: "อยากทำแบบแอป Grab") — one-tap canned phrases above
+//   the composer, the way Grab's driver-chat lets either side send a common
+//   line without typing. Tapping sends immediately (not just fills the
+//   field) — that's the whole point of a quick reply. Guest and staff get
+//   different sets since they're saying different things to each other.
+const QUICK_REPLIES: Record<"guest" | "staff", string[]> = {
+  guest: ["ถึงแล้วหรือยังคะ", "ขอเลื่อนเวลาได้ไหมคะ", "รอที่ล็อบบี้นะคะ", "ขอบคุณค่ะ"],
+  staff: ["กำลังเดินทางค่ะ", "ถึงแล้วค่ะ", "รับทราบค่ะ", "ขอโทษที่ให้รอค่ะ"],
+};
+
 export type ChatSender = "guest" | "therapist" | "admin";
 
 interface Message {
@@ -202,8 +212,8 @@ const BookingChatThread: React.FC<Props> = ({
 
   const myRole: ChatSender = mode === "guest" ? "guest" : sender;
 
-  const send = useCallback(async () => {
-    const text = draft.trim();
+  const send = useCallback(async (override?: string) => {
+    const text = (override ?? draft).trim();
     if (!text || !chatDb || sending) return;
     setSending(true);
     setErrorKey(null);
@@ -384,6 +394,46 @@ const BookingChatThread: React.FC<Props> = ({
             : t("bookingChat.err.listen", "Couldn't load the conversation. Please refresh.")}
         </Typography>
       )}
+
+      {/* 🆕 28x.152 — quick-reply chips, Grab-style one-tap phrases. */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 0.75,
+          px: 1.25,
+          pt: 1,
+          overflowX: "auto",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
+        }}
+      >
+        {QUICK_REPLIES[mode === "guest" ? "guest" : "staff"].map((phrase) => (
+          <Box
+            key={phrase}
+            component="button"
+            type="button"
+            onClick={() => void send(phrase)}
+            disabled={sending || !chatDb}
+            sx={{
+              flexShrink: 0,
+              border: `1px solid ${ROSE_DEEP}`,
+              background: "transparent",
+              color: ROSE_DEEP,
+              borderRadius: 999,
+              padding: "5px 12px",
+              fontFamily: SANS,
+              fontSize: 12,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              cursor: "pointer",
+              "&:disabled": { opacity: 0.4, cursor: "default" },
+              "&:hover:not(:disabled)": { background: ROSE_SOFT },
+            }}
+          >
+            {phrase}
+          </Box>
+        ))}
+      </Box>
 
       {/* composer */}
       <Box
