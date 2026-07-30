@@ -59,6 +59,16 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
         display: "flex",
         alignItems: "center",
         gap: "10px",
+        // 🆕 28x.155 (audit finding) — this pill is a flex child of a
+        //   flex:1/minWidth:0 wrapper (TopNav's compact usage), but a
+        //   nested flex container's own default min-width is "auto" —
+        //   sized to its content (icon + full placeholder text), not to
+        //   the space actually available. Without minWidth:0 here the
+        //   pill refused to shrink below "Find your practitioner…"'s
+        //   natural width and overflowed into the hamburger button at
+        //   real 375px widths (iPhone SE and similar). The <input>
+        //   inside already had minWidth:0 — this was the missing layer.
+        minWidth: 0,
         // 🆕 Round 28b1 (founder 2026-05-03) — search field bumped to be
         //   "ชัดขึ้นอีกนิด" on the new cool-neutral bg. Old glass.pill
         //   was 55% white + blur — too faint against #FAFBFC.
