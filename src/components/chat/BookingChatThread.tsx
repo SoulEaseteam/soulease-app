@@ -101,7 +101,15 @@ const BookingChatThread: React.FC<Props> = ({
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [closed, setClosed] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // 🆕 Stores WHICH error, not its translated text. Keeping the translated
+  //   string in state would put `t` in the dependency list of the Firestore
+  //   listener effect below — and `t` is only stable by convention. Anything
+  //   that makes it change identity per render (a language switch, an i18n
+  //   `bindI18n` event, a test harness with a plain function) tears the
+  //   listener down and reopens it on every snapshot, which is an infinite
+  //   re-subscribe loop on a live chat. Caught while rendering this component
+  //   in a preview harness, where `t` genuinely is a fresh function each render.
+  const [errorKey, setErrorKey] = useState<"listen" | "send" | null>(null);
   const [therapistName, setTherapistName] = useState<string | null>(
     therapistNameHint ?? null
   );
@@ -115,7 +123,7 @@ const BookingChatThread: React.FC<Props> = ({
     }
     let alive = true;
     setLoading(true);
-    setError(null);
+    setErrorKey(null);
     void (async () => {
       try {
         const claim = await claimBookingChat(bookingId, accessToken);
@@ -139,7 +147,7 @@ const BookingChatThread: React.FC<Props> = ({
     return () => {
       alive = false;
     };
-  }, [bookingId, accessToken, mode, t]);
+  }, [bookingId, accessToken, mode]);
 
   // ── 2. Listen ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -169,14 +177,12 @@ const BookingChatThread: React.FC<Props> = ({
       },
       (err) => {
         console.warn("[bookingChat] listen failed", err);
-        setError(
-          t("bookingChat.err.listen", "Couldn't load the conversation. Please refresh.")
-        );
+        setErrorKey("listen");
         setLoading(false);
       }
     );
     return () => unsub();
-  }, [chatDb, bookingId, t]);
+  }, [chatDb, bookingId]);
 
   // ── 3. Keep the newest message in view ────────────────────────────────
   useEffect(() => {
@@ -200,7 +206,7 @@ const BookingChatThread: React.FC<Props> = ({
     const text = draft.trim();
     if (!text || !chatDb || sending) return;
     setSending(true);
-    setError(null);
+    setErrorKey(null);
     try {
       // EXACTLY the keys firestore.rules allows — guest writes 3, staff 4.
       await addDoc(collection(chatDb, "bookings", bookingId, "messages"), {
@@ -212,11 +218,11 @@ const BookingChatThread: React.FC<Props> = ({
       setDraft("");
     } catch (e) {
       console.warn("[bookingChat] send failed", e);
-      setError(t("bookingChat.err.send", "Message not sent. Please try again."));
+      setErrorKey("send");
     } finally {
       setSending(false);
     }
-  }, [draft, chatDb, sending, bookingId, myRole, mode, senderName, t]);
+  }, [draft, chatDb, sending, bookingId, myRole, mode, senderName]);
 
   const headerLabel = useMemo(() => {
     if (mode === "staff") return "แชทกับลูกค้า";
@@ -362,7 +368,7 @@ const BookingChatThread: React.FC<Props> = ({
         )}
       </Box>
 
-      {error && (
+      {errorKey && (
         <Typography
           sx={{
             px: 2,
@@ -373,7 +379,9 @@ const BookingChatThread: React.FC<Props> = ({
             bgcolor: "#FEF2F2",
           }}
         >
-          {error}
+          {errorKey === "send"
+            ? t("bookingChat.err.send", "Message not sent. Please try again.")
+            : t("bookingChat.err.listen", "Couldn't load the conversation. Please refresh.")}
         </Typography>
       )}
 
