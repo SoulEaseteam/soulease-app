@@ -15,7 +15,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import BestsellerRibbon from "@/components/common/BestsellerRibbon";
@@ -163,7 +163,6 @@ const ServicesPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   // 🆕 28r102 (r101 audit H2) — respect prefers-reduced-motion for
   //   the Ken Burns loop + card entrance animations.
-  const prefersReducedMotion = useReducedMotion();
   const initialTab =
     searchParams.get("tab") === "how"
       ? "how"
@@ -272,7 +271,7 @@ const ServicesPage: React.FC = () => {
         {section === "services" && (
           <Box
             component={motion.div}
-            initial="hidden"
+            initial={false}
             animate="visible"
             variants={{
               hidden: {},
@@ -477,7 +476,7 @@ const ServicesPage: React.FC = () => {
                     Floating pills on the images have been removed. */}
                 <Box
                   component={motion.div}
-                  initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                  initial={false}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-30px" }}
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -517,7 +516,7 @@ const ServicesPage: React.FC = () => {
                   component={motion.a}
                   href={`/services/${bestseller.id}`}
                   aria-label={t("services.detailsAria", "Details for {{name}}", { name: bestseller.name })}
-                  initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
                   sx={{
@@ -708,7 +707,7 @@ const ServicesPage: React.FC = () => {
                     {/* ── Editorial per-item eyebrow ─────────────────── */}
                     <Box
                       component={motion.div}
-                      initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
+                      initial={false}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: "-30px" }}
                       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.05 + index * 0.06 }}
@@ -750,7 +749,7 @@ const ServicesPage: React.FC = () => {
                       component={motion.a}
                       href={`/services/${svc.id}`}
                       aria-label={t("services.detailsAria", "Details for {{name}}", { name: svc.name })}
-                      initial={{ opacity: 0, y: 18 }}
+                      initial={false}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: "-30px" }}
                       transition={{
