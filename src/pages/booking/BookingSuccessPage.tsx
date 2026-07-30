@@ -49,6 +49,11 @@ import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
+// 🆕 28x.153 — the 2×2 quick-action grid (Chat / Track / Calendar / Reschedule).
+import ChatBubbleRoundedIcon from "@mui/icons-material/ChatBubbleRounded";
+import PinDropRoundedIcon from "@mui/icons-material/PinDropRounded";
+import EventRoundedIcon from "@mui/icons-material/EventRounded";
+import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { bookingRef } from "@/utils/bookingRef";
@@ -246,6 +251,66 @@ const BookingSuccessPage: React.FC = () => {
   const holdState = (booking?.holdState as string | undefined) ?? undefined;
   const therapistIdForRebook =
     (booking?.therapistId as string | undefined) ?? undefined;
+
+  // 🆕 28x.153 (founder reference screenshot, "แบบนี้" — confirming the 2×2
+  //   tile layout, second time she's sent it) — reconciles the tile grid
+  //   (28x.151) with the real chat thread 28x.140 mounted lower on this
+  //   page: "Chat with {name}" now toggles the SAME BookingChatThread
+  //   inline (moved up, see below) instead of a Telegram deep-link. Track/
+  //   Calendar/Reschedule are unchanged from 28x.151 — chat is the only
+  //   tile 28x.140 gave a real answer for.
+  const [chatOpen, setChatOpen] = useState(false);
+  const place =
+    (booking?.locationName as string | undefined)?.trim() ||
+    (booking?.address as string | undefined)?.trim() ||
+    "";
+  const mapHref = place
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`
+    : null;
+  const rescheduleMessage = encodeURIComponent(
+    t(
+      "success.msg.reschedule",
+      "Hi SunRed concierge, I'd like to reschedule my reservation {{ref}}. Could you help me pick a new time?",
+      { ref: refCode }
+    )
+  );
+  const rescheduleHref = `https://t.me/SunRedvip_bkk?text=${rescheduleMessage}`;
+  const handleAddToCalendar = () => {
+    if (!startAt) return;
+    const durationMin =
+      typeof booking?.duration === "number" ? (booking.duration as number) : 60;
+    const endAt = new Date(startAt.getTime() + durationMin * 60000);
+    const stamp = (d: Date) =>
+      d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const summary = `${getServiceLabel(
+      booking?.serviceId as string | undefined,
+      booking?.serviceName as string | undefined
+    )} · ${therapistName} · SunRed`;
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//SunRed//Booking//EN",
+      "BEGIN:VEVENT",
+      `UID:${id ?? refCode}@sunred.vip`,
+      `DTSTAMP:${stamp(new Date())}`,
+      `DTSTART:${stamp(startAt)}`,
+      `DTEND:${stamp(endAt)}`,
+      `SUMMARY:${summary}`,
+      place ? `LOCATION:${place.replace(/\n/g, ", ")}` : null,
+      `DESCRIPTION:SunRed reservation ${refCode}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ]
+      .filter((l) => l !== null)
+      .join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sunred-${refCode}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // 🆕 Round 28b59 (founder 2026-05-05) — Stripped 4 dead handlers
   //   (onChat / onTrack / onAddToCalendar / onReschedule) that were
@@ -605,6 +670,68 @@ const BookingSuccessPage: React.FC = () => {
               </Box>
             </Box>
               </Box>{/* end hero cluster */}
+
+            {/* 🆕 28x.151/153 (founder reference screenshot, sent twice —
+                "แบบนี้") — 2×2 quick-action grid. Chat opens the real
+                BookingChatThread (28x.140) inline right below; the other
+                three are unchanged from 28x.151. */}
+            <Box
+              sx={{
+                marginTop: "18px",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+              }}
+            >
+              <ActionTile
+                icon={<ChatBubbleRoundedIcon />}
+                label={t("success.action.chat", "Chat with {{name}}", {
+                  name: therapistName,
+                })}
+                sub={
+                  chatOpen
+                    ? t("success.action.chatSubOpen", "Tap to close")
+                    : t("success.action.chatSub", "Message here")
+                }
+                onClick={() => setChatOpen((v) => !v)}
+              />
+              <ActionTile
+                icon={<PinDropRoundedIcon />}
+                label={t("success.action.track", "Track arrival")}
+                sub={t("success.action.trackSub", "Live map")}
+                href={mapHref ?? undefined}
+                disabled={!mapHref}
+              />
+              <ActionTile
+                icon={<EventRoundedIcon />}
+                label={t("success.action.calendar", "Add to calendar")}
+                sub={t("success.action.calendarSub", ".ics file")}
+                onClick={startAt ? handleAddToCalendar : undefined}
+                disabled={!startAt}
+              />
+              <ActionTile
+                icon={<AutorenewRoundedIcon />}
+                label={t("success.action.reschedule", "Reschedule")}
+                sub={t("success.action.rescheduleSub", "Free")}
+                href={rescheduleHref}
+              />
+            </Box>
+
+            {/* 🆕 28x.140/153 — the real chat thread, revealed by the "Chat
+                with {{name}}" tile above instead of always-mounted, so the
+                page matches the founder's tile-first reference exactly. */}
+            {chatOpen && id && (
+              <Box sx={{ marginTop: "10px" }}>
+                <BookingChatThread
+                  bookingId={id}
+                  mode="guest"
+                  accessToken={accessToken}
+                  therapistNameHint={
+                    (booking?.therapistName as string | undefined) ?? undefined
+                  }
+                />
+              </Box>
+            )}
 
             {/* 🆕 Round 28s90 (CRO audit) — Multi-channel confirm row.
                 Was a single LINE-only gradient button that dropped
@@ -1098,32 +1225,10 @@ const BookingSuccessPage: React.FC = () => {
                 Bridge ribbon below the button shows the refCode +
                 copy-to-clipboard for users who prefer their own
                 channel. */}
-            {/* 🆕 Round 28x.140 (founder: "ต้องจองแล้วเท่านั้นถึงจะแชทกับ
-                พนักงานเพื่อคอนเฟิร์มออเดอได้") — the thread opens here and
-                nowhere earlier, because this is the first screen where a
-                reservation exists to hang it off.
-
-                It sits BELOW the concierge deep-links on purpose: a guest who
-                already lives in LINE or WhatsApp should keep using them, and
-                those channels reach View directly. This is for the guest who
-                has neither — until now her only options were to install an app
-                or to abandon a booking she had already committed to.
-
-                Renders nothing at all if the claim fails (old link without a
-                capability token, or chat switched off in admin settings), so
-                nothing here needs to guard on that. */}
-            {id && (
-              <Box sx={{ marginTop: "22px" }}>
-                <BookingChatThread
-                  bookingId={id}
-                  mode="guest"
-                  accessToken={accessToken}
-                  therapistNameHint={
-                    (booking?.therapistName as string | undefined) ?? undefined
-                  }
-                />
-              </Box>
-            )}
+            {/* 🆕 28x.153 — the chat thread (28x.140) moved up: it now
+                mounts right below the 2×2 tile grid, revealed by the "Chat
+                with {{name}}" tile instead of always-visible here. See the
+                chatOpen block right after the hero cluster. */}
 
             <Box
               sx={{
@@ -1244,5 +1349,98 @@ const PrepLine: React.FC<{
     </Typography>
   </Box>
 );
+
+// ─── Quick-action tile (2×2 grid) ───────────────────────────────────────
+// 🆕 28x.151/153 — either an external link (href — track/reschedule) or a
+//   local handler (onClick — chat toggle/add to calendar). `disabled` dims
+//   the tile and swaps it from an <a>/<button> to a plain <div> so it isn't
+//   a dead control.
+const ActionTile: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  sub: string;
+  href?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}> = ({ icon, label, sub, href, onClick, disabled }) => {
+  const content = (
+    <>
+      <Box
+        aria-hidden
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: "50%",
+          background: "rgba(255,153,153,0.12)",
+          color: "#FF9999",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          "& svg": { fontSize: 18 },
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "12.5px",
+            fontWeight: 700,
+            color: "var(--sr-ink)",
+            lineHeight: 1.25,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {label}
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "11px",
+            color: "var(--sr-muted)",
+            marginTop: "1px",
+          }}
+        >
+          {sub}
+        </Typography>
+      </Box>
+    </>
+  );
+
+  const sx = {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "12px 14px",
+    borderRadius: "16px",
+    background: "var(--sr-panel)",
+    border: "1px solid var(--sr-hairline)",
+    boxShadow: "var(--sr-card-shadow)",
+    textDecoration: "none",
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.5 : 1,
+    transition: "transform 0.15s ease",
+    "&:hover": disabled ? undefined : { transform: "translateY(-1px)" },
+  } as const;
+
+  if (disabled) {
+    return <Box sx={sx}>{content}</Box>;
+  }
+  if (onClick) {
+    return (
+      <Box component="button" type="button" onClick={onClick} sx={{ ...sx, border: sx.border, textAlign: "left" }}>
+        {content}
+      </Box>
+    );
+  }
+  return (
+    <Box component="a" href={href} target="_blank" rel="noopener noreferrer" sx={sx}>
+      {content}
+    </Box>
+  );
+};
 
 export default BookingSuccessPage;
