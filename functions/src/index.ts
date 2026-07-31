@@ -2846,6 +2846,13 @@ async function handleOpenJobClaim(
         ...(therapist.uid ? { therapistUid: therapist.uid } : {}),
         therapistResponse: "accepted",
         therapistRespondedAt: FieldValue.serverTimestamp(),
+      // 🆕 Round 28x.160 — entering the dispatch lifecycle is what makes her
+      //   card read "busy". Accepting used to write ONLY therapistResponse,
+      //   which the busy engine never reads, so an accepted job left her
+      //   advertised as AVAILABLE (founder: "Vivian รับงานแล้ว แต่ สถานะไม่
+      //   เปลี่ยน"). `advanceJobStatus` already treats a missing value as
+      //   "assigned", so this stamps the state that was always implied.
+        dispatchState: "assigned",
         claimedFrom: "channel",
       });
       return "won";
@@ -3018,6 +3025,13 @@ async function handleJobCallback(
     await ref.update({
       therapistResponse: accepted ? "accepted" : "declined",
       therapistRespondedAt: FieldValue.serverTimestamp(),
+      // 🆕 Round 28x.160 — entering the dispatch lifecycle is what makes her
+      //   card read "busy". Accepting used to write ONLY therapistResponse,
+      //   which the busy engine never reads, so an accepted job left her
+      //   advertised as AVAILABLE (founder: "Vivian รับงานแล้ว แต่ สถานะไม่
+      //   เปลี่ยน"). `advanceJobStatus` already treats a missing value as
+      //   "assigned", so this stamps the state that was always implied.
+      ...(accepted ? { dispatchState: "assigned" } : {}),
       // A decline needs View's attention NOW — reuse the existing red banner.
       ...(accepted
         ? {}
@@ -4078,6 +4092,13 @@ export const respondToJob = onCall(
     await ref.update({
       therapistResponse: accepted ? "accepted" : "declined",
       therapistRespondedAt: FieldValue.serverTimestamp(),
+      // 🆕 Round 28x.160 — entering the dispatch lifecycle is what makes her
+      //   card read "busy". Accepting used to write ONLY therapistResponse,
+      //   which the busy engine never reads, so an accepted job left her
+      //   advertised as AVAILABLE (founder: "Vivian รับงานแล้ว แต่ สถานะไม่
+      //   เปลี่ยน"). `advanceJobStatus` already treats a missing value as
+      //   "assigned", so this stamps the state that was always implied.
+      ...(accepted ? { dispatchState: "assigned" } : {}),
       ...(accepted
         ? {}
         : {
@@ -4916,6 +4937,106 @@ export const createAdminAccount = onCall(
 //   cleared back to available. Conditional writes only — no churn.
 //   (busyUntil also self-expires in the engine once its time passes.)
 // ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.160 (founder, with a Telegram screenshot: "Vivian รับงานแล้ว
+//   แต่ สถานะไม่เปลี่ยน" — she accepted a 22:00 job at 21:41 and the public
+//   card still read AVAILABLE at 21:43, with a 32-minute drive ahead of her).
+//
+// ROOT CAUSE — the public status engine (calculateTherapistStatus) reads
+// `activeBooking`/`busyUntil` on the therapist doc, and those are written ONLY
+// from bookings matching `dispatchState in (…)`. Two independent gaps meant a
+// genuinely committed practitioner kept advertising herself as free:
+//
+//   1. NOTHING EVER WROTE `dispatchState` UNTIL SOMEONE TAPPED A FLOW BUTTON.
+//      It is not stamped at booking creation, and none of the three accept
+//      paths (Telegram ✅, the open-job channel claim, the in-app callable)
+//      touched it — they only set `therapistResponse`, which this engine does
+//      not read. `advanceJobStatus` defaults a MISSING value to "assigned" in
+//      code, which reads like the field exists; in Firestore it simply is not
+//      there, and `where("dispatchState","in",…)` cannot match a missing field.
+//
+//   2. "enroute" WAS NOT IN THE LIST. The first thing she taps after accepting
+//      is 🚗 ออกเดินทาง — which moved her OUT of the busy set. So even on a job
+//      that had reached the flow, she flipped back to AVAILABLE for the entire
+//      drive. The duplication comment further up this file flagged that the two
+//      copies of this list "already disagree"; this is what that cost.
+//
+// Both copies now live here, in one function, so they cannot drift again.
+//
+// The lead window is why "assigned" is safe to honour: an accepted booking for
+// next Tuesday must not black out her availability all week, so a job that has
+// only been ACCEPTED counts as busy once it is within ASSIGNED_LEAD_MS of
+// starting. Anything already moving (enroute/arrived/in_session) counts always
+// — a job running late is still a job.
+const BUSY_DISPATCH_STATES = ["assigned", "enroute", "arrived", "in_session"];
+/** How early an accepted-but-not-started job starts blocking her card. */
+const ASSIGNED_LEAD_MS = 90 * 60 * 1000;
+const NOT_REALLY_BOOKED = new Set([
+  "cancelled",
+  "canceled",
+  "no_show",
+  "no-show",
+  "refunded",
+  "failed",
+  "rejected",
+]);
+
+/** therapistId → when she frees up (null when the end time is unknown). */
+async function collectBusyTherapists(): Promise<Map<string, Timestamp | null>> {
+  const db = getFirestore();
+  const snap = await db
+    .collection("bookings")
+    .where("dispatchState", "in", BUSY_DISPATCH_STATES)
+    .limit(300)
+    .get();
+
+  const now = Date.now();
+  const busy = new Map<string, Timestamp | null>();
+
+  for (const d of snap.docs) {
+    const b = d.data() as {
+      therapistId?: string;
+      status?: string;
+      dispatchState?: string;
+      startAt?: Timestamp;
+      duration?: number;
+      expectedEndAt?: Timestamp;
+      endAt?: Timestamp;
+    };
+    const tid = b.therapistId;
+    if (!tid) continue;
+    // A cancelled job that never had its dispatch state rolled back would
+    // otherwise hold her card hostage.
+    if (NOT_REALLY_BOOKED.has(String(b.status ?? "").toLowerCase())) continue;
+
+    const startMs = b.startAt instanceof Timestamp ? b.startAt.toMillis() : null;
+    if (
+      b.dispatchState === "assigned" &&
+      startMs != null &&
+      startMs - now > ASSIGNED_LEAD_MS
+    ) {
+      continue; // accepted, but not for a while yet
+    }
+
+    // `expectedEndAt` is only stamped when "เริ่มนวด" is tapped, so an accepted
+    // job usually has neither end field. Deriving one from startAt + duration
+    // gives the CLIENT a window to expire against (calculateTherapistStatus
+    // treats an expired busyUntil as a finished job and self-heals), instead of
+    // leaving a null that stays sticky until someone closes the job by hand.
+    let end: Timestamp | null = b.expectedEndAt ?? b.endAt ?? null;
+    if (!end && startMs != null && typeof b.duration === "number" && b.duration > 0) {
+      end = Timestamp.fromMillis(startMs + b.duration * 60_000);
+    }
+
+    const prev = busy.get(tid) ?? null;
+    if (!busy.has(tid) || (end && (!prev || end.toMillis() > prev.toMillis()))) {
+      busy.set(tid, end);
+    }
+  }
+  return busy;
+}
+
 export const syncTherapistBusyStatus = onSchedule(
   {
     schedule: "every 2 minutes",
@@ -4924,33 +5045,7 @@ export const syncTherapistBusyStatus = onSchedule(
   },
   async () => {
     const db = getFirestore();
-    const ACTIVE_STATES = ["assigned", "arrived", "in_session"];
-    const snap = await db
-      .collection("bookings")
-      .where("dispatchState", "in", ACTIVE_STATES)
-      .limit(300)
-      .get();
-
-    // therapistId → latest session end (Timestamp | null)
-    const busy = new Map<string, Timestamp | null>();
-    for (const d of snap.docs) {
-      const b = d.data() as {
-        therapistId?: string;
-        expectedEndAt?: Timestamp;
-        endAt?: Timestamp;
-      };
-      const tid = b.therapistId;
-      if (!tid) continue;
-      const end = b.expectedEndAt ?? b.endAt ?? null;
-      if (!busy.has(tid)) {
-        busy.set(tid, end);
-      } else {
-        const prev = busy.get(tid) ?? null;
-        if (end && (!prev || end.toMillis() > prev.toMillis())) {
-          busy.set(tid, end);
-        }
-      }
-    }
+    const busy = await collectBusyTherapists();
 
     const tSnap = await db.collection("therapists").get();
     const batch = db.batch();
@@ -4982,7 +5077,6 @@ export const syncTherapistBusyStatus = onSchedule(
     }
     if (changes > 0) await batch.commit();
     logger.info("[syncTherapistBusyStatus]", {
-      activeBookings: snap.size,
       busyTherapists: busy.size,
       changes,
     });
@@ -5187,29 +5281,9 @@ export const onBookingDispatchChange = onDocumentUpdated(
     if (affected.size === 0) return;
 
     const db = getFirestore();
-    const ACTIVE_STATES = ["assigned", "arrived", "in_session"];
-
-    // Same bounded, index-free query the 2-min reconciler uses.
-    const snap = await db
-      .collection("bookings")
-      .where("dispatchState", "in", ACTIVE_STATES)
-      .limit(300)
-      .get();
-    const busy = new Map<string, Timestamp | null>();
-    for (const d of snap.docs) {
-      const b = d.data() as {
-        therapistId?: string;
-        expectedEndAt?: Timestamp;
-        endAt?: Timestamp;
-      };
-      const tid = b.therapistId;
-      if (!tid) continue;
-      const end = b.expectedEndAt ?? b.endAt ?? null;
-      const prev = busy.get(tid) ?? null;
-      if (!busy.has(tid) || (end && (!prev || end.toMillis() > prev.toMillis()))) {
-        busy.set(tid, end);
-      }
-    }
+    // Exactly the same computation the 2-min reconciler runs — one function,
+    // so the two can never disagree about what "busy" means again.
+    const busy = await collectBusyTherapists();
 
     const batch = db.batch();
     let changes = 0;

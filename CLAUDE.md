@@ -696,6 +696,24 @@ You'll have ALL context. No re-explanation needed.
   don't trust a "realistic" test fixture without diffing it against
   the live payload it claims to represent. See [[sunred-rules-verification]]
   memory for the full incident writeup.
+- **A status engine is only as live as the field it reads — and `?? "default"`
+  in code is NOT a stored value (28x.160).** The public "is she free" engine
+  (`calculateTherapistStatus`) reads `activeBooking`/`busyUntil`, which are
+  written only from bookings matching `dispatchState in (…)`. But NOTHING wrote
+  `dispatchState`: not booking creation, and not any of the three accept paths
+  (Telegram ✅ / open-job channel claim / in-app callable) — they set
+  `therapistResponse`, which that engine never reads. `advanceJobStatus`'s
+  `b.dispatchState ?? "assigned"` made the field look present in code while it
+  was absent in Firestore, and `where("dispatchState","in",…)` cannot match a
+  missing field. Second gap in the same list: `"enroute"` was omitted, so the
+  first button she taps after accepting (🚗 ออกเดินทาง) moved her back OUT of
+  busy for the whole drive. Net effect: an accepted practitioner kept
+  advertising herself as AVAILABLE — a live double-booking risk, caught only
+  by a founder screenshot ("Vivian รับงานแล้ว แต่ สถานะไม่เปลี่ยน"). Lesson:
+  when a displayed state is derived from a query, grep for who actually WRITES
+  the queried field, and don't trust a code-level default as evidence it exists.
+  The two duplicate copies of that state list are now one function
+  (`collectBusyTherapists`) — the old comment already admitted they "disagree".
 - **A new enum value in code isn't live until every allow-list that
   gates it is updated too (28x.99).** `analytics.ts`'s `FunnelEvent`
   type grew `therapist_view`/`bundle_view`/`bundle_reserve_click`/
