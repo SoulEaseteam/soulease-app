@@ -125,6 +125,17 @@ const TherapistMinimalCard: React.FC<Props> = ({
   };
 
   const status = computedStatus ?? "bookable";
+  // 🆕 Round 28x.157 (founder: "สถานะ ปุ่มเปลี่ยนเป็นสีส้มหากมีจอง และ
+  //   ป้ายโชว์เวลาถัดไปตามเงื่อนไข") — `status === "bookable"` means the
+  //   engine found a REAL active booking on her right now (see
+  //   calculateTherapistStatus.ts §1) — she's busy, not off-duty. The
+  //   button used to render identically to a genuinely free therapist
+  //   (same pink AVAILABLE), so a guest couldn't tell busy from free at
+  //   a glance. Now it switches to amber/orange and, when the engine
+  //   knows when she frees up, the label itself reads "Free HH:mm"
+  //   (therapistCard.freeAt — wired 28x.102, never actually rendered
+  //   until now) instead of a bare "Bookable".
+  const isBusyNow = status === "bookable";
 
   // 🚨 Round 28r66 HOTFIX — Bug 2b. Founder set `badgeKey: "NEW"` on a
   //   Firestore therapist doc via /admin/* but the card never rendered
@@ -662,7 +673,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 ? "var(--sr-panel-2)"
                 : isBookNowActive
                   ? "#13bda6"
-                  : "linear-gradient(135deg, #FFB5C8 0%, #FF9999 55%, #E8607E 100%)",
+                  : isBusyNow
+                    ? "linear-gradient(135deg, #FFCB80 0%, #FFA940 55%, #D9770B 100%)"
+                    : "linear-gradient(135deg, #FFB5C8 0%, #FF9999 55%, #E8607E 100%)",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -675,7 +688,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 ? "none"
                 : isBookNowActive
                   ? "0 6px 16px rgba(19, 189, 166, 0.45)"
-                  : "0 6px 16px rgba(255, 99, 99, 0.40)",
+                  : isBusyNow
+                    ? "0 6px 16px rgba(217, 119, 6, 0.40)"
+                    : "0 6px 16px rgba(255, 99, 99, 0.40)",
               transition: "transform 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
@@ -698,7 +713,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 : t("resting", "Resting")
               : isBookNowActive
                 ? t("therapistCard.bookNow", "Book Now")
-                : t("available", "Available")}
+                : isBusyNow
+                  ? // 🆕 28x.157 — busy-but-bookable idle label: the exact
+                    //   free time when the engine knows it, else a bare
+                    //   "Bookable" (same string admin already shows for
+                    //   this status).
+                    nextFreeAt && nextFreeAt !== "Now"
+                    ? t("therapistCard.freeAt", "Free {{time}}", { time: nextFreeAt })
+                    : t("bookable", "Bookable")
+                  : t("available", "Available")}
           </Box>
         </Box>
       </Box>
