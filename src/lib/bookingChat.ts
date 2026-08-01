@@ -37,6 +37,7 @@ import {
   type Firestore,
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 import {
   app,
@@ -94,6 +95,28 @@ function ensureGuestApp(): { auth: Auth; db: Firestore } {
       });
     } catch {
       guestDb = getFirestore(guestApp);
+    }
+  }
+  // 🆕 Round 28x.164 — App Check init, mirroring src/lib/firebase.ts. App
+  //   Check tokens are per-FirebaseApp-instance, not per-project — the
+  //   primary app being wired does NOT cover this SEPARATE guest app.
+  //   Without this, the day enforcement is turned on, guest booking chat
+  //   (the one surface that talks to Firestore through THIS app) would go
+  //   dark while everything else on the site kept working — exactly the
+  //   kind of narrow, easy-to-miss gap this file's own header warns about.
+  //   Inert no-op today: same env-var gate, same "off until a real key
+  //   exists" default as the primary app.
+  const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY as
+    | string
+    | undefined;
+  if (RECAPTCHA_SITE_KEY) {
+    try {
+      initializeAppCheck(guestApp, {
+        provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+        isTokenAutoRefreshEnabled: true,
+      });
+    } catch {
+      // Already initialized (HMR / repeat mount).
     }
   }
   return { auth: guestAuth, db: guestDb };

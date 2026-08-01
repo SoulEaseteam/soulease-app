@@ -12,6 +12,7 @@ import {
   inMemoryPersistence,
   type Auth,
 } from "firebase/auth";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // Exported (28x.140) so the guest-chat secondary app can initialise a SECOND
 // Firebase app from the identical config — see src/lib/bookingChat.ts for why
@@ -29,6 +30,48 @@ export const firebaseConfig = {
 // Idempotent init — reuse the existing app on HMR / repeat-import / SSR
 // prerender so we never double-initialize Firebase.
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+// 🆕 Round 28x.164 — App Check client wiring (founder security follow-up,
+//   28x.107 audit: "booking create is open to logged-out guests and rules
+//   cannot rate-limit"). This is PREP only — inert until a real reCAPTCHA
+//   v3 site key exists.
+//
+//   Off by default, same fallback shape as CLOUD_NAME in cloudinary.ts: no
+//   `VITE_RECAPTCHA_SITE_KEY` env var → this whole block is skipped, zero
+//   behavior change. Once the founder creates a site key (Firebase Console
+//   → App Check → register this web app → reCAPTCHA v3) and it's added to
+//   Vercel env, the SDK starts attaching real attestation tokens to every
+//   Firestore/Functions call automatically — no other code change needed.
+//
+//   That alone does NOT block anything yet — App Check only actually
+//   REJECTS requests once enforcement is turned ON per-service (Firestore /
+//   Functions) in the Firebase Console, which Firebase's own guidance says
+//   to do in "monitor" mode first and watch real traffic before enforcing.
+//   That console step is deliberately not automated here — a
+//   misconfiguration there can silently reject every real booking
+//   sitewide, which is a strictly worse outcome than today's gap. Do that
+//   step with the founder present, not blind.
+//
+//   Also wires the local-dev debug token path (self.FIREBASE_APPCHECK_
+//   DEBUG_TOKEN) so `npm run dev` keeps working once enforcement is ever
+//   turned on — App Check has no concept of localhost being exempt.
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY as
+  | string
+  | undefined;
+if (RECAPTCHA_SITE_KEY && typeof window !== "undefined") {
+  if (import.meta.env.DEV) {
+    (self as typeof self & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch {
+    // Already initialized (HMR / repeat import) — same guard shape as
+    // makeDb()/makeAuth() below.
+  }
+}
 
 // 🆕 Round 28s325 — auto-detect long-polling.
 //   The founder hit "FIRESTORE INTERNAL ASSERTION FAILED: Unexpected state
