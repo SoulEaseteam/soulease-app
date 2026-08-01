@@ -544,7 +544,36 @@ const AdminFloatingChat: React.FC = () => {
           dismisses after 12s; opening the panel also dismisses. */}
       <AnimatePresence>
         {showGreeting && !isExpanded && (
+          // 🆕 Round 28x.161 (founder: bubble overlapped therapist cards on
+          //   the 2-col mobile grid — obscured review counts, and its own
+          //   close button sat directly on top of card content, an easy
+          //   mis-tap). A soft scrim now dims the page underneath while the
+          //   greeting shows, so it reads as an intentional coach-mark
+          //   overlay rather than a stray box glitching on top of real
+          //   content. Tapping the scrim dismisses, same as the ✕.
           <Box
+            key="greeting-scrim"
+            component={motion.div}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            onClick={dismissGreeting}
+            sx={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1000,
+              background: "rgba(26, 16, 20, 0.32)",
+              backdropFilter: "blur(1px)",
+              WebkitBackdropFilter: "blur(1px)",
+            }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showGreeting && !isExpanded && (
+          <Box
+            key="greeting-bubble"
             component={motion.div}
             initial={
               prefersReducedMotion
