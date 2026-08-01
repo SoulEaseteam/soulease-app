@@ -422,9 +422,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
               gap: "5px",
               padding: "5px 10px",
               borderRadius: "999px",
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(3px)",
-              WebkitBackdropFilter: "blur(3px)",
+              // 🆕 Round 28x.162 (founder screenshot: badge unreadable in
+              //   night theme) — this was hardcoded to a near-opaque WHITE
+              //   pill while its text used var(--sr-ink), which flips to
+              //   near-white (#F3F2F4) in the night theme — white text on
+              //   a white pill. --sr-panel already carries the correct
+              //   light/dark pill tone (and --sr-ink already contrasts
+              //   against it everywhere else in the app).
+              background: "var(--sr-panel)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
             }}
           >
