@@ -971,7 +971,15 @@ const BookingFlowPage: React.FC = () => {
     !!form.date &&
     !!form.time &&
     locationSet &&
-    !adminQuoteRequired && // > 20 km bookings require admin contact first
+    // 🚨 HOTFIX (founder: "Confirm Reservation ยังมีปัญหาเยอะเลย") — long-trip
+    //   bookings require "contact the concierge" (see the amber chip below),
+    //   but every OTHER guard in handleSubmit already bypasses for admin
+    //   sessions — this one didn't. View IS the concierge; when she's the one
+    //   filling in an admin booking (because the customer already reached her
+    //   directly), this silently locked her out of confirming any booking
+    //   over the ADMIN_QUOTE_KM distance, with no error — the button just
+    //   stayed disabled.
+    (isAdminBooking || !adminQuoteRequired) &&
     form.contactName.trim().length >= 2 &&
     phoneValid;
 
@@ -2848,7 +2856,12 @@ const BookingFlowPage: React.FC = () => {
               <TextField
                 fullWidth
                 size="small"
-                placeholder={`e.g. ${calculatedTotal} (leave blank to use calculated)`}
+                // 🚨 HOTFIX — was `e.g. ${calculatedTotal} (leave blank to use
+                //   calculated)`, which overflowed the field's actual width and
+                //   clipped mid-word with no ellipsis (native input placeholders
+                //   don't wrap) — screenshot showed "...leave blank to use calcula".
+                //   Shortened so it fits at any realistic field width.
+                placeholder={`e.g. ${calculatedTotal} (blank = auto)`}
                 value={adminOverrideRaw}
                 onChange={(e) =>
                   setAdminOverrideRaw(e.target.value.replace(/[^0-9]/g, ""))
