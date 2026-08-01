@@ -72,12 +72,18 @@ const TherapistIdentityCard: React.FC<{
             height: 96,
             borderRadius: "50%",
             objectFit: "cover",
-            // 🆕 28x.129 — Cloudinary's g_face already returns a square framed
-            //   on the face, so cover has nothing left to trim. This bias only
-            //   matters on localhost, where enhanceImage returns the raw URL
-            //   untransformed (Cloudinary fetch can't reach localhost): without
-            //   it, dev shows the decapitated crop the founder reported and
-            //   prod doesn't, which is exactly how this went unnoticed.
+            // 🆕 28x.129 — Cloudinary's g_face returned a square already framed
+            //   on the face, so `cover` had nothing left to trim; this bias was
+            //   the localhost-only safety net (fetch mode can't reach
+            //   localhost, so dev got the raw photo and the decapitated crop
+            //   the founder reported, while prod looked fine — which is exactly
+            //   how it went unnoticed).
+            //
+            // 🔴 28x.158 — that safety net is now the ONLY framing there is:
+            //   the Cloudinary proxy is off by default, so no g_face crop
+            //   arrives in production either. These roster photos are full-body
+            //   studio portraits, so a plain centred `cover` circle lands on the
+            //   torso. Do not remove this line thinking it's dev-only.
             objectPosition: "50% 22%",
             border: "3px solid rgba(255,255,255,0.9)",
             boxShadow: "0 6px 18px rgba(107, 21, 65, 0.35)",

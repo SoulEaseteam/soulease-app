@@ -302,10 +302,20 @@ const DetailHero: React.FC<Props> = ({
                   // Round 28s56 — subtle zoom + brighten on hover so the
                   // grid feels interactive (desktop / hover-capable).
                   transition: "transform 0.4s ease, filter 0.3s ease",
+                  // 🆕 Round 28x.159 (founder: "รูปมัน โดนเหมือนมีฟิลเตอร บัง
+                  //   จนเทาหม่น") — replaces Cloudinary's `e_improve`, which
+                  //   auto-lifted colour and contrast on every photo until
+                  //   28x.158 took the proxy out of the path. Without it the
+                  //   raw studio shots read flat, and stacking the old white
+                  //   wash below on top of that made them look greyed out.
+                  //   Deliberately mild: this is a light touch-up, not a look.
+                  filter: "saturate(1.06) contrast(1.03)",
                   "@media (hover: hover)": {
                     "&:hover": {
                       transform: "scale(1.04)",
-                      filter: "brightness(1.04)",
+                      // Must repeat the base filter — `filter` replaces
+                      // wholesale, it does not compose across rules.
+                      filter: "saturate(1.06) contrast(1.03) brightness(1.04)",
                     },
                   },
                   // Only the big cell carries the original ::after
@@ -317,10 +327,23 @@ const DetailHero: React.FC<Props> = ({
                       content: '""',
                       position: "absolute",
                       inset: 0,
-                      background: [
-                        "radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.18) 0%, transparent 50%)",
-                        "linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, transparent 30%, transparent 55%, rgba(0, 0, 0, 0.70) 100%)",
-                      ].join(", "),
+                      // 🆕 Round 28x.159 (founder: "รูปมัน โดนเหมือนมีฟิลเตอร บัง
+                      //   จนเทาหม่น") — this stack was the "filter" she is
+                      //   seeing, and it is real, not perceived:
+                      //     • an 18% WHITE radial centred at 30%/25% — which on
+                      //       a portrait shot lands squarely on the face, laying
+                      //       a milky film over exactly the part of the photo
+                      //       that sells the booking. Removed outright; it was
+                      //       decorative gloss with no legibility job.
+                      //     • a 15% BLACK wash across the top. Also removed —
+                      //       nothing is written up there to protect.
+                      //   What stays is the bottom scrim, which earns its place:
+                      //   the name, distance and stat chips sit on it. Its ramp
+                      //   now starts at 58% instead of 55% and ends slightly
+                      //   deeper, so it holds the same text contrast while
+                      //   touching less of the photograph.
+                      background:
+                        "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.74) 100%)",
                       pointerEvents: "none",
                     },
                   }),
