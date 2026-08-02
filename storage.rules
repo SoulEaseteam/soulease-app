@@ -56,6 +56,17 @@ service firebase.storage {
              && request.resource.contentType.matches('image/.*');
     }
 
+    // 🆕 Round 28x.174 (founder: "โปรไฟล์พนักงาน มีแค่รูป ให้เพิ่มวิดีโอได้")
+    //   — video/* only, 60 MB cap. Rules can't inspect a video's DURATION
+    //   (that's a client-side upload-time check, TherapistGalleryPage), so
+    //   file size is the only hard backend limit — sized generously enough
+    //   for a real ~30-60s clip at reasonable phone-camera bitrate without
+    //   opening the door to arbitrary large uploads.
+    function isSaneVideo() {
+      return request.resource.size < 60 * 1024 * 1024
+             && request.resource.contentType.matches('video/.*');
+    }
+
     // Therapist profile + gallery images — publicly readable (they are the
     // customer-facing site's main product surface).
     //
@@ -67,7 +78,7 @@ service firebase.storage {
     // lose write to everyone else's photos.
     match /therapists/{therapistId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSaneImage()
+      allow write: if (isSaneImage() || isSaneVideo())
                    && (isAdmin()
                        || (isTherapist() && request.auth.token.tid == therapistId));
       allow delete: if isAdmin()

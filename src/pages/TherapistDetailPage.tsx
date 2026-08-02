@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 //   fourth accent colour to the palette.
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import { formatViews } from "@/utils/formatCount";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
@@ -181,6 +182,10 @@ type DemoTherapist = {
   photoBg: string;
   /** Cloudinary-enhanced gallery URLs. First entry = cover photo. */
   images?: string[];
+  /** 🆕 Round 28x.174 — admin-approved video clips, shown mixed into the
+   *  Photos grid (founder: "ปนอยู่ในกริดรูปเดิม"), never routed through
+   *  Cloudinary (it can't transcode video the way this app uses it). */
+  videos?: string[];
   rating: string;
   reviewCount: number;
   yearsExp: number;
@@ -342,6 +347,10 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
   const images = rawImages.map((url) =>
     enhanceImage(url, { variant: "full" })
   );
+  // 🆕 Round 28x.174 — NOT run through enhanceImage(): Cloudinary's
+  //   image-transform URL shape doesn't apply to video, and this app's
+  //   Cloudinary usage has never handled video at all.
+  const videos = real.videos ?? [];
   const photoBg = images.length > 0
     ? `center / cover no-repeat url("${images[0]}")`
     : gradientForId(real.id);
@@ -576,6 +585,7 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
     age: ageNum,
     photoBg,
     images,
+    videos,
     // Rating: 0 by default; StatsCard will Bayesian-recompute from
     // live reviews when present, else show "New" badge.
     rating: (Number(real.rating) || 0).toFixed(1),
@@ -1211,6 +1221,18 @@ const TherapistDetailPage: React.FC = () => {
   // the sticky + inline Reserve CTAs, both deleted in 28s41. The
   // ServiceDurationSheet now auto-navigates on Confirm so no
   // page-level "is the selection complete?" gate is needed.
+
+  // 🆕 Round 28x.174 (founder: "ปนอยู่ในกริดรูปเดิม") — video clips mixed
+  //   into the same Photos grid + lightbox as photos, not a separate
+  //   section. Photos first, videos appended after, so every EXISTING
+  //   photo keeps the same index it always had (photoViews tracking below
+  //   is keyed per-url anyway, but this also means nothing reflows for the
+  //   ~all therapists with no videos yet). `therapist` is guaranteed
+  //   non-null here — the 404 branch above already returned otherwise.
+  const galleryMedia: { url: string; type: "image" | "video" }[] = [
+    ...(therapist.images ?? []).map((url) => ({ url, type: "image" as const })),
+    ...(therapist.videos ?? []).map((url) => ({ url, type: "video" as const })),
+  ];
 
   return (
     <Box
@@ -2057,7 +2079,7 @@ const TherapistDetailPage: React.FC = () => {
           )}
         </Box>
 
-        {(therapist.images ?? []).length === 0 ? (
+        {galleryMedia.length === 0 ? (
           <Box
             sx={{
               padding: "40px 20px",
@@ -2092,23 +2114,26 @@ const TherapistDetailPage: React.FC = () => {
               gap: { xs: "6px", md: "10px" },
             }}
           >
-            {(therapist.images ?? []).map((src, idx) => (
+            {galleryMedia.map((item, idx) => (
               <Box
-                key={`${src}-${idx}`}
+                key={`${item.url}-${idx}`}
                 component="button"
                 type="button"
                 onClick={() => {
                   setGalleryIdx(idx);
-                  void recordPhotoView(id, src);
+                  void recordPhotoView(id, item.url);
                 }}
-                aria-label={t(
-                  "detail.gallery.tileAria",
-                  "Open photo {{n}} of {{total}}",
-                  {
-                    n: idx + 1,
-                    total: (therapist.images ?? []).length,
-                  }
-                )}
+                aria-label={
+                  item.type === "video"
+                    ? t("detail.gallery.tileVideoAria", "Play video {{n}} of {{total}}", {
+                        n: idx + 1,
+                        total: galleryMedia.length,
+                      })
+                    : t("detail.gallery.tileAria", "Open photo {{n}} of {{total}}", {
+                        n: idx + 1,
+                        total: galleryMedia.length,
+                      })
+                }
                 sx={{
                   position: "relative",
                   width: "100%",
@@ -2131,25 +2156,69 @@ const TherapistDetailPage: React.FC = () => {
                   },
                 }}
               >
-                <Box
-                  component="img"
-                  src={src}
-                  alt={`${therapist.name} photo ${idx + 1}`}
-                  loading="lazy"
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    display: "block",
-                  }}
-                />
+                {item.type === "video" ? (
+                  <Box
+                    component="video"
+                    src={item.url}
+                    preload="metadata"
+                    muted
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                      background: "#000",
+                    }}
+                  />
+                ) : (
+                  <Box
+                    component="img"
+                    src={item.url}
+                    alt={`${therapist.name} photo ${idx + 1}`}
+                    loading="lazy"
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                )}
+                {/* 🆕 Round 28x.174 — play affordance, video tiles only. */}
+                {item.type === "video" && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      pointerEvents: "none",
+                      background: "rgba(0,0,0,0.15)",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: "50%",
+                        background: "rgba(0,0,0,0.45)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <PlayArrowRoundedIcon sx={{ fontSize: 20, color: "#fff" }} />
+                    </Box>
+                  </Box>
+                )}
                 {/* 🆕 28t.12 — 👁 view count over each photo (founder ref).
-                    🆕 28x.113 — now a REAL per-photo count (photoViews[src]),
+                    🆕 28x.113 — now a REAL per-photo count (photoViews[url]),
                     not the whole-profile counter duplicated under every tile.
                     🆕 28x.171 — hidden behind SHOW_PHOTO_VIEW_COUNTS (see top
                     of file) while counts are too low to read as social proof.
                     recordPhotoView() below is untouched — still tracking. */}
-                {SHOW_PHOTO_VIEW_COUNTS && (photoViews[src] ?? 0) > 0 && (
+                {SHOW_PHOTO_VIEW_COUNTS && item.type === "image" && (photoViews[item.url] ?? 0) > 0 && (
                   <Box
                     sx={{
                       position: "absolute",
@@ -2176,7 +2245,7 @@ const TherapistDetailPage: React.FC = () => {
                         lineHeight: 1,
                       }}
                     >
-                      {formatViews(photoViews[src] ?? 0)}
+                      {formatViews(photoViews[item.url] ?? 0)}
                     </Box>
                   </Box>
                 )}
@@ -2198,7 +2267,7 @@ const TherapistDetailPage: React.FC = () => {
           detail hero, InfoSheet). Only mounted while `galleryIdx`
           is a number. */}
       {galleryIdx !== null &&
-        (therapist.images ?? []).length > 0 && (
+        galleryMedia.length > 0 && (
           <Box
             role="dialog"
             aria-modal="true"
@@ -2250,13 +2319,13 @@ const TherapistDetailPage: React.FC = () => {
               />
             </Box>
 
-            {(therapist.images ?? []).length > 1 && (
+            {galleryMedia.length > 1 && (
               <Box
                 component="button"
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const total = (therapist.images ?? []).length;
+                  const total = galleryMedia.length;
                   setGalleryIdx(
                     (galleryIdx - 1 + total) % total
                   );
@@ -2291,27 +2360,47 @@ const TherapistDetailPage: React.FC = () => {
               </Box>
             )}
 
-            <Box
-              component="img"
-              src={(therapist.images ?? [])[galleryIdx]}
-              alt={`${therapist.name} photo ${galleryIdx + 1}`}
-              onClick={(e) => e.stopPropagation()}
-              sx={{
-                maxWidth: "92vw",
-                maxHeight: "86vh",
-                objectFit: "contain",
-                borderRadius: "10px",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.50)",
-              }}
-            />
+            {/* 🆕 Round 28x.174 — video plays inline with native controls;
+                autoPlay is intentional here (this is a modal the guest just
+                opened by tapping the clip, not an ambient background loop —
+                muted-autoplay-on-page-load rules don't apply). */}
+            {galleryMedia[galleryIdx]?.type === "video" ? (
+              <Box
+                component="video"
+                src={galleryMedia[galleryIdx].url}
+                controls
+                autoPlay
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  maxWidth: "92vw",
+                  maxHeight: "86vh",
+                  borderRadius: "10px",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.50)",
+                }}
+              />
+            ) : (
+              <Box
+                component="img"
+                src={galleryMedia[galleryIdx]?.url}
+                alt={`${therapist.name} photo ${galleryIdx + 1}`}
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  maxWidth: "92vw",
+                  maxHeight: "86vh",
+                  objectFit: "contain",
+                  borderRadius: "10px",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.50)",
+                }}
+              />
+            )}
 
-            {(therapist.images ?? []).length > 1 && (
+            {galleryMedia.length > 1 && (
               <Box
                 component="button"
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const total = (therapist.images ?? []).length;
+                  const total = galleryMedia.length;
                   setGalleryIdx((galleryIdx + 1) % total);
                 }}
                 aria-label={t(
@@ -2345,7 +2434,7 @@ const TherapistDetailPage: React.FC = () => {
             )}
 
             {/* Photo counter — bottom-center hairline. */}
-            {(therapist.images ?? []).length > 1 && (
+            {galleryMedia.length > 1 && (
               <Typography
                 sx={{
                   position: "absolute",
@@ -2363,7 +2452,7 @@ const TherapistDetailPage: React.FC = () => {
                   borderRadius: "999px",
                 }}
               >
-                {galleryIdx + 1} / {(therapist.images ?? []).length}
+                {galleryIdx + 1} / {galleryMedia.length}
               </Typography>
             )}
           </Box>

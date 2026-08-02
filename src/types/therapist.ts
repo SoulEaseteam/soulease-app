@@ -112,6 +112,11 @@ export interface Therapist {
 
   /** gallery & features */
   gallery: string[];
+  /** 🆕 Round 28x.174 — admin-approved video clips, same moderation queue
+   *  (galleryRequests, mediaType:"video") and same admin-only write as
+   *  gallery above. Optional: absent on every profile until she uploads
+   *  her first one. */
+  videos?: string[];
   features: Features;
   specialty?: string;
 

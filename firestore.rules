@@ -855,7 +855,14 @@ service cloud.firestore {
                     && request.resource.data.therapistDocId is string
                     && isTherapistOwnerById(request.resource.data.therapistDocId)
                     && request.resource.data.status == 'pending'
-                    && request.resource.data.imageUrl is string;
+                    && request.resource.data.imageUrl is string
+                    // 🆕 Round 28x.174 (founder: "โปรไฟล์พนักงาน มีแค่รูป
+                    //   ให้เพิ่มวิดีโอได้") — optional so every existing/
+                    //   historical request (all photos, filed before this
+                    //   field existed) keeps working unchanged; absent ==
+                    //   "image" everywhere this gets read.
+                    && (!('mediaType' in request.resource.data)
+                        || request.resource.data.mediaType in ['image', 'video']);
       // Only admin resolves a request (approve/reject) — the therapist
       // filed it and waits; she may still withdraw it herself below.
       allow update: if isAdmin();

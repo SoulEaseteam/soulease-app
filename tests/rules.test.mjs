@@ -541,6 +541,29 @@ await check("therapist CAN file her own pending gallery request", () =>
     })
   )
 );
+// 🆕 Round 28x.174 — video upload request, same rule, optional mediaType.
+await check("therapist CAN file a video request (mediaType: video)", () =>
+  assertSucceeds(
+    setDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-new-video-1"), {
+      therapistUid: THERAPIST_UID,
+      therapistDocId: THERAPIST_DOC_ID,
+      imageUrl: "https://vid/new1.mp4",
+      mediaType: "video",
+      status: "pending",
+    })
+  )
+);
+await check("therapist CANNOT file a request with a bogus mediaType", () =>
+  assertFails(
+    setDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-new-video-2"), {
+      therapistUid: THERAPIST_UID,
+      therapistDocId: THERAPIST_DOC_ID,
+      imageUrl: "https://vid/new2.mp4",
+      mediaType: "audio",
+      status: "pending",
+    })
+  )
+);
 // 🚨 HOTFIX regression test — the exploit an audit found: `therapistUid`
 //   matching the caller only proves identity, it never proved the caller
 //   owns `therapistDocId`, the field admin's approve action trusts and

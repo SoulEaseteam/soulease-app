@@ -149,6 +149,48 @@ await check("admin CANNOT upload a non-image", () =>
   )
 );
 
+// 🆕 Round 28x.174 (founder: "โปรไฟล์พนักงาน มีแค่รูป ให้เพิ่มวิดีโอได้") —
+// rules only inspect contentType + size, so dummy bytes with a real
+// video/* content type exercise the same isSaneVideo() path a real clip
+// would, without needing an actual playable file in the test fixture.
+console.log("\ntherapist videos (28x.174)");
+await check("practitioner CAN upload a video into her OWN folder", () =>
+  assertSucceeds(
+    uploadBytes(
+      ref(asYuri(), "therapists/YuriSunRed/videoPending/clip.mp4"),
+      PNG,
+      { contentType: "video/mp4" }
+    )
+  )
+);
+await check("practitioner CANNOT upload a video into ANOTHER's folder", () =>
+  assertFails(
+    uploadBytes(
+      ref(asYuri(), "therapists/NickySunRed/videoPending/clip.mp4"),
+      PNG,
+      { contentType: "video/mp4" }
+    )
+  )
+);
+await check("customer CANNOT upload a practitioner video", () =>
+  assertFails(
+    uploadBytes(
+      ref(asCustomer(), "therapists/YuriSunRed/videoPending/evil.mp4"),
+      PNG,
+      { contentType: "video/mp4" }
+    )
+  )
+);
+await check("a video over the 60MB cap is REJECTED", () =>
+  assertFails(
+    uploadBytes(
+      ref(asYuri(), "therapists/YuriSunRed/videoPending/huge.mp4"),
+      new Uint8Array(61 * 1024 * 1024),
+      { contentType: "video/mp4" }
+    )
+  )
+);
+
 console.log("\nservices + bundles · admin-only marketing images");
 await check("admin CAN upload a service image", () =>
   assertSucceeds(uploadBytes(ref(asAdmin(), "services/new.png"), PNG, IMG))

@@ -12,7 +12,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, CircularProgress, Snackbar, Alert } from "@mui/material";
-import { CheckCircle, XCircle, Clock } from "phosphor-react";
+import { CheckCircle, XCircle, Clock, Play } from "phosphor-react";
 import {
   arrayUnion,
   collection,
@@ -37,6 +37,10 @@ interface GalleryRequest {
   therapistDocId: string;
   therapistName: string;
   imageUrl: string;
+  // 🆕 Round 28x.174 — absent on every historical request (all photos,
+  //   filed before this field existed); default "image" everywhere it's
+  //   read, matching the same optional shape firestore.rules accepts.
+  mediaType: "image" | "video";
   createdAt: Timestamp | null;
 }
 
@@ -59,6 +63,7 @@ const AdminStaffRequestsPage: React.FC = () => {
               therapistDocId: (data.therapistDocId as string) ?? "",
               therapistName: (data.therapistName as string) ?? (data.therapistDocId as string) ?? "—",
               imageUrl: (data.imageUrl as string) ?? "",
+              mediaType: (data.mediaType as "image" | "video" | undefined) ?? "image",
               createdAt: (data.createdAt as Timestamp | undefined) ?? null,
             };
           }),
@@ -73,8 +78,10 @@ const AdminStaffRequestsPage: React.FC = () => {
   const approve = async (r: GalleryRequest) => {
     setBusyId(r.id);
     try {
+      // 🆕 Round 28x.174 — same approve action, routes to whichever field
+      //   this media type actually lives on.
       await updateDoc(doc(db, "therapists", r.therapistDocId), {
-        gallery: arrayUnion(r.imageUrl),
+        [r.mediaType === "video" ? "videos" : "gallery"]: arrayUnion(r.imageUrl),
         updatedAt: serverTimestamp(),
         updatedBy: auth.currentUser?.uid ?? null,
       });
@@ -83,7 +90,10 @@ const AdminStaffRequestsPage: React.FC = () => {
         resolvedAt: serverTimestamp(),
         resolvedBy: auth.currentUser?.uid ?? null,
       });
-      setToast({ msg: `อนุมัติรูปของ ${r.therapistName} แล้ว`, severity: "success" });
+      setToast({
+        msg: `อนุมัติ${r.mediaType === "video" ? "วิดีโอ" : "รูป"}ของ ${r.therapistName} แล้ว`,
+        severity: "success",
+      });
     } catch (err) {
       console.error("[AdminStaffRequests] approve failed:", err);
       setToast({ msg: "อนุมัติไม่สำเร็จ ลองใหม่อีกครั้ง", severity: "error" });
@@ -100,7 +110,10 @@ const AdminStaffRequestsPage: React.FC = () => {
         resolvedAt: serverTimestamp(),
         resolvedBy: auth.currentUser?.uid ?? null,
       });
-      setToast({ msg: `ปฏิเสธรูปของ ${r.therapistName} แล้ว`, severity: "success" });
+      setToast({
+        msg: `ปฏิเสธ${r.mediaType === "video" ? "วิดีโอ" : "รูป"}ของ ${r.therapistName} แล้ว`,
+        severity: "success",
+      });
     } catch (err) {
       console.error("[AdminStaffRequests] reject failed:", err);
       setToast({ msg: "ปฏิเสธไม่สำเร็จ ลองใหม่อีกครั้ง", severity: "error" });
@@ -115,7 +128,7 @@ const AdminStaffRequestsPage: React.FC = () => {
         คำขอพนักงาน
       </Typography>
       <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em", mb: 2.5 }}>
-        Staff Requests · รูปแกลเลอรีที่หมอนวดอัปโหลดใหม่ รอตรวจก่อนขึ้นจริง
+        Staff Requests · รูป/วิดีโอแกลเลอรีที่หมอนวดอัปโหลดใหม่ รอตรวจก่อนขึ้นจริง
       </Typography>
 
       {loading ? (
@@ -137,14 +150,38 @@ const AdminStaffRequestsPage: React.FC = () => {
                 borderRadius: "16px", p: "12px 14px",
               }}
             >
-              <Box
-                component="img"
-                src={r.imageUrl}
-                alt=""
-                sx={{ width: 64, height: 64, borderRadius: "10px", objectFit: "cover", flexShrink: 0, border: `1px solid ${adminColor.line2}` }}
-              />
+              <Box sx={{ position: "relative", width: 64, height: 64, flexShrink: 0 }}>
+                {r.mediaType === "video" ? (
+                  <Box
+                    component="video"
+                    src={r.imageUrl}
+                    preload="metadata"
+                    muted
+                    sx={{ width: 64, height: 64, borderRadius: "10px", objectFit: "cover", background: "#000", border: `1px solid ${adminColor.line2}` }}
+                  />
+                ) : (
+                  <Box
+                    component="img"
+                    src={r.imageUrl}
+                    alt=""
+                    sx={{ width: 64, height: 64, borderRadius: "10px", objectFit: "cover", border: `1px solid ${adminColor.line2}` }}
+                  />
+                )}
+                {r.mediaType === "video" && (
+                  <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                    <Play size={18} weight="fill" color="rgba(255,255,255,0.85)" />
+                  </Box>
+                )}
+              </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontSize: 13.5, fontWeight: 800, color: adminColor.text }}>{r.therapistName}</Typography>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 800, color: adminColor.text }}>
+                  {r.therapistName}
+                  {r.mediaType === "video" && (
+                    <Box component="span" sx={{ ml: 0.75, fontSize: 10, fontWeight: 800, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      · วิดีโอ
+                    </Box>
+                  )}
+                </Typography>
                 <Typography sx={{ fontSize: 11, color: adminColor.dim, mt: "2px" }}>
                   {r.createdAt ? r.createdAt.toDate().toLocaleString("th-TH") : "—"}
                 </Typography>

@@ -27,7 +27,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Box, Typography, Button, CircularProgress, IconButton, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Reorder } from "framer-motion";
-import { CaretLeft, UploadSimple, X, CircleNotch, Clock, Image, Trash, DotsSixVertical } from "phosphor-react";
+import { CaretLeft, UploadSimple, X, CircleNotch, Clock, Image, Trash, DotsSixVertical, VideoCamera, Play } from "phosphor-react";
 import {
   addDoc,
   collection,
@@ -48,6 +48,12 @@ import { downscaleImage } from "@/pages/admin/therapistFormKit";
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
 const GALLERY_CAP = 12;
+// 🆕 Round 28x.174 (founder: "โปรไฟล์พนักงาน มีแค่รูป ให้เพิ่มวิดีโอได้") —
+//   much lower than the photo cap: video is heavier to store, heavier to
+//   moderate, and the grid is meant to stay mostly photos with a few
+//   clips mixed in, not a video feed.
+const VIDEO_CAP = 3;
+const VIDEO_MAX_SECONDS = 60;
 
 interface PendingRequest {
   id: string;
@@ -78,14 +84,32 @@ const TherapistGalleryPage: React.FC = () => {
   const LONG_PRESS_MS = 450;
   const MOVE_CANCEL_PX = 8;
 
+  // 🆕 Round 28x.174 — video, kept deliberately separate from the photo
+  //   state above rather than generalizing the two: photos have reorder +
+  //   a 12-item cap + years of tuning, video is a simpler add/remove list
+  //   with its own small cap. Less risk of the video addition disturbing
+  //   the photo flow that already works.
+  const [pendingVideos, setPendingVideos] = useState<PendingRequest[]>([]);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [busyVideoUrl, setBusyVideoUrl] = useState<string | null>(null);
+  const [videoConfirmTarget, setVideoConfirmTarget] = useState<{ kind: "live" | "pending"; key: string } | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     const q = query(collection(db, "galleryRequests"), where("therapistUid", "==", uid), where("status", "==", "pending"));
     const unsub = onSnapshot(
       q,
-      (snap) => setPending(snap.docs.map((d) => ({ id: d.id, imageUrl: (d.data().imageUrl as string) ?? "" }))),
-      () => setPending([]),
+      (snap) => {
+        const all = snap.docs.map((d) => ({ id: d.id, imageUrl: (d.data().imageUrl as string) ?? "", mediaType: (d.data().mediaType as string | undefined) ?? "image" }));
+        setPending(all.filter((r) => r.mediaType !== "video"));
+        setPendingVideos(all.filter((r) => r.mediaType === "video"));
+      },
+      () => {
+        setPending([]);
+        setPendingVideos([]);
+      },
     );
     return () => unsub();
   }, []);
@@ -93,6 +117,10 @@ const TherapistGalleryPage: React.FC = () => {
   const live = therapist?.gallery ?? [];
   const totalCount = live.length + pending.length;
   const atCap = totalCount >= GALLERY_CAP;
+
+  const liveVideos = therapist?.videos ?? [];
+  const totalVideoCount = liveVideos.length + pendingVideos.length;
+  const atVideoCap = totalVideoCount >= VIDEO_CAP;
 
   const removeLivePhoto = async (url: string) => {
     if (!therapistDocId) return;
@@ -217,6 +245,104 @@ const TherapistGalleryPage: React.FC = () => {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  // 🆕 Round 28x.174 — read a video file's duration before uploading a
+  //   single byte. storage.rules can only cap file SIZE (it can't inspect
+  //   a video's content), so a too-long clip has to be caught here or it
+  //   just burns her upload allowance and admin's review time on something
+  //   that was always going to get rejected.
+  const readVideoDuration = (file: File): Promise<number> =>
+    new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve(v.duration);
+      };
+      v.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not read video metadata."));
+      };
+      v.src = url;
+    });
+
+  const onUploadVideo = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file || !therapistDocId) return;
+    if (atVideoCap) {
+      setToast({ msg: `ครบ ${VIDEO_CAP} คลิปแล้ว ลบคลิปเดิมก่อนถึงจะเพิ่มได้`, severity: "error" });
+      return;
+    }
+    if (!file.type.startsWith("video/")) return;
+    setUploadingVideo(true);
+    try {
+      const durationSec = await readVideoDuration(file);
+      if (durationSec > VIDEO_MAX_SECONDS) {
+        setToast({ msg: `คลิปยาวเกิน ${VIDEO_MAX_SECONDS} วินาที ตัดให้สั้นลงก่อนค่ะ`, severity: "error" });
+        return;
+      }
+      const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+      const storage = getStorage(app);
+      const ext = file.type.split("/")[1] || "mp4";
+      const path = `therapists/${therapistDocId}/videoPending/${Date.now()}.${ext}`;
+      const snap = await uploadBytes(ref(storage, path), file, { contentType: file.type });
+      const videoUrl = await getDownloadURL(snap.ref);
+      await addDoc(collection(db, "galleryRequests"), {
+        therapistUid: auth.currentUser?.uid ?? null,
+        therapistDocId,
+        therapistName: therapist?.name ?? therapistDocId,
+        imageUrl: videoUrl,
+        mediaType: "video",
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+      setToast({ msg: "ส่งวิดีโอให้แอดมินตรวจแล้ว รออนุมัติก่อนขึ้นจริง", severity: "success" });
+    } catch (err) {
+      console.error("[TherapistGallery] video upload failed:", err);
+      setToast({ msg: "อัปโหลดวิดีโอไม่สำเร็จ ลองใหม่อีกครั้ง", severity: "error" });
+    } finally {
+      setUploadingVideo(false);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+    }
+  };
+
+  const removeLiveVideo = async (url: string) => {
+    if (!therapistDocId) return;
+    setBusyVideoUrl(url);
+    try {
+      await updateDoc(doc(db, "therapists", therapistDocId), {
+        videos: liveVideos.filter((u) => u !== url),
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.uid ?? null,
+      });
+    } catch (err) {
+      console.error("[TherapistGallery] video remove failed:", err);
+      setToast({ msg: "ลบวิดีโอไม่สำเร็จ ลองใหม่อีกครั้ง", severity: "error" });
+    } finally {
+      setBusyVideoUrl(null);
+    }
+  };
+
+  const withdrawPendingVideo = async (id: string) => {
+    setBusyVideoUrl(id);
+    try {
+      await deleteDoc(doc(db, "galleryRequests", id));
+    } catch (err) {
+      console.error("[TherapistGallery] video withdraw failed:", err);
+      setToast({ msg: "ยกเลิกคำขอไม่สำเร็จ ลองใหม่อีกครั้ง", severity: "error" });
+    } finally {
+      setBusyVideoUrl(null);
+    }
+  };
+
+  const confirmVideoDelete = async () => {
+    if (!videoConfirmTarget) return;
+    const { kind, key } = videoConfirmTarget;
+    setVideoConfirmTarget(null);
+    if (kind === "live") await removeLiveVideo(key);
+    else await withdrawPendingVideo(key);
   };
 
   return (
@@ -428,6 +554,111 @@ const TherapistGalleryPage: React.FC = () => {
               </Button>
             </>
           )}
+
+          {/* 🆕 Round 28x.174 (founder: "โปรไฟล์พนักงาน มีแค่รูป ให้เพิ่ม
+              วิดีโอได้") — same moderation-queue pattern as photos above,
+              deliberately simpler UI (no reorder, small cap). */}
+          {!reordering && (
+            <Box sx={{ mt: 4 }}>
+              <Box
+                sx={{
+                  display: "flex", alignItems: "center", gap: 1.25, mb: 2.5,
+                  p: "12px 14px", borderRadius: "14px",
+                  background: "linear-gradient(160deg, rgba(224,112,143,0.12) 0%, var(--sr-panel) 55%, var(--sr-panel) 100%)",
+                  border: "1px solid rgba(194,24,91,0.20)",
+                }}
+              >
+                <Box sx={{ width: 34, height: 34, borderRadius: "11px", flexShrink: 0, background: "linear-gradient(135deg, #FF9999, #FF9999)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <VideoCamera size={17} weight="duotone" color="#fff" />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 800, color: "var(--sr-ink)" }}>
+                    {totalVideoCount}/{VIDEO_CAP} วิดีโอ
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", lineHeight: 1.4, mt: "1px" }}>
+                    ไม่เกิน {VIDEO_MAX_SECONDS} วินาที/คลิป · รอแอดมินตรวจก่อนขึ้นจริงเหมือนรูป
+                  </Typography>
+                </Box>
+              </Box>
+
+              {pendingVideos.length > 0 && (
+                <>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: "var(--sr-muted)", letterSpacing: "0.08em", textTransform: "uppercase", mb: 1 }}>
+                    รอแอดมินตรวจสอบ
+                  </Typography>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mb: 2.5 }}>
+                    {pendingVideos.map((p) => (
+                      <Box key={p.id} sx={{ position: "relative", aspectRatio: "1", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(194,24,91,0.20)", boxShadow: "0 4px 12px rgba(194,24,91,0.10)", background: "#000" }}>
+                        <Box component="video" src={p.imageUrl} preload="metadata" muted sx={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }} />
+                        <Box sx={{ position: "absolute", top: 5, left: 5, display: "flex", alignItems: "center", gap: "3px", background: "rgba(0,0,0,0.55)", borderRadius: "8px", px: "6px", py: "2px" }}>
+                          <Clock size={10} color="#fff" />
+                          <Typography sx={{ fontSize: 8.5, color: "#fff", fontWeight: 700 }}>รอตรวจ</Typography>
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => setVideoConfirmTarget({ kind: "pending", key: p.id })}
+                          disabled={busyVideoUrl === p.id}
+                          sx={{ position: "absolute", top: 5, right: 5, width: 24, height: 24, background: "rgba(220,38,38,0.85)", color: "#fff", "&:hover": { background: "#DC2626" } }}
+                        >
+                          <X size={12} weight="bold" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                </>
+              )}
+
+              {liveVideos.length > 0 && (
+                <>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: "var(--sr-muted)", letterSpacing: "0.08em", textTransform: "uppercase", mb: 1 }}>
+                    วิดีโอที่ขึ้นจริงตอนนี้
+                  </Typography>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mb: 2.5 }}>
+                    {liveVideos.map((url) => (
+                      <Box key={url} sx={{ position: "relative", aspectRatio: "1", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(194,24,91,0.20)", boxShadow: "0 4px 12px rgba(194,24,91,0.10)", background: "#000" }}>
+                        <Box component="video" src={url} preload="metadata" muted sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                          <Play size={22} weight="fill" color="rgba(255,255,255,0.85)" />
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => setVideoConfirmTarget({ kind: "live", key: url })}
+                          disabled={busyVideoUrl === url}
+                          sx={{ position: "absolute", top: 5, right: 5, width: 24, height: 24, background: "rgba(220,38,38,0.85)", color: "#fff", "&:hover": { background: "#DC2626" } }}
+                        >
+                          <X size={12} weight="bold" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                </>
+              )}
+
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                style={{ display: "none" }}
+                onChange={(e) => void onUploadVideo(e.target.files)}
+              />
+              <Button
+                onClick={() => videoInputRef.current?.click()}
+                disabled={uploadingVideo || atVideoCap}
+                fullWidth
+                startIcon={uploadingVideo ? <CircleNotch size={16} className="sr-spin" /> : <VideoCamera size={16} weight="bold" />}
+                sx={{
+                  mt: 1, py: 1.4, textTransform: "none", fontWeight: 700, borderRadius: 2,
+                  background: "linear-gradient(135deg, #FF9999, #FF9999)", color: "#fff", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+                  "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
+                  "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },
+                  "& .sr-spin": { animation: "srspin 0.8s linear infinite" },
+                  "@keyframes srspin": { to: { transform: "rotate(360deg)" } },
+                }}
+              >
+                {atVideoCap ? `ครบ ${VIDEO_CAP} คลิปแล้ว` : uploadingVideo ? "กำลังอัปโหลด…" : "อัปโหลดวิดีโอใหม่"}
+              </Button>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -449,6 +680,32 @@ const TherapistGalleryPage: React.FC = () => {
           </Button>
           <Button
             onClick={() => void confirmDelete()}
+            startIcon={<Trash size={15} weight="bold" />}
+            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 2, background: "#DC2626", color: "#fff", "&:hover": { background: "#B91C1C" } }}
+          >
+            ลบเลย
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28x.174 — same confirm-before-delete pattern, video target. */}
+      <Dialog open={Boolean(videoConfirmTarget)} onClose={() => setVideoConfirmTarget(null)} PaperProps={{ sx: { borderRadius: "16px", background: "var(--sr-panel)", maxWidth: 320 } }}>
+        <DialogTitle sx={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: "var(--sr-ink)" }}>
+          {videoConfirmTarget?.kind === "pending" ? "ยกเลิกคำขอวิดีโอนี้?" : "ลบวิดีโอนี้?"}
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "var(--sr-muted)", lineHeight: 1.5 }}>
+            {videoConfirmTarget?.kind === "pending"
+              ? "วิดีโอที่รออนุมัติจะถูกยกเลิกทันที ทำกลับไม่ได้"
+              : "วิดีโอนี้จะหายจากโปรไฟล์สาธารณะทันที ทำกลับไม่ได้"}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button onClick={() => setVideoConfirmTarget(null)} sx={{ textTransform: "none", fontWeight: 700, color: "var(--sr-muted)" }}>
+            ยกเลิก
+          </Button>
+          <Button
+            onClick={() => void confirmVideoDelete()}
             startIcon={<Trash size={15} weight="bold" />}
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 2, background: "#DC2626", color: "#fff", "&:hover": { background: "#B91C1C" } }}
           >
