@@ -71,7 +71,14 @@ let guestApp: FirebaseApp | null = null;
 let guestAuth: Auth | null = null;
 let guestDb: Firestore | null = null;
 
-function ensureGuestApp(): { auth: Auth; db: Firestore } {
+// Exported (28x.173) so bookingReview.ts can reuse the SAME guest app
+// instance instead of standing up a third Firebase app for what is
+// conceptually identical: a guest's temporary anonymous identity scoped to
+// one booking, no-login, in-memory persistence. Chat and review claims sign
+// into the same auth instance at different times (whichever the guest is
+// currently doing), which is fine — the custom token's claim, not the app,
+// is what scopes each capability.
+export function ensureGuestApp(): { auth: Auth; db: Firestore } {
   if (!guestApp) {
     guestApp =
       getApps().find((a) => a.name === GUEST_APP_NAME) ??

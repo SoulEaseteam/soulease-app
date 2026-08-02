@@ -966,6 +966,105 @@ await check("admin CANNOT write a chat summary (function-only)", () =>
   )
 );
 
+// ── reviews (28x.173) ────────────────────────────────────────────────────
+// Founder: "ทำรีวิวแบบไม่ต้องสมัครหรือเป็นสมาชิกได้ไหม แค่หลังจบงาน เอาลิ้ง
+// ให้ลูกค้าให้คะแนนรีวิว ได้เลย". Same claim-token pattern as booking chat,
+// this time via claimBookingReview's `bookingReview` claim — and this suite
+// exists specifically because a real bug (`&& ` binding tighter than `||`
+// let ANY signed-in user skip every validation check) was caught here
+// BEFORE it shipped. These tests would have failed on the broken version;
+// keep them that way.
+console.log("\nreviews (28x.173)");
+
+const asReviewGuest = (bookingId) =>
+  testEnv
+    .authenticatedContext(`bkgreview_${bookingId}`, { bookingReview: bookingId })
+    .firestore();
+
+await check("signed-in user CAN create a review for herself", () =>
+  assertSucceeds(
+    addDoc(collection(asUser(OWNER_UID), "reviews"), {
+      therapistId: THERAPIST_DOC_ID,
+      userId: OWNER_UID,
+      rating: 5,
+      comment: "Lovely session.",
+      status: "pending",
+    })
+  )
+);
+await check("signed-in user CANNOT create a review with an out-of-range rating", () =>
+  assertFails(
+    addDoc(collection(asUser(OWNER_UID), "reviews"), {
+      therapistId: THERAPIST_DOC_ID,
+      userId: OWNER_UID,
+      rating: 6,
+      status: "pending",
+    })
+  )
+);
+await check("signed-in user CANNOT skip straight to an approved review", () =>
+  assertFails(
+    addDoc(collection(asUser(OWNER_UID), "reviews"), {
+      therapistId: THERAPIST_DOC_ID,
+      userId: OWNER_UID,
+      rating: 5,
+      status: "approved",
+    })
+  )
+);
+
+await check("token-claim guest CAN review her own completed booking", () =>
+  assertSucceeds(
+    setDoc(doc(asReviewGuest("bk-guest"), "reviews", "bk-guest"), {
+      bookingId: "bk-guest",
+      therapistId: THERAPIST_DOC_ID,
+      rating: 5,
+      comment: "Great, thank you!",
+      status: "pending",
+    })
+  )
+);
+await check("the same token-claim guest CANNOT submit a second review for that booking", () =>
+  assertFails(
+    setDoc(doc(asReviewGuest("bk-guest"), "reviews", "bk-guest"), {
+      bookingId: "bk-guest",
+      therapistId: THERAPIST_DOC_ID,
+      rating: 1,
+      status: "pending",
+    })
+  )
+);
+await check("token-claim guest CANNOT write a review doc id that doesn't match her booking", () =>
+  assertFails(
+    setDoc(doc(asReviewGuest("bk-guest"), "reviews", "bk-owned"), {
+      bookingId: "bk-owned",
+      therapistId: THERAPIST_DOC_ID,
+      rating: 5,
+      status: "pending",
+    })
+  )
+);
+await check("token-claim guest still CANNOT skip the shared rating/status validation", () =>
+  assertFails(
+    setDoc(doc(asReviewGuest("bk-owned"), "reviews", "bk-owned"), {
+      bookingId: "bk-owned",
+      therapistId: THERAPIST_DOC_ID,
+      rating: 5,
+      status: "approved",
+    })
+  )
+);
+await check("a stranger with no claim and no matching userId CANNOT create a review", () =>
+  assertFails(
+    setDoc(doc(asUser(GUEST_UID), "reviews", "bk-owned"), {
+      bookingId: "bk-owned",
+      therapistId: THERAPIST_DOC_ID,
+      rating: 5,
+      status: "pending",
+    })
+  )
+);
+
 await testEnv.cleanup();
 
 console.log(`\n${passed} passed · ${failed} failed`);

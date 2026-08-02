@@ -103,6 +103,10 @@ const BookingFlowPage = React.lazy(
 const BookingSuccessPage = React.lazy(
   () => import("@/pages/booking/BookingSuccessPage")
 );
+// 🆕 Round 28x.173 — booking-scoped guest review, no login required.
+const BookingReviewPage = React.lazy(
+  () => import("@/pages/booking/BookingReviewPage")
+);
 const SelectLocationPage = React.lazy(
   () => import("@/pages/booking/SelectLocationPage")
 );
@@ -392,6 +396,9 @@ export default function App() {
           <Route path="/booking" element={<BookingFlowPage />} />
           <Route path="/booking/:id" element={<BookingFlowPage />} />
           <Route path="/booking/success/:id" element={<BookingSuccessPage />} />
+          {/* 🆕 Round 28x.173 — /booking/review/:id?t=<accessToken>, same
+              capability-token shape as the success page above. */}
+          <Route path="/booking/review/:id" element={<BookingReviewPage />} />
           {/* 🆕 Phase 4 — Dedicated Select Location route opened from
               the Confirm Order Address tile. Returns the address payload
               via react-router state. */}

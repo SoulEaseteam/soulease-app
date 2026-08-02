@@ -576,10 +576,38 @@ service cloud.firestore {
     // own review), and a comment size cap to prevent quota abuse.
     // ReviewPage.tsx already gates UX behind login + completed-booking;
     // this just makes the rules match the intent.
+    // 🆕 Round 28x.173 — booking-scoped guest review, no account required
+    //   (founder: "ทำรีวิวแบบไม่ต้องสมัครหรือเป็นสมาชิกได้ไหม"). Mirrors the
+    //   booking-chat guest pattern: claimBookingReview verifies the
+    //   checkout accessToken and mints a custom token carrying
+    //   `bookingReview: <bookingId>`, which this reads. The reviewId
+    //   itself must equal the bookingId — one review per booking is then
+    //   just Firestore's own "create fails if the doc already exists"
+    //   behavior, no separate dedup query needed.
+    function isBookingReviewClaim(bookingId) {
+      return isSignedIn() && request.auth.token.bookingReview == bookingId;
+    }
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isSignedIn()
-                    && request.resource.data.userId == request.auth.uid
+      // ⚠️ The two identity branches are wrapped in ONE outer parens group,
+      //   deliberately — `&&` binds tighter than `||` here (same as JS), so
+      //   without the outer wrap this would parse as
+      //   `signedInBranch || (bookingReviewBranch && allTheValidation)`,
+      //   letting ANY signed-in user create a review with no rating/status/
+      //   comment checks at all as long as the userId matched. Caught before
+      //   shipping — exactly the class of bug this file's rules discipline
+      //   exists to prevent.
+      allow create: if (
+                      (
+                        isSignedIn()
+                        && request.resource.data.userId == request.auth.uid
+                        && !('bookingId' in request.resource.data)
+                      ) || (
+                        request.resource.data.bookingId == reviewId
+                        && isBookingReviewClaim(reviewId)
+                        && !('userId' in request.resource.data)
+                      )
+                    )
                     && request.resource.data.rating is int
                     && request.resource.data.rating >= 1
                     && request.resource.data.rating <= 5

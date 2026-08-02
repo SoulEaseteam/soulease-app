@@ -4191,6 +4191,7 @@ export const advanceJobStatus = onCall(
       duration?: number;
       date?: string;
       time?: string;
+      accessToken?: string;
     };
 
     if (b.therapistUid !== uid) {
@@ -4232,7 +4233,17 @@ export const advanceJobStatus = onCall(
     if (token) {
       const who = b.therapistName ?? "หมอนวด";
       const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-      const line = `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`;
+      let line = `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`;
+      // 🆕 Round 28x.173 (founder: "หลังจบงาน เอาลิ้งให้ลูกค้าให้คะแนนรีวิว
+      //   ได้เลย") — no direct guest-Telegram-DM channel exists (guests
+      //   browse the site, they never /start a bot the way practitioners
+      //   do), so the honest version of "send it automatically" is: put the
+      //   link right here, on the message View already gets the moment a
+      //   job finishes, for her to relay through whichever channel she's
+      //   already talking to that guest on.
+      if (next === "done" && b.accessToken) {
+        line += `\n⭐ ลิงก์รีวิว: https://sunred.vip/booking/review/${bookingId}?t=${b.accessToken}`;
+      }
       const chatId = await getReportChatId();
       // 🆕 28x.124 — on arrival, the status line becomes the caption of the
       //   meeting-point photo instead of a separate message, so View sees
@@ -4708,6 +4719,75 @@ export const claimBookingChat = onCall(
         : null,
       assigned: settings.therapistEnabled && Boolean(b.therapistId),
       status,
+    };
+  }
+);
+
+// 🆕 Round 28x.173 — booking-scoped guest review, no account required.
+//
+// Founder: "ถ้าอยากทำรีวิวแบบไม่ต้องสมัครหรือเป็นสมาชิกได้ไหม แค่หลังจบงาน
+//   เอาลิ้งให้ลูกค้าให้คะแนนรีวิว ได้เลย".
+//
+// Same identity problem as claimBookingChat, same fix: the guest holds the
+// `accessToken` minted at checkout, never an account. Verify it here and
+// mint a custom token carrying a `bookingReview` claim instead of
+// `bookingChat` — firestore.rules' reviews/{reviewId} create rule reads it,
+// and requires reviewId itself to equal the bookingId (see rules comment),
+// so "already reviewed" is just Firestore's own create-on-existing-doc
+// rejection — no separate dedup query needed anywhere.
+export const claimBookingReview = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const data = request.data as
+      | { bookingId?: string; token?: string }
+      | undefined;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    const token = String(data?.token ?? "").trim();
+    if (!bookingId) {
+      throw new HttpsError("invalid-argument", "bookingId is required.");
+    }
+
+    const db = getFirestore();
+    const snap = await db.collection("bookings").doc(bookingId).get();
+    if (!snap.exists) {
+      // Same reasoning as claimBookingChat/getBookingPublic — an
+      // indistinguishable error so a bad guess can't confirm a real id.
+      throw new HttpsError("permission-denied", "Booking not found.");
+    }
+    const b = snap.data() as Record<string, unknown>;
+
+    const uid = request.auth?.uid ?? null;
+    const storedToken =
+      typeof b.accessToken === "string" ? b.accessToken.trim() : "";
+    const tokenOk = storedToken.length > 0 && token === storedToken;
+    const ownerOk = uid != null && b.userId === uid;
+    if (!tokenOk && !ownerOk) {
+      throw new HttpsError("permission-denied", "Booking not found.");
+    }
+
+    if (!SERVED_STATUSES.has(String(b.status ?? ""))) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This reservation hasn't been completed yet."
+      );
+    }
+
+    const existing = await db.collection("reviews").doc(bookingId).get();
+
+    // Same reasoning as claimBookingChat: a signed-in owner already has a
+    // uid rules can match directly — no second identity to mint for her.
+    const customToken = ownerOk
+      ? null
+      : await getAuth().createCustomToken(`bkgreview_${bookingId}`, {
+          bookingReview: bookingId,
+        });
+
+    return {
+      ok: true,
+      customToken,
+      alreadyReviewed: existing.exists,
+      therapistId: (b.therapistId as string | null) ?? null,
+      therapistName: (b.therapistName as string | null) ?? null,
     };
   }
 );
