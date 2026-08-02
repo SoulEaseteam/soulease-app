@@ -380,13 +380,14 @@ const StepService: React.FC<Props> = ({
                       sx={{
                         display: "inline-flex",
                         alignItems: "center",
-                        padding: "4px 10px",
+                        padding: "6px 14px",
                         borderRadius: "999px",
-                        background: "rgba(217,124,149,0.14)",
-                        color: "#B8567F",
+                        background: "rgba(255,255,255,0.94)",
+                        color: "#8A3A57",
                         fontFamily: SANS,
-                        fontSize: "11px",
+                        fontSize: "13px",
                         fontWeight: 700,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
                       }}
                     >
                       {typeLabel}
