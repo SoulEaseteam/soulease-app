@@ -57,9 +57,16 @@ const TELEGRAM_CHAT_ID = "-1002962073895";
 // 🆕 Round 28s82 (founder 2026-05-31: "เอาแค่ส่งหาฉันคนเดียวก่อน") —
 //   master kill-switch for the therapist DM on a new booking. While
 //   OFF, only the admin group gets the alert and View dispatches
-//   manually. Flip to `true` once practitioners have linked their
-//   Telegram (via /start) and View is ready to auto-DM them.
-const DISPATCH_THERAPIST_DM = false;
+//   manually.
+// 🆕 Round 28x.170 (founder, reviewing a CBODY dispatch-bot screenshot:
+//   "ต่อไป ส่งออเดอไปให้พนักงานได้เลย จนกว่าพนักงานจะรับงานจึงจะเห็นทั้งหมด") —
+//   the XingXing pilot (28x.61) proved out and expanded to Yuri/Vivian/Nicky
+//   (28x.86); founder direction now is to go fully live for every
+//   practitioner, not just the pilot four. THERAPIST_DM_PILOT below stops
+//   mattering once this is true — kept in place rather than deleted in case
+//   a future incident needs a fast revert to "pilot only" without redeploying
+//   from a stale diff.
+const DISPATCH_THERAPIST_DM = true;
 
 // 🆕 Round 28x.61 (founder: "ทดลองกับ XingXing ดูก่อน ถ้าเวิร์ค ค่อยขยับขยาย
 //   กับคนอื่น") — a PILOT allowlist that overrides the master switch above for
