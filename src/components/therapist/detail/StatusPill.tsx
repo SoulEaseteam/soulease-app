@@ -79,43 +79,43 @@ const VARIANTS: Record<
     title: string;
     titleKey: string;
     bg: string;
-    border: string;
-    fg: string;
+    shadow: string;
     iconBg: string;
   }
 > = {
+  // 🆕 Round 28x.169 (founder: "ป้ายสีเขียวนี้ ทำให้เหมือนปุ่มขึ้น") — this is
+  //   tappable on every real call site (TherapistDetailPage always passes
+  //   onClick, jumps to the Services tab), but read as a soft info-alert:
+  //   light tint fill, thin border, a left accent stripe — the "notice
+  //   banner" pattern, not the app's actual button language. Switched to
+  //   the same solid-fill / full-pill / shadow language every real CTA in
+  //   this app uses (ConfirmBar, TherapistMinimalCard's Book button), so
+  //   text/icon flip to white-on-solid instead of tint-on-light.
   online: {
     icon: <CheckRoundedIcon sx={{ fontSize: 16 }} />,
     // Round 28s61 — `title` kept as the English fallback; the
     // rendered label now goes through t("detail.status.*") so
     // ZH/JA/KO/TH visitors see their language.
-    // 🆕 Round 28r81 — Shifted from sage-tint bg (rgba(22,163,74,x))
-    //   to the accent mint tint (#e8f8f5) + teal border for the
-    //   "available now" state. Text/icon fg kept sage green for the
-    //   ONLINE dot semantic (r70 rule) — mint is bg-only.
     title: "Currently Available!",
     titleKey: "detail.status.available",
-    bg: "rgba(87, 184, 139, 0.10)",
-    border: "rgba(87, 184, 139, 0.30)",
-    fg: "#2E7D57",
+    bg: "#57B88B",
+    shadow: "rgba(46, 125, 87, 0.40)",
     iconBg: "#57B88B",
   },
   busy: {
     icon: <AccessTimeRoundedIcon sx={{ fontSize: 15 }} />,
     title: "Currently Busy",
     titleKey: "detail.status.busy",
-    bg: "rgba(249, 115, 22, 0.08)",
-    border: "rgba(249, 115, 22, 0.25)",
-    fg: "#f97316",
+    bg: "#f97316",
+    shadow: "rgba(194, 65, 12, 0.40)",
     iconBg: "#f97316",
   },
   offline: {
     icon: <BedtimeRoundedIcon sx={{ fontSize: 15 }} />,
     title: "Off duty",
     titleKey: "detail.status.offline",
-    bg: "var(--sr-panel-2)",
-    border: "var(--sr-hairline)",
-    fg: "var(--sr-muted)",
+    bg: "var(--sr-muted)",
+    shadow: "rgba(0, 0, 0, 0.24)",
     iconBg: "var(--sr-muted)",
   },
 };
@@ -185,15 +185,19 @@ const StatusPill: React.FC<Props> = ({
         //   width (minus its own 14px side margins) so the two line up.
         width: "calc(100% - 28px)",
         margin: "12px 14px 0",
-        padding: "9px 12px",
-        borderRadius: "12px",
+        padding: "11px 16px",
+        // 🆕 28x.169 — full pill radius + solid fill + real shadow, matching
+        //   ConfirmBar/TherapistMinimalCard's actual button language instead
+        //   of the "info alert" card pattern (tint bg, thin border, left
+        //   accent stripe) this used to have.
+        borderRadius: "999px",
         background: v.bg,
-        border: `1px solid ${v.border}`,
-        borderLeft: `3px solid ${v.fg}`,
+        border: "none",
         display: "flex",
         alignItems: "center",
-        gap: "9px",
+        gap: "10px",
         cursor: clickable ? "pointer" : "default",
+        boxShadow: `0 8px 20px ${v.shadow}`,
         transition: "transform 0.16s ease, box-shadow 0.16s ease",
         // 🆕 28t.10 — gentle "blink" glow ONLY while the therapist is
         //   online/open for work (founder "กระพริบเบาๆ เฉพาะตอนเปิดงาน").
@@ -202,27 +206,30 @@ const StatusPill: React.FC<Props> = ({
             ? "srPillGlow 2.6s ease-in-out infinite"
             : "none",
         "@keyframes srPillGlow": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(87,184,139,0)" },
-          "50%": { boxShadow: "0 0 0 4px rgba(87,184,139,0.16)" },
+          "0%, 100%": { boxShadow: `0 8px 20px ${v.shadow}` },
+          "50%": { boxShadow: `0 8px 20px ${v.shadow}, 0 0 0 4px rgba(87,184,139,0.20)` },
         },
         "&:hover": clickable
-          ? { transform: "translateY(-1px)", boxShadow: `0 6px 16px ${v.border}` }
+          ? { transform: "translateY(-1px)", boxShadow: `0 12px 26px ${v.shadow}` }
           : undefined,
         "&:active": clickable ? { transform: "scale(0.99)" } : undefined,
         "&:focus-visible": clickable
-          ? { outline: `2px solid ${v.fg}`, outlineOffset: 2 }
+          ? { outline: "2px solid #fff", outlineOffset: 2 }
           : undefined,
         "@media (prefers-reduced-motion: reduce)": { animation: "none" },
       }}
     >
-      {/* icon — gentle bounce */}
+      {/* icon — gentle bounce. Frosted-glass chip on the solid fill, same
+          treatment as the trust chips on DetailHero, instead of a
+          same-color-as-background circle that would now disappear. */}
       <Box
         sx={{
-          width: 24,
-          height: 24,
+          width: 26,
+          height: 26,
           flexShrink: 0,
           borderRadius: "50%",
-          background: v.iconBg,
+          background: "rgba(255,255,255,0.24)",
+          border: "1px solid rgba(255,255,255,0.35)",
           color: "#fff",
           display: "flex",
           alignItems: "center",
@@ -247,7 +254,7 @@ const StatusPill: React.FC<Props> = ({
             fontFamily: SERIF,
             fontSize: "13px",
             fontWeight: 700,
-            color: "var(--sr-ink)",
+            color: "#fff",
             lineHeight: 1.2,
           }}
         >
@@ -257,7 +264,7 @@ const StatusPill: React.FC<Props> = ({
           sx={{
             fontFamily: SANS,
             fontSize: "10.5px",
-            color: "var(--sr-body)",
+            color: "rgba(255,255,255,0.88)",
             lineHeight: 1.35,
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -273,8 +280,8 @@ const StatusPill: React.FC<Props> = ({
           aria-hidden
           sx={{
             flexShrink: 0,
-            color: v.fg,
-            fontSize: "16px",
+            color: "#fff",
+            fontSize: "18px",
             fontWeight: 700,
             // 🆕 28t.10 — nudge only while online (founder "เฉพาะตอนเปิดงาน").
             animation:
