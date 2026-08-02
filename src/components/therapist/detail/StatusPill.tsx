@@ -181,10 +181,14 @@ const StatusPill: React.FC<Props> = ({
         boxSizing: "border-box",
         // 🆕 28w.68 (founder "จัดกึ่งกลาง ให้บาลานซ์กับคอลัมอื่น") — `all: unset`
         //   made the <button> shrink-to-fit, so the pill hugged the left edge
-        //   while the stat columns above spanned the full card. Span the same
-        //   width (minus its own 14px side margins) so the two line up.
-        width: "calc(100% - 28px)",
-        margin: "12px 14px 0",
+        //   while the stat columns above spanned the full card. Was spanning
+        //   the full card width to line up with the stat columns above it.
+        // 🆕 28x.172 (founder "ลดความยาวของปุ่มลง") — full-bleed width read as
+        //   a banner/bar, not a button. Capped so it's genuinely button-sized
+        //   and centered instead, still clamped to the card width on narrow
+        //   screens so it can't overflow.
+        width: "min(300px, calc(100% - 28px))",
+        margin: "12px auto 0",
         padding: "11px 16px",
         // 🆕 28x.169 — full pill radius + solid fill + real shadow, matching
         //   ConfirmBar/TherapistMinimalCard's actual button language instead

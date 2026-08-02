@@ -144,6 +144,14 @@ import { responsiveShell, responsiveType } from "@/theme/breakpoints";
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
+// 🆕 Round 28x.171 (founder: "ซ่อนจำนวนดูรูปไว้ก่อน แต่ยังใช้อยู่ในอนาคต รอ
+//   คนมาดูเยอะๆ ก่อน") — low counts ("👁 1" on every tile) read as "nobody's
+//   looking" rather than social proof. Tracking (recordPhotoView, the
+//   photoViews read) is untouched and keeps accumulating in the
+//   background — this only gates the on-photo badge. Flip back to true
+//   once real numbers are worth showing.
+const SHOW_PHOTO_VIEW_COUNTS = false;
+
 // 🆕 Round 28s207 (audit #6) — 24h "HH:mm" → "h AM/PM" so the working
 //   hours read naturally everywhere (matches TherapistMinimalCard).
 function toAmPm(hhmm: string): string {
@@ -2137,8 +2145,11 @@ const TherapistDetailPage: React.FC = () => {
                 />
                 {/* 🆕 28t.12 — 👁 view count over each photo (founder ref).
                     🆕 28x.113 — now a REAL per-photo count (photoViews[src]),
-                    not the whole-profile counter duplicated under every tile. */}
-                {(photoViews[src] ?? 0) > 0 && (
+                    not the whole-profile counter duplicated under every tile.
+                    🆕 28x.171 — hidden behind SHOW_PHOTO_VIEW_COUNTS (see top
+                    of file) while counts are too low to read as social proof.
+                    recordPhotoView() below is untouched — still tracking. */}
+                {SHOW_PHOTO_VIEW_COUNTS && (photoViews[src] ?? 0) > 0 && (
                   <Box
                     sx={{
                       position: "absolute",
