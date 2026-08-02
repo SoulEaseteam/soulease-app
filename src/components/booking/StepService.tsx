@@ -356,16 +356,41 @@ const StepService: React.FC<Props> = ({
                     hardcoded "60 min" on every card; Gentleman's/Therapeutic
                     have no 60-min tier (70/120 only). Show the service's
                     REAL minimum tier. */}
-                {durationsFor(s)[0] ?? 60} min · {typeLabel}
+                {durationsFor(s)[0] ?? 60} min
               </Typography>
               {/* 🆕 28w.63 (founder "ใส่ราคาเริ่มต้น + ป้ายวิบวับ") — starting
                   price (struck-through was + from-price) + shimmering badge. */}
               {/* 🆕 28x.104 — struck was-price removed (ราคาขีดฆ่า ออกทุกจุด);
                   price SERIF→SANS for readability. */}
+              {/* 🆕 28x.175 (founder screenshot, a competitor's per-service
+                  "practitioner recommends" pill: "แต่งป้าย บริการให้เป็นแบบนี้
+                  ... ไม่ต้องเอามา เพราะ ของใครของมัน") — she wants the PILL
+                  styling, not the reference's actual text (that pill named
+                  a specific practitioner on someone else's roster — not
+                  ours to borrow, same call already made for
+                  TherapistMinimalCard's specialty row in 28x.119). `typeLabel`
+                  was already real, our-own per-service copy sitting as plain
+                  text in the subtitle above; moved here as the pill instead
+                  of inventing new per-therapist content we don't have. */}
               {(() => {
                 const from = startingPrice(s);
                 return (
                   <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px", mt: "6px" }}>
+                    <Box
+                      sx={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "4px 10px",
+                        borderRadius: "999px",
+                        background: "rgba(217,124,149,0.14)",
+                        color: "#B8567F",
+                        fontFamily: SANS,
+                        fontSize: "11px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {typeLabel}
+                    </Box>
                     <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
                       <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10px", color: "var(--sr-muted)", fontWeight: 600 }}>เริ่มต้น</Typography>
                       <Typography component="span" sx={{ fontFamily: SANS, fontSize: "16px", fontWeight: 700, color: "#FF9999", lineHeight: 1 }}>{formatTHB(from)}</Typography>
