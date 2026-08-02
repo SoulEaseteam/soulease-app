@@ -35,6 +35,7 @@ import { PaperPlaneRight } from "phosphor-react";
 
 import { db as primaryDb } from "@/lib/firebase";
 import { claimBookingChat } from "@/lib/bookingChat";
+import { chatSeenKey, BOOKING_CHAT_SEEN_EVENT } from "@/lib/bookingChatShared";
 
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 const ROSE_DEEP = "#C2185B";
@@ -82,8 +83,6 @@ interface Props {
   height?: number;
 }
 
-/** localStorage key for the staff-side unread dot (see useBookingChatUnread). */
-export const chatSeenKey = (bookingId: string) => `sunred.chat.seen.${bookingId}`;
 
 function toMillis(raw: unknown): number | null {
   if (!raw) return null;
@@ -134,6 +133,15 @@ const BookingChatThread: React.FC<Props> = ({
     let alive = true;
     setLoading(true);
     setErrorKey(null);
+    // 🚨 HOTFIX — `closed` was only ever set to true (on a failed claim),
+    //   never reset back on a later successful one. `/booking/success/:id`
+    //   has no route `key`, so this component instance can persist across a
+    //   param-only navigation to a DIFFERENT booking — one failed claim
+    //   (chat disabled, expired link, etc.) would then permanently hide
+    //   chat for every later booking too, until a full page reload.
+    //   Resetting here, symmetric with loading/errorKey above, means each
+    //   new bookingId gets an honest fresh attempt.
+    setClosed(false);
     void (async () => {
       try {
         const claim = await claimBookingChat(bookingId, accessToken);
@@ -205,6 +213,11 @@ const BookingChatThread: React.FC<Props> = ({
     if (mode !== "staff" || messages.length === 0) return;
     try {
       window.localStorage.setItem(chatSeenKey(bookingId), String(Date.now()));
+      // 🚨 HOTFIX (28x.167) — useBookingChatUnread only recomputed on a
+      //   fresh Firestore push, so the dot she just cleared here stayed lit
+      //   until some UNRELATED job's message happened to trigger a new
+      //   snapshot. This tells it to recheck immediately.
+      window.dispatchEvent(new Event(BOOKING_CHAT_SEEN_EVENT));
     } catch {
       /* private mode — the dot just stays on, which is the safe direction */
     }
