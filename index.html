@@ -86,8 +86,23 @@
     <link rel="canonical" href="https://sunred.vip/" />
 
     <!-- Icons -->
-    <link rel="icon" type="image/png" href="/images/icon/sunred-logo.png" />
-    <link rel="apple-touch-icon" href="/images/icon/sunred-logo.png" />
+    <!-- 🚨 HOTFIX (Round 28x.166) — was pointing at "sunred-logo.png", which
+         despite its name is a staff portrait JPEG, not a logo — the tab icon
+         and iOS home-screen icon were literally a random practitioner's face.
+         sunred-mark.svg (the real sun-glyph brand mark) already existed in
+         the repo, just never wired in anywhere. Rasterized to real PNGs
+         since Android's install prompt needs raster icons, not SVG. -->
+    <link rel="icon" type="image/png" href="/images/icon/favicon.png" />
+    <link rel="apple-touch-icon" href="/images/icon/apple-touch-icon.png" />
+    <!-- 🆕 Round 28x.166 — PWA manifest, so "Add to Home Screen" launches in
+         standalone mode (no browser chrome) with the real brand icon, and
+         Android/Chrome can offer its native "Install App" prompt — neither
+         worked before; there was no manifest at all. -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SunRed" />
     <!-- Round 28r73 · Rebrand Phase 4 — Nordic Gray primary ink -->
     <meta name="theme-color" content="#2D2D2B" />
 
@@ -174,7 +189,7 @@
         "@type": "Organization",
         "name": "SUNRED",
         "url": "https://sunred.vip",
-        "logo": "https://sunred.vip/images/icon/sunred-logo.png",
+        "logo": "https://sunred.vip/images/icon/pwa-icon-512.png",
         "sameAs": [
           "https://x.com/SunRedvip_bkk",
           "https://www.instagram.com/longcheng956?igsh=MWRmdWFnaXp4cXhxMA==",
@@ -192,8 +207,8 @@
         "@id": "https://sunred.vip/#business",
         "name": "SUNRED",
         "alternateName": ["SunRed Bangkok", "SunRed Outcall Massage"],
-        "image": "https://sunred.vip/images/icon/sunred-logo.png",
-        "logo": "https://sunred.vip/images/icon/sunred-logo.png",
+        "image": "https://sunred.vip/images/icon/pwa-icon-512.png",
+        "logo": "https://sunred.vip/images/icon/pwa-icon-512.png",
         "url": "https://sunred.vip/",
         "priceRange": "$$",
         "currenciesAccepted": "THB, USD, CNY, JPY, KRW",
