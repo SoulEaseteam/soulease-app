@@ -479,17 +479,39 @@ service cloud.firestore {
              || (isSignedIn() && chatBooking(bookingId).userId == request.auth.uid)
              || (isSignedIn() && chatBooking(bookingId).therapistUid == request.auth.uid);
     }
+    // 🚨 HOTFIX (audit) — the two kill switches on adminSettings/advanced
+    //   were only ever read inside the claimBookingChat CALLABLE (which gates
+    //   the guest's token exchange) and the Telegram-DM trigger — never here,
+    //   the actual write gate. Flipping bookingChatEnabled:false ("whole
+    //   feature") left admin and the practitioner able to keep writing,
+    //   because their panels never call claimBookingChat at all (28x.153's
+    //   staff branch skips the claim exchange entirely). Flipping
+    //   bookingChatTherapistEnabled:false ("thread stays open with the
+    //   concierge alone") didn't stop the practitioner from sending either —
+    //   nothing here depended on it. Both defaults stay ON (missing field ⇒
+    //   `!= false` ⇒ true), matching the documented default.
+    function bookingChatEnabled() {
+      let path = /databases/$(database)/documents/adminSettings/advanced;
+      return !exists(path) || get(path).data.bookingChatEnabled != false;
+    }
+    function bookingChatTherapistEnabled() {
+      let path = /databases/$(database)/documents/adminSettings/advanced;
+      return !exists(path) || get(path).data.bookingChatTherapistEnabled != false;
+    }
     // A sender may only speak AS the identity they actually proved. Without
     // this a guest could post a message labelled `sender: 'therapist'` and the
     // panel would render it in the practitioner's own bubble style.
     function chatSenderOk(bookingId) {
-      return (request.resource.data.sender == 'guest'
+      return bookingChatEnabled() && (
+             (request.resource.data.sender == 'guest'
               && (isChatGuest(bookingId)
                   || (isSignedIn() && chatBooking(bookingId).userId == request.auth.uid)))
              || (request.resource.data.sender == 'therapist'
+                 && bookingChatTherapistEnabled()
                  && isSignedIn()
                  && chatBooking(bookingId).therapistUid == request.auth.uid)
-             || (request.resource.data.sender == 'admin' && isAdmin());
+             || (request.resource.data.sender == 'admin' && isAdmin())
+      );
     }
     match /bookings/{bookingId}/messages/{messageId} {
       allow read: if isChatMember(bookingId);
@@ -776,10 +798,34 @@ service cloud.firestore {
     //   here as pending, never touching the live `gallery` array directly.
     //   Admin approves via the "คำขอพนักงาน" panel, which writes the URL
     //   into therapists/{id}.gallery (admin already has full write there).
+    // 🚨 HOTFIX (audit) — `therapistUid == request.auth.uid` only proved the
+    //   CALLER'S identity; it never checked that `therapistDocId` — the field
+    //   admin's approve action actually trusts and writes into via
+    //   `arrayUnion` — belongs to that same caller. Any signed-in account
+    //   (a therapist OR a plain customer — nothing here required the
+    //   "therapist" role either) could file a request naming a DIFFERENT
+    //   practitioner's `therapistDocId` plus an attacker-chosen `imageUrl`,
+    //   and admin approving it would inject that image straight into a
+    //   stranger's live public gallery with no way to spot the spoof.
+    //   isTherapistOwnerById() below does a real cross-document lookup —
+    //   the same 3-way (docId / uid field / email) ownership match already
+    //   used for editing a therapist's own profile — so `therapistDocId`
+    //   must genuinely resolve back to the caller, not just be self-reported.
+    function isTherapistOwnerById(therapistId) {
+      let tPath = /databases/$(database)/documents/therapists/$(therapistId);
+      return isSignedIn() && exists(tPath) && (
+        request.auth.uid == therapistId ||
+        (get(tPath).data.uid is string && get(tPath).data.uid == request.auth.uid) ||
+        (get(tPath).data.email is string && request.auth.token.email is string &&
+         get(tPath).data.email == request.auth.token.email)
+      );
+    }
     match /galleryRequests/{requestId} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.therapistUid == request.auth.uid);
       allow create: if isSignedIn()
                     && request.resource.data.therapistUid == request.auth.uid
+                    && request.resource.data.therapistDocId is string
+                    && isTherapistOwnerById(request.resource.data.therapistDocId)
                     && request.resource.data.status == 'pending'
                     && request.resource.data.imageUrl is string;
       // Only admin resolves a request (approve/reject) — the therapist

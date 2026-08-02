@@ -541,6 +541,24 @@ await check("therapist CAN file her own pending gallery request", () =>
     })
   )
 );
+// 🚨 HOTFIX regression test — the exploit an audit found: `therapistUid`
+//   matching the caller only proves identity, it never proved the caller
+//   owns `therapistDocId`, the field admin's approve action trusts and
+//   `arrayUnion`s straight into a live public gallery. A signed-in customer
+//   (OWNER_UID owns no therapist doc at all) could self-report a real
+//   therapist's docId and have their own chosen image land on a stranger's
+//   profile the moment admin approved it.
+await check("a signed-in non-owner CANNOT file a request naming someone else's therapistDocId", () =>
+  assertFails(
+    setDoc(doc(asUser(OWNER_UID), "galleryRequests", "req-spoofed"), {
+      therapistUid: OWNER_UID,
+      therapistDocId: THERAPIST_DOC_ID,
+      therapistName: "Spoofed Name",
+      imageUrl: "https://evil.example/injected.jpg",
+      status: "pending",
+    })
+  )
+);
 await check("therapist CANNOT file a request claiming someone else's uid", () =>
   assertFails(
     setDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-new-2"), {
