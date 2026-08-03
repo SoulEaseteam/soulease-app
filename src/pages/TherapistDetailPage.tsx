@@ -1359,9 +1359,12 @@ const TherapistDetailPage: React.FC = () => {
       >
         {/* 🆕 Round 28x.176 — name/location/stat-chip card, overlapping the
             hero photo (founder reference: pet-adoption listing, card over
-            plain photo instead of text-on-photo). Renders first so the
-            bio StatsCard right below it (overlapPhoto=false — this card
-            already owns the overlap) reads as one continuous panel. */}
+            plain photo instead of text-on-photo).
+            🆕 Round 28x.178 (founder: "ดูเยอะไปนะ ลอง อันไหนรวมได้ก็รวม") —
+            the bio grid (sex/height-weight/style) used to be its OWN
+            second stacked card right below this one; now passed as a
+            child so it renders inside the SAME card, behind one hairline
+            instead of a second full card boundary + shadow. */}
         <IdentityCard
           name={therapist.name}
           age={therapist.age}
@@ -1372,52 +1375,50 @@ const TherapistDetailPage: React.FC = () => {
           reviewCount={therapist.reviewCount > 0 ? therapist.reviewCount : undefined}
           totalSessions={therapist.totalSessions > 0 ? therapist.totalSessions : undefined}
           rebookRate={therapist.rebookRate || undefined}
-        />
+        >
+          {/* 🆕 Round 28s364 — bio data: sex · height/weight · style.
+              Replaces the pink BioStatsBar strip (28s363) at founder request:
+              "กลับไปใช้ StatsCard เดิม เอา 238/16%/★4.5 ออก ใส่ sex/height/style/language แทน" */}
+          {(() => {
+            if (!realRecord?.features) return null;
+            const f = realRecord.features;
 
-        {/* 🆕 Round 28s364 — StatsCard with bioCells (bio mode).
-            White floating card (negative top overlap) with bio data:
-            sex · height/weight · style · language.
-            Replaces the pink BioStatsBar strip (28s363) at founder request:
-            "กลับไปใช้ StatsCard เดิม เอา 238/16%/★4.5 ออก ใส่ sex/height/style/language แทน" */}
-        {(() => {
-          if (!realRecord?.features) return null;
-          const f = realRecord.features;
+            /** Append unit only when stored value is a bare number */
+            const withUnit = (v: string | undefined | null, unit: string) => {
+              const s = (v ?? "").trim();
+              if (!s) return "";
+              return /[a-zA-Z฀-๿]/.test(s) ? s : `${s} ${unit}`;
+            };
 
-          /** Append unit only when stored value is a bare number */
-          const withUnit = (v: string | undefined | null, unit: string) => {
-            const s = (v ?? "").trim();
-            if (!s) return "";
-            return /[a-zA-Z฀-๿]/.test(s) ? s : `${s} ${unit}`;
-          };
+            const sex = (f.gender ?? "").trim();
+            const h = withUnit(f.height, "cm");
+            const w = withUnit(f.weight, "kg");
+            const heightWeight = [h, w].filter(Boolean).join(" / ");
+            const bt = (f.bodyType ?? "").trim();
+            const bust = (f.bustSize ?? "").trim();
+            const looksMeasurement = /\d\s*[-–/]\s*\d/.test(bt);
+            const style = looksMeasurement ? bt : bust || bt;
+            // 🆕 Round 28s366 — 3 cols only; language moved below trust badges
+            const bioCells = [
+              { value: sex, label: "sex" },
+              { value: heightWeight, label: "height / weight" },
+              { value: style, label: "style" },
+            ].filter((c) => c.value);
 
-          const sex = (f.gender ?? "").trim();
-          const h = withUnit(f.height, "cm");
-          const w = withUnit(f.weight, "kg");
-          const heightWeight = [h, w].filter(Boolean).join(" / ");
-          const bt = (f.bodyType ?? "").trim();
-          const bust = (f.bustSize ?? "").trim();
-          const looksMeasurement = /\d\s*[-–/]\s*\d/.test(bt);
-          const style = looksMeasurement ? bt : bust || bt;
-          // 🆕 Round 28s366 — 3 cols only; language moved below trust badges
-          const bioCells = [
-            { value: sex, label: "sex" },
-            { value: heightWeight, label: "height / weight" },
-            { value: style, label: "style" },
-          ].filter((c) => c.value);
-
-          if (bioCells.length === 0) return null;
-          return (
-            <StatsCard
-              rating={displayRating}
-              reviewCount={therapist.reviewCount}
-              yearsExp={therapist.yearsExp}
-              totalSessions={therapist.totalSessions}
-              rebookRate={therapist.rebookRate ?? ""}
-              bioCells={bioCells}
-              overlapPhoto={false}
-            />
-          );
-        })()}
+            if (bioCells.length === 0) return null;
+            return (
+              <StatsCard
+                rating={displayRating}
+                reviewCount={therapist.reviewCount}
+                yearsExp={therapist.yearsExp}
+                totalSessions={therapist.totalSessions}
+                rebookRate={therapist.rebookRate ?? ""}
+                bioCells={bioCells}
+                bare
+              />
+            );
+          })()}
+        </IdentityCard>
 
         {/* 🆕 28t.12 — Trust chips (Data verified · Vaccinated) removed
             (founder "เอาออก"). Verification is conveyed by the Credentials

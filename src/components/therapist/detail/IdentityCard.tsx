@@ -16,6 +16,13 @@
 //   reference-chasing, not a real content gap. Name+age+verified,
 //   location, and the sessions/rebook/rating chips are the fields that
 //   actually transfer.
+//
+// 🆕 Round 28x.178 (founder: "ดูเยอะไปนะ ลอง อันไหนรวมได้ก็รวม") — this used
+//   to be the first of three separate stacked white cards/rows (this one,
+//   the bio StatsCard, the heart+StatusPill row) reading as visual clutter.
+//   Now accepts `children`, rendered inside the SAME card below a hairline,
+//   so the page can compose the bio grid and the CTA row into ONE card
+//   instead of three.
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
@@ -36,6 +43,9 @@ interface Props {
   reviewCount?: number;
   totalSessions?: number;
   rebookRate?: string;
+  /** 🆕 Round 28x.178 — extra sections (bio grid, CTA row) rendered
+   *  inside this same card, each preceded by a hairline divider. */
+  children?: React.ReactNode;
 }
 
 const IdentityCard: React.FC<Props> = ({
@@ -48,6 +58,7 @@ const IdentityCard: React.FC<Props> = ({
   reviewCount,
   totalSessions,
   rebookRate,
+  children,
 }) => {
   const hasLocation = distanceLabel?.trim() && distanceLabel !== "—";
 
@@ -209,6 +220,15 @@ const IdentityCard: React.FC<Props> = ({
             )}
           </Box>
         ) : null}
+
+        {React.Children.map(children, (child, i) =>
+          child == null ? null : (
+            <React.Fragment key={i}>
+              <Box sx={{ height: "1px", background: "var(--sr-line)", margin: "14px 0" }} />
+              {child}
+            </React.Fragment>
+          ),
+        )}
       </Box>
     </Box>
   );

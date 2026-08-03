@@ -54,6 +54,13 @@ interface Props {
    * Default true preserves the original standalone-overlap behavior.
    */
   overlapPhoto?: boolean;
+  /**
+   * 🆕 Round 28x.178 (founder: "ดูเยอะไปนะ ลอง อันไหนรวมได้ก็รวม") — when
+   * true, skip this card's own outer margin/background/border/shadow box
+   * and render just the cell grid, so a parent (IdentityCard) can host it
+   * inside ONE shared card instead of two stacked ones. bioCells mode only.
+   */
+  bare?: boolean;
 }
 
 const StatsCard: React.FC<Props> = ({
@@ -67,6 +74,7 @@ const StatsCard: React.FC<Props> = ({
   onTapLoyalty,
   bioCells,
   overlapPhoto = true,
+  bare = false,
 }) => {
   const { t } = useTranslation();
 
@@ -175,6 +183,63 @@ const StatsCard: React.FC<Props> = ({
   if (bioCells && bioCells.length > 0) {
     const cols = bioCells.filter((c) => c.value && String(c.value).trim() !== "");
     const isFour = cols.length === 4;
+    const grid = (
+      <Box
+        sx={{
+          display: "grid",
+          // 🆕 Round 28s365 — always 4 cols on every viewport (founder:
+          //   "StatsCard มี 4บาร์ เรียงเสมอ ทุกจอ"). Was 2×2 on mobile.
+          gridTemplateColumns: `repeat(${cols.length}, 1fr)`,
+        }}
+      >
+        {cols.map((c, i) => (
+          <Box
+            key={i}
+            sx={{
+              textAlign: "center",
+              paddingY: { xs: "8px", md: "10px" },
+              paddingX: { xs: "4px", md: "10px" },
+              borderLeft: i > 0 ? "1px solid var(--sr-line)" : "none",
+            }}
+          >
+            {/* Value — bigger/bolder (Round 28s366) */}
+            <Box
+              sx={{
+                fontFamily: SERIF,
+                fontWeight: 800,
+                fontSize: { xs: "14px", md: "17px" },
+                color: "var(--sr-ink)",
+                letterSpacing: "-0.01em",
+                lineHeight: 1.25,
+                wordBreak: "break-word",
+                overflowWrap: "anywhere",
+              }}
+            >
+              {c.value}
+            </Box>
+            {/* Label */}
+            <Box
+              sx={{
+                fontFamily: SANS,
+                fontSize: { xs: "8px", md: "9px" },
+                color: "var(--sr-muted)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                fontWeight: 600,
+                marginTop: "4px",
+              }}
+            >
+              {c.label}
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    );
+
+    // 🆕 Round 28x.178 — bare mode: no outer card, just the grid, so a
+    //   parent card (IdentityCard) can host this as one of its own rows.
+    if (bare) return grid;
+
     return (
       <Box
         sx={{
@@ -194,56 +259,7 @@ const StatsCard: React.FC<Props> = ({
             boxShadow: "var(--sr-card-shadow)",
           }}
         >
-          <Box
-            sx={{
-              display: "grid",
-              // 🆕 Round 28s365 — always 4 cols on every viewport (founder:
-              //   "StatsCard มี 4บาร์ เรียงเสมอ ทุกจอ"). Was 2×2 on mobile.
-              gridTemplateColumns: `repeat(${cols.length}, 1fr)`,
-            }}
-          >
-            {cols.map((c, i) => (
-              <Box
-                key={i}
-                sx={{
-                  textAlign: "center",
-                  paddingY: { xs: "8px", md: "10px" },
-                  paddingX: { xs: "4px", md: "10px" },
-                  borderLeft: i > 0 ? "1px solid var(--sr-line)" : "none",
-                }}
-              >
-                {/* Value — bigger/bolder (Round 28s366) */}
-                <Box
-                  sx={{
-                    fontFamily: SERIF,
-                    fontWeight: 800,
-                    fontSize: { xs: "14px", md: "17px" },
-                    color: "var(--sr-ink)",
-                    letterSpacing: "-0.01em",
-                    lineHeight: 1.25,
-                    wordBreak: "break-word",
-                    overflowWrap: "anywhere",
-                  }}
-                >
-                  {c.value}
-                </Box>
-                {/* Label */}
-                <Box
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: { xs: "8px", md: "9px" },
-                    color: "var(--sr-muted)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    fontWeight: 600,
-                    marginTop: "4px",
-                  }}
-                >
-                  {c.label}
-                </Box>
-              </Box>
-            ))}
-          </Box>
+          {grid}
         </Box>
       </Box>
     );
