@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>SunRed · มาตรฐานบริการและคู่มือผู้ให้บริการ</title>
+<style>
+  /* 🆕 SunRed internal service-standards page (public/standards.html).
+     Code gate mirrors CBODY's /service-standards-th: a soft 4-digit lock.
+     NOTE: this is a client-side gate only (deters casual viewers, not real
+     security — the text lives in the DOM). To change the code, edit
+     ACCESS_CODE in the <script> at the bottom. For real protection, gate it
+     server-side. */
+  :root {
+    --bg: #FBF7F9; --panel: #FFFFFF; --panel-2: #FCEBF1;
+    --ink: #211A1E; --body: #574A50; --muted: #8A7A81; --hair: #EFE0E6;
+    --rose: #C2185B; --rose-soft: #D97C95; --gold: #9A7400; --green: #15803D;
+    --shadow: 0 14px 40px rgba(120, 30, 66, 0.10);
+    /* หลายสี — สีประจำหมวด/เมนู (โทนสดใส ไม่ใช้ทองขรึม) */
+    --c-rose: #C2185B; --c-teal: #0E9488; --c-violet: #7C3AED;
+    --c-green: #15A24A; --c-coral: #E0384E; --c-blue: #2563EB; --c-magenta: #A21CAF;
+    --serif: Georgia, "Times New Roman", serif;
+    --thai: "Sarabun", "Noto Sans Thai", -apple-system, system-ui, "Helvetica Neue", sans-serif;
+    --maxw: 820px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171316; --panel: #201A1E; --panel-2: #2A2027;
+      --ink: #F3ECEF; --body: #C4B6BC; --muted: #8E7E86;
+      --hair: #352A31; --rose: #E8899F; --rose-soft: #D97C95;
+      --gold: #E7C55A; --green: #4ADE80; --shadow: 0 16px 44px rgba(0,0,0,0.5);
+      --c-rose: #F090A6; --c-teal: #2DD4BF; --c-violet: #A78BFA;
+      --c-green: #4ADE80; --c-coral: #FB7185; --c-blue: #60A5FA; --c-magenta: #E879F9;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--body); font-family: var(--thai); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 96px; }
+
+  /* ── Gate ── */
+  #gate { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+  #gate.hidden { display: none; }
+  #gate .lock { font-size: 40px; margin-bottom: 8px; }
+  #gate h2 { font-family: var(--serif); color: var(--ink); font-size: 22px; margin: 0 0 6px; }
+  #gate p { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+  #dots { display: flex; gap: 14px; margin-bottom: 10px; }
+  #dots span { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--rose-soft); }
+  #dots span.on { background: var(--rose); border-color: var(--rose); }
+  #err { color: #DC2626; font-size: 13px; height: 18px; margin-bottom: 14px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 68px); gap: 12px; }
+  .pad button { height: 62px; border-radius: 16px; border: 1px solid var(--hair); background: var(--panel); color: var(--ink); font-family: var(--serif); font-size: 24px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow); transition: transform .08s ease, background .12s; }
+  .pad button:active { transform: scale(0.94); background: var(--panel-2); }
+  .pad button.util { font-family: var(--thai); font-size: 14px; font-weight: 700; color: var(--muted); box-shadow: none; }
+
+  /* ── Cover ── */
+  .cover { text-align: center; padding: 64px 20px 40px; border-bottom: 1px solid var(--hair); margin-bottom: 36px; }
+  .wordmark { font-family: var(--serif); font-size: 34px; letter-spacing: 0.16em; font-weight: 700; color: var(--ink); }
+  .wordmark .r { color: var(--rose); }
+  .eyebrow { font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--rose); font-weight: 700; margin: 22px 0 10px; }
+  h1.title { font-family: var(--serif); font-weight: 700; font-size: clamp(26px, 5vw, 40px); color: var(--ink); margin: 0 auto 14px; line-height: 1.2; max-width: 16ch; }
+  .confidential { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--hair); border-radius: 999px; padding: 6px 16px; }
+
+  nav.toc { background: var(--panel); border: 1px solid var(--hair); border-radius: 18px; padding: 18px 22px; box-shadow: var(--shadow); margin-bottom: 44px; }
+  nav.toc .lbl { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 12px; }
+  nav.toc ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+  nav.toc a { display: flex; gap: 12px; align-items: baseline; text-decoration: none; color: var(--body); padding: 7px 8px; border-radius: 10px; font-size: 15px; }
+  nav.toc a:hover { background: var(--panel-2); color: var(--ink); }
+  nav.toc .n { font-family: var(--serif); color: var(--rose); font-weight: 700; min-width: 20px; }
+
+  section { margin-bottom: 52px; scroll-margin-top: 20px; --acc: var(--c-rose); }
+  #s0 { --acc: var(--c-rose); } #s1 { --acc: var(--c-teal); } #s2 { --acc: var(--c-violet); }
+  #s3 { --acc: var(--c-green); } #s4 { --acc: var(--c-coral); } #s5 { --acc: var(--c-blue); }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 2px solid var(--acc); padding-bottom: 10px; margin-bottom: 22px; }
+  .sec-head .num { font-family: var(--serif); font-size: 30px; font-weight: 700; color: var(--acc); line-height: 1; }
+  /* หัวข้อย่อยรับสีประจำหมวด */
+  section h3 { border-left: 3px solid var(--acc); padding-left: 10px; }
+  /* เลขสารบัญไล่สีตามหมวด */
+  nav.toc ol li:nth-child(1) .n { color: var(--c-rose); }
+  nav.toc ol li:nth-child(2) .n { color: var(--c-teal); }
+  nav.toc ol li:nth-child(3) .n { color: var(--c-violet); }
+  nav.toc ol li:nth-child(4) .n { color: var(--c-green); }
+  nav.toc ol li:nth-child(5) .n { color: var(--c-coral); }
+  nav.toc ol li:nth-child(6) .n { color: var(--c-blue); }
+  .sec-head h2 { font-weight: 700; font-size: 21px; color: var(--ink); margin: 0; }
+  h3 { font-weight: 700; font-size: 16.5px; color: var(--ink); margin: 26px 0 8px; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0 0 14px; padding-left: 4px; list-style: none; }
+  li { padding-left: 22px; position: relative; margin-bottom: 7px; }
+  li::before { content: ""; position: absolute; left: 4px; top: 12px; width: 6px; height: 6px; border-radius: 50%; background: var(--acc, var(--rose-soft)); }
+  strong { color: var(--ink); font-weight: 700; }
+  .lead { font-size: 16px; }
+
+  .box { border-radius: 14px; padding: 16px 18px; margin: 16px 0; border: 1px solid var(--hair); background: var(--panel); }
+  .box .h { font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .box.warn { background: color-mix(in srgb, var(--gold) 12%, var(--panel)); border-color: color-mix(in srgb, var(--gold) 34%, transparent); }
+  .box.warn .h { color: var(--gold); }
+  .box.rose { background: var(--panel-2); border-color: color-mix(in srgb, var(--rose) 24%, transparent); }
+  .box ul { margin-bottom: 0; }
+
+  .flow { display: grid; margin: 16px 0; }
+  .step { display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 12px 0; border-bottom: 1px dashed var(--hair); }
+  .step:last-child { border-bottom: none; }
+  .step .dot { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(140deg, var(--rose-soft), var(--rose)); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-weight: 700; font-size: 15px; box-shadow: 0 4px 10px rgba(194,24,91,0.3); }
+  .step .st-t { font-weight: 700; color: var(--ink); }
+  .step .st-d { font-size: 14px; color: var(--muted); }
+
+  .menu { --macc: var(--c-rose); border: 1px solid var(--hair); border-left: 4px solid var(--macc); border-radius: 18px; overflow: hidden; margin: 18px 0; background: var(--panel); box-shadow: var(--shadow); }
+  .menu.m-thai { --macc: var(--c-green); } .menu.m-aroma { --macc: var(--c-violet); }
+  .menu.m-gent { --macc: var(--c-rose); } .menu.m-thera { --macc: var(--c-magenta); }
+  .menu > .top { padding: 18px 20px 14px; background: linear-gradient(160deg, color-mix(in srgb, var(--macc) 20%, var(--panel)) 0%, var(--panel) 62%); border-bottom: 1px solid var(--hair); }
+  .menu .code { font-size: 11px; letter-spacing: 0.14em; color: var(--macc); font-weight: 700; text-transform: uppercase; }
+  .menu .name { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--ink); margin: 2px 0 4px; }
+  .menu .concept { font-size: 14.5px; }
+  .menu > .body { padding: 16px 20px 20px; }
+  .menu .row { margin-bottom: 12px; }
+  .menu .row .k { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
+  .menu .row .v { font-size: 14.5px; }
+  table.price { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  table.price th, table.price td { text-align: right; padding: 8px 10px; font-size: 14px; border-bottom: 1px solid var(--hair); }
+  table.price th:first-child, table.price td:first-child { text-align: left; }
+  table.price thead th { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  table.price td.you { color: var(--macc, var(--rose)); font-weight: 700; }
+  table.price tbody tr:last-child td { border-bottom: none; }
+
+  .footer { text-align: center; color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--hair); padding-top: 26px; margin-top: 20px; }
+  a.top-link { color: var(--rose); text-decoration: none; }
+  @media (max-width: 560px) { .cover { padding: 44px 12px 32px; } .pad { grid-template-columns: repeat(3, 64px); } }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="lock">🔐</div>
+  <h2>ตรวจสอบสิทธิ์เข้าใช้งาน</h2>
+  <p>กรุณากรอกรหัสตัวเลข 4 หลัก</p>
+  <div id="dots"><span></span><span></span><span></span><span></span></div>
+  <div id="err"></div>
+  <div class="pad">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button class="util" data-k="clear">ลบ</button><button data-k="0">0</button><button class="util" data-k="back">←</button>
+  </div>
+</div>
+
+<div class="cover">
+  <div class="wordmark">SUN<span class="r">RED</span></div>
+  <div class="eyebrow">สำหรับผู้ให้บริการ · ภายในระบบ</div>
+  <h1 class="title">มาตรฐานบริการและคู่มือผู้ให้บริการ</h1>
+  <div class="confidential">ฉบับใช้ฝึกอบรมและตรวจสอบก่อนเปิดรับงาน · เอกสารภายใน ไม่เผยแพร่</div>
+</div>
+
+<div class="wrap">
+  <nav class="toc">
+    <div class="lbl">สารบัญ</div>
+    <ol>
+      <li><a href="#s0"><span class="n">0</span><span>กติกาการร่วมงาน · เงิน ค่าเดินทาง ส่วนแบ่ง</span></a></li>
+      <li><a href="#s1"><span class="n">1</span><span>ขั้นตอนการทำงาน 1 งาน · รับงานถึงจบงาน</span></a></li>
+      <li><a href="#s2"><span class="n">2</span><span>มาตรฐานบริการรายเมนู</span></a></li>
+      <li><a href="#s3"><span class="n">3</span><span>มาตรฐานตัวผู้ให้บริการ · แต่งกาย สุขอนามัย อุปกรณ์</span></a></li>
+      <li><a href="#s4"><span class="n">4</span><span>ความปลอดภัยและความลับของลูกค้า</span></a></li>
+      <li><a href="#s5"><span class="n">5</span><span>ความรับผิดชอบและการจัดอันดับ</span></a></li>
+    </ol>
+  </nav>
+
+  <section id="s0">
+    <div class="sec-head"><span class="num">0</span><h2>กติกาการร่วมงาน</h2></div>
+    <p class="lead">SunRed ทำงานแบบ <strong>คอนเซียร์จดูแลให้</strong> — คุณไม่ต้องหาลูกค้าเองหรือแชกับลูกค้าเอง แอดมินคัดงานและส่งให้ คุณโฟกัสที่การให้บริการอย่างเดียว ปลอดภัยและเป็นส่วนตัวกว่า</p>
+    <h3>ส่วนแบ่งรายได้</h3>
+    <ul>
+      <li>ส่วนแบ่งของคุณเป็น <strong>จำนวนเงินคงที่ต่อเมนู</strong> ไม่ใช่เปอร์เซ็นต์ — รู้ล่วงหน้าทุกงานว่าจะได้เท่าไร</li>
+      <li><strong>โปรโมชันหรือส่วนลด ไม่หักจากส่วนของคุณ</strong> — ทางร้านรับผลต่างเอง คุณได้เต็มตามตารางเสมอ</li>
+      <li>ไม่มีระบบ “เป็นหนี้แพลตฟอร์ม” · ไม่ต้องวางเงินค้ำ · ไม่มีการบล็อกไม่ให้รับงานเพราะติดยอด</li>
+    </ul>
+    <h3>ค่าเดินทาง</h3>
+    <ul>
+      <li>ระบบคำนวณ <strong>อัตโนมัติจากจุดสแตนด์บายของคุณ</strong> ไป-กลับ (ฐานมอเตอร์ไซค์) ตามระยะจริง ไม่ต้องต่อรองกับลูกค้า</li>
+      <li>ช่วงเร่งด่วนและช่วงดึกมีบวกเพิ่มเป็น % จากราคาฐาน · ฝนตกเปลี่ยนเป็นรถยนต์ ราคาอาจสูงขึ้น</li>
+      <li>ตั้ง <strong>จุดสแตนด์บาย</strong> ให้ตรงกับที่ที่คุณรอรับงานจริง (แอป → ตำแหน่งปัจจุบัน)</li>
+    </ul>
+    <h3>การรับเงินจากลูกค้า</h3>
+    <ul>
+      <li><strong>เงินสด / PromptPay</strong> — ไม่มีค่าธรรมเนียม (แนะนำเป็นหลัก)</li>
+      <li><strong>WeChat Pay / Alipay</strong> — มีค่าแปลงเงิน +5% + ฿200 (แจ้งลูกค้าให้ชัดก่อนรับ)</li>
+      <li>บัญชีรับเงินโอนของคุณ แก้ไขเองได้ในแอป · ระบบแจ้งแอดมินอัตโนมัติทุกครั้งเพื่อความปลอดภัย</li>
+    </ul>
+    <div class="box rose">
+      <div class="h">เงื่อนไขก่อนเปิดรับเมนู</div>
+      <ul>
+        <li>เปิดรับเฉพาะเมนูที่คุณเลือกไว้ในแอป (หน้า Services) — เลือกเฉพาะที่คุณทำได้จริงและมั่นใจในคุณภาพ</li>
+        <li>ถ้าลูกค้าแจ้งว่าบริการไม่ตรงมาตรฐาน ทางร้านขอปิดเมนูนั้นของคุณชั่วคราวเพื่อทบทวน</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="s1">
+    <div class="sec-head"><span class="num">1</span><h2>ขั้นตอนการทำงาน 1 งาน</h2></div>
+    <p class="lead">ทุกสเตปกดในแอป แล้วแอดมินเห็นสถานะทันที <strong>ไม่ต้องโทรแจ้ง</strong> — สถานะบนหน้าเว็บลูกค้าก็เปลี่ยนตามให้อัตโนมัติ</p>
+    <div class="flow">
+      <div class="step"><div class="dot">1</div><div><div class="st-t">รับงาน</div><div class="st-d">แอดมินส่งงานเข้าแอป + แจ้งในกลุ่ม Telegram → กด “รับงาน” หรือ “ไม่รับ” ให้เร็ว · ที่อยู่/เบอร์ลูกค้าเปิดให้เห็นหลังกดรับ</div></div></div>
+      <div class="step"><div class="dot">2</div><div><div class="st-t">ออกเดินทาง</div><div class="st-d">กดเมื่อออกจากจุดสแตนด์บาย — เปิดแผนที่นำทางจากในแอปได้เลย</div></div></div>
+      <div class="step"><div class="dot">3</div><div><div class="st-t">ถึงแล้ว · ถ่ายรูปจุดนัดพบ</div><div class="st-d">ถึงที่หมายแล้ว <strong>ถ่ายรูปจุดที่รอลูกค้าส่งเข้าแชทแอดมิน</strong> (ไม่ต้องโทร) — บอทแจ้งเจ้าของว่าถึงแล้วพร้อมรูป เพื่อยืนยันและความปลอดภัย</div></div></div>
+      <div class="step"><div class="dot">4</div><div><div class="st-t">เริ่มนวด</div><div class="st-d">เข้าห้อง คุยสั้น ๆ เรื่องสุขภาพ/ข้อห้าม แล้วกด “เริ่มนวด” เพื่อเริ่มจับเวลาตามที่ลูกค้าจอง</div></div></div>
+      <div class="step"><div class="dot">5</div><div><div class="st-t">จบงาน</div><div class="st-d">กด “จบงาน” ระบบปิดงานเป็นเสร็จสิ้น + เปลี่ยนสถานะบนหน้าเว็บอัตโนมัติ · หลังเลิกงานกลับจุดสแตนด์บาย</div></div></div>
+    </div>
+    <div class="box warn">
+      <div class="h">ข้อควรระวัง</div>
+      <ul>
+        <li>ให้บริการครบเวลาที่ลูกค้าจองเสมอ — ห้ามจบก่อนเวลาหรือลดเวลาจริง</li>
+        <li>ถ้าลูกค้าขอเพิ่มเวลา/เพิ่มบริการ ให้แจ้งแอดมินก่อนทุกครั้ง</li>
+        <li>ถ้าไปถึงแล้วติดต่อลูกค้าไม่ได้ ให้ถ่ายรูปจุดที่รอ + แจ้งแอดมินทันที อย่าเพิ่งกลับเอง</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="s2">
+    <div class="sec-head"><span class="num">2</span><h2>มาตรฐานบริการรายเมนู</h2></div>
+    <p class="lead">ราคาด้านล่างคือราคาที่ลูกค้าจ่าย และ “คุณได้” คือส่วนแบ่งคงที่ของคุณ (ไม่รวมค่าเดินทางซึ่งเป็นของคุณเต็ม)</p>
+
+    <div class="menu m-thai">
+      <div class="top"><div class="code">xSR-Thai</div><div class="name">Thai Massage · นวดแผนไทย</div><div class="concept">นวดแผนไทยไปหาลูกค้าถึงที่ เน้นคลายเมื่อยแบบดั้งเดิม เหมาะกับลูกค้าที่อยากผ่อนคลายเรียบง่าย</div></div>
+      <div class="body">
+        <div class="row"><div class="k">การแต่งกาย</div><div class="v">ชุดทำงานสุภาพ สีเรียบ สะอาด</div></div>
+        <div class="row"><div class="k">จุดเน้น</div><div class="v">บ่า คอ หลัง เอว ขา · คุมน้ำหนักมือ “สบายและปลอดภัย” เช็คฟีดแบ็กเป็นระยะ</div></div>
+        <table class="price"><thead><tr><th>ระยะเวลา</th><th>ลูกค้าจ่าย</th><th>คุณได้</th></tr></thead><tbody>
+          <tr><td>60 นาที</td><td>฿1,200</td><td class="you">฿700</td></tr>
+          <tr><td>90 นาที</td><td>฿1,600</td><td class="you">฿900</td></tr>
+          <tr><td>120 นาที</td><td>฿2,000</td><td class="you">฿1,200</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+
+    <div class="menu m-aroma">
+      <div class="top"><div class="code">SR-Aroma</div><div class="name">Aromatherapy · อโรมาเธอราพี</div><div class="concept">นวดน้ำมันหอมระเหย สัมผัสลื่นไหล บรรยากาศผ่อนคลาย เหมาะกับลูกค้าที่ใส่ใจคุณภาพและบรรยากาศ</div></div>
+      <div class="body">
+        <div class="row"><div class="k">การแต่งกาย</div><div class="v">ชุดทำงานเรียบร้อย ดูสะอาดและมีรสนิยม</div></div>
+        <div class="row"><div class="k">วัสดุ &amp; บรรยากาศ</div><div class="v">น้ำมันหอมคุณภาพดีเตรียมให้พอ · ไฟนวล + เพลงบรรยากาศ</div></div>
+        <div class="row"><div class="k">จุดเน้น</div><div class="v">ลายมือต่อเนื่อง ลื่นไหล ประณีตกว่านวดไทย</div></div>
+        <table class="price"><thead><tr><th>ระยะเวลา</th><th>ลูกค้าจ่าย</th><th>คุณได้</th></tr></thead><tbody>
+          <tr><td>60 นาที</td><td>฿1,400</td><td class="you">฿800</td></tr>
+          <tr><td>90 นาที</td><td>฿1,800</td><td class="you">฿1,100</td></tr>
+          <tr><td>120 นาที</td><td>฿2,400</td><td class="you">฿1,500</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+
+    <div class="menu m-gent">
+      <div class="top"><div class="code">SR-HJ2200 · Bestseller</div><div class="name">Gentleman's Signature</div><div class="concept">อโรมาเธอราพีระดับพรีเมียม พร้อมพิธีปิดท้ายผ่อนคลายเฉพาะบุคคล (personalised finishing ritual) เมนูขายดีที่สุด</div></div>
+      <div class="body">
+        <div class="row"><div class="k">การแต่งกาย</div><div class="v">ชุดทำงานโทนสุภาพ ให้ความรู้สึกเป็นส่วนตัว</div></div>
+        <div class="row"><div class="k">บรรยากาศ</div><div class="v">ไฟนวล เพลงเบา ๆ ดูแลลูกค้าอย่างประณีตตั้งแต่ต้นจนจบ</div></div>
+        <div class="row"><div class="k">ขอบเขต</div><div class="v">ให้บริการในกรอบมาตรฐานเมนูเท่านั้น รักษาความเป็นมืออาชีพและความปลอดภัยตลอดเวลา ถ้าลูกค้าขอนอกเหนือมาตรฐาน ให้ดึงกลับเข้ากรอบอย่างสุภาพ หรือขอจบงาน</div></div>
+        <table class="price"><thead><tr><th>ระยะเวลา</th><th>ลูกค้าจ่าย</th><th>คุณได้</th></tr></thead><tbody>
+          <tr><td>70 นาที</td><td>฿2,200</td><td class="you">฿1,300</td></tr>
+          <tr><td>120 นาที</td><td>฿3,000</td><td class="you">฿1,800</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+
+    <div class="menu m-thera">
+      <div class="top"><div class="code">SR-B2B3200</div><div class="name">SunRed Therapeutic</div><div class="concept">ทรีตเมนต์น้ำมันสัมผัสต่อเนื่องทั้งตัว (continuous-contact whole-body oil ceremony) เมนูระดับบนสุด สำหรับลูกค้ากลุ่มกำลังซื้อสูง</div></div>
+      <div class="body">
+        <div class="row"><div class="k">การแต่งกาย &amp; บรรยากาศ</div><div class="v">เตรียมชุด/อุปกรณ์ตามมาตรฐานเมนู · ไฟและเพลงบรรยากาศ · รักษาสุขอนามัยและความปลอดภัยของทั้งสองฝ่ายตลอดเวลา</div></div>
+        <div class="row"><div class="k">อุปกรณ์</div><div class="v">แผ่นรองกันลื่น + น้ำมัน/เจลคุณภาพ เตรียมให้พอต่องาน</div></div>
+        <div class="row"><div class="k">ขอบเขต &amp; ความเสี่ยง</div><div class="v">คุมท่าทาง น้ำหนักตัว และปริมาณน้ำมันเป็นพิเศษเพื่อกันลื่น/บาดเจ็บ · ให้บริการในกรอบมาตรฐานเมนูเท่านั้น</div></div>
+        <table class="price"><thead><tr><th>ระยะเวลา</th><th>ลูกค้าจ่าย</th><th>คุณได้</th></tr></thead><tbody>
+          <tr><td>70 นาที</td><td>฿3,200</td><td class="you">฿2,000</td></tr>
+          <tr><td>120 นาที</td><td>฿4,000</td><td class="you">฿2,500</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+
+    <div class="box"><div class="h">อุปกรณ์พื้นฐานที่ต้องพกทุกงาน</div>
+      <ul>
+        <li>แผ่นรอง / ปลอกหมอนแบบใช้ครั้งเดียว · น้ำมัน/เจลนวด · เจลล้างมือหรือสเปรย์แอลกอฮอล์</li>
+        <li>โทรศัพท์ + ลำโพงเล็กสำหรับเปิดเพลงบรรยากาศ · ชุดทำงานมาตรฐานสำรอง</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="s3">
+    <div class="sec-head"><span class="num">3</span><h2>มาตรฐานตัวผู้ให้บริการ</h2></div>
+    <h3>การแต่งกายและภาพลักษณ์</h3>
+    <ul>
+      <li>สะอาด เรียบร้อย มีรสนิยม เข้ากับภาพลักษณ์พรีเมียมของแบรนด์ · เปลี่ยนชุดที่ห้องน้ำก่อนเริ่มงาน</li>
+      <li>รูปโปรไฟล์และแกลเลอรีต้องเป็นรูปจริงของคุณ · รูปใหม่อัปโหลดผ่านแอป (เข้าคิวให้แอดมินตรวจก่อนขึ้นจริง)</li>
+    </ul>
+    <h3>สุขอนามัยและความสุภาพ</h3>
+    <ul>
+      <li>ล้างมือ/ทำความสะอาดก่อน-หลังทุกงาน · ใช้ของใช้ครั้งเดียวตามมาตรฐาน</li>
+      <li>สุภาพ ตรงเวลา พูดจาดี · ให้ลูกค้ารู้สึกปลอดภัยและได้รับการดูแลอย่างมืออาชีพ</li>
+    </ul>
+    <h3>เวลาทำงานและสถานะ</h3>
+    <ul>
+      <li>ตั้งสถานะ ว่าง / กำลังนวด / พัก / วันหยุด ให้ตรงความจริง — ลูกค้าเห็นทันทีที่เปลี่ยน</li>
+      <li>เวลาทำงาน (Working Hours) แก้ได้เฉพาะวันพุธและอาทิตย์ เพื่อให้ตารางคาดเดาได้</li>
+    </ul>
+  </section>
+
+  <section id="s4">
+    <div class="sec-head"><span class="num">4</span><h2>ความปลอดภัยและความลับของลูกค้า</h2></div>
+    <div class="box rose">
+      <div class="h">ความเป็นส่วนตัวคือหัวใจของ SunRed</div>
+      <ul>
+        <li><strong>ห้ามเปิดเผยหรือบันทึกข้อมูลลูกค้า</strong> (ชื่อ เบอร์ ที่อยู่ รูป) นอกระบบเด็ดขาด · ห้ามติดต่อลูกค้าตรงนอกงานที่แอดมินส่งให้</li>
+        <li>ที่อยู่/เบอร์ลูกค้าเปิดให้เห็นก็ต่อเมื่อคุณกดรับงานแล้วเท่านั้น</li>
+      </ul>
+    </div>
+    <h3>ความปลอดภัยของคุณเอง</h3>
+    <ul>
+      <li>ถ่ายรูปจุดนัดพบส่งแอดมินทุกครั้งที่ถึงที่หมาย — เป็นทั้งหลักฐานและตัวช่วยความปลอดภัย</li>
+      <li>แอดมินเห็นสถานะและตำแหน่งงานของคุณแบบเรียลไทม์ · ถ้ารู้สึกไม่ปลอดภัย แจ้งกลุ่มทันที</li>
+      <li>ห้ามรับงานนอกระบบ — นอกจากผิดกติกาแล้ว ยังไม่มีใครดูแลความปลอดภัยให้คุณ</li>
+    </ul>
+  </section>
+
+  <section id="s5">
+    <div class="sec-head"><span class="num">5</span><h2>ความรับผิดชอบและการจัดอันดับ</h2></div>
+    <p class="lead">ลูกค้ามักเลือกจองคนที่ดูน่าเชื่อถือและมีงานสม่ำเสมอ สิ่งที่คุณทำมีผลต่อลำดับการแสดงบนหน้าเว็บและโอกาสได้งาน</p>
+    <h3>สิ่งที่ช่วยให้ได้งานมากขึ้น</h3>
+    <ul>
+      <li>ตอบรับงานเร็ว · เปิดสถานะ “ว่าง” ตรงเวลาทำงานจริง</li>
+      <li>ให้บริการครบเวลา คุณภาพดี → รีวิวดี → อันดับดีขึ้น</li>
+      <li>ลูกค้ากลับมาจองซ้ำ (rebook) คือสัญญาณคุณภาพที่ดีที่สุด</li>
+    </ul>
+    <div class="box warn">
+      <div class="h">สิ่งที่ควรเลี่ยง</div>
+      <ul>
+        <li>จบงานก่อนเวลา/ลดเวลาจริงจนลูกค้าร้องเรียน · ตอบช้า ดึงเวลา</li>
+        <li>ยกเลิกงานด้วยเหตุผลส่วนตัวบ่อย ๆ · ชวนลูกค้ายกเลิกหรือเปลี่ยนไปเมนูถูกลง</li>
+        <li>รับงานนอกระบบ (ผิดกติกาขั้นร้ายแรง)</li>
+      </ul>
+    </div>
+    <p style="font-size:13.5px;color:var(--muted)">สิทธิ์ในการปรับปรุงหรือเปลี่ยนแปลงมาตรฐานทั้งหมดเป็นของทีม SunRed · หากมีข้อสงสัยติดต่อแอดมินในกลุ่มได้ตลอด 24 ชม.</p>
+  </section>
+
+  <div class="footer">
+    SunRed · เอกสารภายในสำหรับผู้ให้บริการ · <a class="top-link" href="#s0">กลับขึ้นบน</a><br>
+    ราคาและส่วนแบ่งอ้างอิงจากระบบจริงในแอป (หน้า Services) ซึ่งเป็นตัวเลขล่าสุดเสมอ
+  </div>
+</div>
+
+<script>
+  // 🔑 เปลี่ยนรหัสเข้าใช้งานได้ที่บรรทัดนี้ (4 หลัก)
+  var ACCESS_CODE = "2828";
+  (function () {
+    var gate = document.getElementById("gate");
+    var dots = document.querySelectorAll("#dots span");
+    var err = document.getElementById("err");
+    var buf = "";
+    // จำการปลดล็อกไว้ 12 ชม. ในเครื่องนี้ จะได้ไม่ต้องกรอกซ้ำ
+    try {
+      if (localStorage.getItem("sr_std_ok")) {
+        var t = Number(localStorage.getItem("sr_std_ok"));
+        if (t && (Date.now() - t) < 12 * 3600 * 1000) { gate.classList.add("hidden"); }
+      }
+    } catch (e) {}
+    function render() {
+      for (var i = 0; i < 4; i++) { dots[i].classList.toggle("on", i < buf.length); }
+    }
+    function submit() {
+      if (buf === ACCESS_CODE) {
+        try { localStorage.setItem("sr_std_ok", String(Date.now())); } catch (e) {}
+        gate.classList.add("hidden");
+      } else {
+        err.textContent = "❌ รหัสไม่ถูกต้อง โปรดลองใหม่";
+        buf = ""; render();
+      }
+    }
+    document.querySelectorAll(".pad button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var k = b.getAttribute("data-k");
+        if (k === "clear") { buf = ""; err.textContent = ""; }
+        else if (k === "back") { buf = buf.slice(0, -1); }
+        else if (buf.length < 4) { buf += k; err.textContent = ""; }
+        render();
+        if (buf.length === 4) { setTimeout(submit, 120); }
+      });
+    });
+    render();
+  })();
+</script>
+</body>
+</html>
