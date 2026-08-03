@@ -15,7 +15,6 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Box,
-  Typography,
   Dialog,
   IconButton,
   Menu,
@@ -28,10 +27,6 @@ import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-// 🆕 Round 28az — replace 📍 emoji with MUI icon (founder rule: icons only).
-import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
-import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
-import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -45,21 +40,11 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 export type AvailabilityStatus = "online" | "busy" | "offline";
 
 interface Props {
+  // 🆕 Round 28x.176 — name/age/distance/rating/stat-chip props moved to
+  //   IdentityCard.tsx along with the JSX that rendered them; this
+  //   component only needs `name` now (share title + photo alt text).
   name: string;
-  age: number;
   area: string;
-  /**
-   * @deprecated Round 28b33 — prefer `distanceLabel`. Kept for back-
-   * compat with callers that already pass a pre-formatted string.
-   */
-  distance?: string;
-  /**
-   * 🆕 Round 28b33 (founder 2026-05-04) — Canonical distance + ETA
-   * label produced by `formatDistanceEta(km, etaMin)`. Renders as
-   * "1.2 km • 4 min" or just "1.2 km" / "—" depending on inputs.
-   * When provided, overrides the legacy `distance` string.
-   */
-  distanceLabel?: string | null;
   /**
    * Either the legacy boolean (true → online, false → offline) or a
    * 3-state status string. Existing callers passing `online={t.online}`
@@ -73,28 +58,6 @@ interface Props {
   /** Round 28s52 — Optional working hours shown in the info overlay
    *  next to the distance row. e.g. "19:00 – 05:00 (overnight)". */
   workingHours?: string | null;
-  /** Round 28s53 — Tapping the "Allow location" chip fires this to
-   *  request a real GPS position. Once it resolves, the parent
-   *  recomputes `distanceLabel`. */
-  onRequestLocation?: () => void;
-  /** Round 28s53 — Geolocation status drives the chip copy:
-   *  idle/prompt → "Allow location", "prompt" while pending →
-   *  "Locating…", "denied" → "Location off". */
-  geoStatus?: "idle" | "prompt" | "ready" | "denied" | "unsupported";
-  /**
-   * 🆕 Round 28s365 — ★ rating chip next to the name.
-   * Rendered as a soft amber pill e.g. "★ 4.5 (16)".
-   * Omit to hide the chip.
-   */
-  rating?: string;
-  reviewCount?: number;
-  /**
-   * 🆕 Round 28s366 — stat chips below the name line.
-   * Sessions count, rebook rate %, and rating are shown as
-   * small frosted chips in a row under the name.
-   */
-  totalSessions?: number;
-  rebookRate?: string;
 }
 
 const STATUS_COLORS: Record<AvailabilityStatus, { dot: string; label: string }> = {
@@ -110,27 +73,15 @@ function resolveStatus(input: boolean | AvailabilityStatus): AvailabilityStatus 
 
 const DetailHero: React.FC<Props> = ({
   name,
-  age,
   area,
-  distance,
-  distanceLabel,
   online,
   images = [],
   photoBg,
   workingHours,
-  onRequestLocation,
-  geoStatus = "idle",
-  rating,
-  reviewCount,
-  totalSessions,
-  rebookRate,
 }) => {
   // 🆕 Round 28s219 — i18n for hardcoded Thai "ดูทั้งหมด" overlay
   //   (founder: "ทำไมเป็นภาษาไทย").
   const { t } = useTranslation();
-  // 🆕 Round 28b33 — Prefer the new prop. Fall back to the legacy
-  //   string for callers that haven't migrated yet.
-  const resolvedLabel = distanceLabel ?? distance ?? null;
   const navigate = useNavigate();
   const [activeIdx, setActiveIdx] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -318,35 +269,11 @@ const DetailHero: React.FC<Props> = ({
                       filter: "saturate(1.06) contrast(1.03) brightness(1.04)",
                     },
                   },
-                  // Only the big cell carries the original ::after
-                  // dark gradient so the bottom-of-card name overlay
-                  // (rendered later, position absolute on the wrapper)
-                  // still reads on the LEFT half where it sits.
-                  ...(isBig && {
-                    "&::after": {
-                      content: '""',
-                      position: "absolute",
-                      inset: 0,
-                      // 🆕 Round 28x.159 (founder: "รูปมัน โดนเหมือนมีฟิลเตอร บัง
-                      //   จนเทาหม่น") — this stack was the "filter" she is
-                      //   seeing, and it is real, not perceived:
-                      //     • an 18% WHITE radial centred at 30%/25% — which on
-                      //       a portrait shot lands squarely on the face, laying
-                      //       a milky film over exactly the part of the photo
-                      //       that sells the booking. Removed outright; it was
-                      //       decorative gloss with no legibility job.
-                      //     • a 15% BLACK wash across the top. Also removed —
-                      //       nothing is written up there to protect.
-                      //   What stays is the bottom scrim, which earns its place:
-                      //   the name, distance and stat chips sit on it. Its ramp
-                      //   now starts at 58% instead of 55% and ends slightly
-                      //   deeper, so it holds the same text contrast while
-                      //   touching less of the photograph.
-                      background:
-                        "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.74) 100%)",
-                      pointerEvents: "none",
-                    },
-                  }),
+                  // 🆕 Round 28x.176 — the bottom scrim this ::after used to
+                  //   carry existed only to keep the name/distance/stat-chip
+                  //   overlay legible; that overlay moved off the photo into
+                  //   IdentityCard, so the scrim has nothing left to protect.
+                  //   Removed for a clean product photo (founder reference).
                 }}
               >
                 {showSeeAll && (
@@ -515,222 +442,11 @@ const DetailHero: React.FC<Props> = ({
           ))}
         </Box>
 
-        {/* .info-overlay — bottom 70px lifts the name+status above the
-            StatsCard's -30px overlap zone (was 24px → got covered). */}
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: "70px",
-            left: "20px",
-            right: "20px",
-            zIndex: 3,
-            color: "#fff",
-          }}
-        >
-          {/* .name-line */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              marginBottom: "6px",
-            }}
-          >
-            <Typography
-              component="h1"
-              sx={{
-                fontFamily: SERIF,
-                fontWeight: 500,
-                fontSize: "30px",
-                letterSpacing: "-0.02em",
-                lineHeight: 1.0,
-                "& em": {
-                  fontStyle: "italic",
-                  opacity: 0.85,
-                  fontWeight: 400,
-                  fontSize: "22px",
-                },
-              }}
-            >
-              {name} <em>{age}</em>
-            </Typography>
-            {/* 🆕 Round 28b3 — verified badge */}
-            <VerifiedRoundedIcon
-              aria-label="verified"
-              titleAccess="Verified by SunRed"
-              sx={{
-                fontSize: 26,
-                // 🆕 28t.19 — rose (was Twitter-blue #1d9bf0, off-brand).
-                color: "#FF9999",
-                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.45))",
-              }}
-            />
-            {/* Round 28s367 — ★ rating chip removed from name line;
-                moved to frosted chip row (row 3) below the name. */}
-          </Box>
-
-          {/* .quick-meta — location row (Round 28s368: moved above chip row) */}
-          <Box
-            sx={{
-              display: "flex",
-              gap: "12px",
-              fontSize: "11.5px",
-              opacity: 0.95,
-              fontWeight: 500,
-              fontFamily: SANS,
-              marginBottom: "6px",
-            }}
-          >
-            <Box
-              role={
-                resolvedLabel?.trim() && resolvedLabel !== "—"
-                  ? undefined
-                  : "button"
-              }
-              tabIndex={
-                resolvedLabel?.trim() && resolvedLabel !== "—"
-                  ? undefined
-                  : 0
-              }
-              onClick={(e) => {
-                if (resolvedLabel?.trim() && resolvedLabel !== "—") return;
-                if (geoStatus === "denied") return;
-                e.stopPropagation();
-                onRequestLocation?.();
-              }}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-                if (resolvedLabel?.trim() && resolvedLabel !== "—") return;
-                if (geoStatus === "denied") return;
-                e.preventDefault();
-                e.stopPropagation();
-                onRequestLocation?.();
-              }}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                cursor:
-                  resolvedLabel?.trim() && resolvedLabel !== "—"
-                    ? "default"
-                    : geoStatus === "denied"
-                      ? "default"
-                      : "pointer",
-              }}
-            >
-              {resolvedLabel?.trim() && resolvedLabel !== "—" ? (
-                <>
-                  <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
-                  {resolvedLabel}
-                </>
-              ) : (
-                <>
-                  <NearMeRoundedIcon sx={{ fontSize: 14 }} />
-                  {/* 🆕 28w.73 (founder "โลเคชั่น ไม่ทำงาน") — geolocation itself
-                      works; the browser had BLOCKED the permission (error code
-                      1). Once blocked, browsers never re-prompt, so the old
-                      dead "Location off" chip just looked broken. Say what to
-                      do instead. */}
-                  {geoStatus === "prompt"
-                    ? "Locating…"
-                    : geoStatus === "denied"
-                      ? "Location blocked — allow it in your browser settings"
-                      : geoStatus === "unsupported"
-                        ? "Location unavailable on this device"
-                        : "Allow location"}
-                </>
-              )}
-            </Box>
-          </Box>
-
-          {/* 🆕 Round 28s366 — stat chips (Sessions · % Rebook · ★ rating)
-              Round 28s368 — moved BELOW location row (quick-meta above). */}
-          {(totalSessions != null && totalSessions > 0) || rebookRate || (rating && rating !== "—") ? (
-            <Box
-              sx={{
-                display: "flex",
-                gap: "6px",
-                flexWrap: "wrap",
-              }}
-            >
-              {totalSessions != null && totalSessions > 0 && (
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    background: "rgba(255,255,255,0.18)",
-                    backdropFilter: "blur(8px)",
-                    border: "1px solid rgba(255,255,255,0.28)",
-                    borderRadius: "999px",
-                    padding: "3px 10px",
-                    fontFamily: SANS,
-                    fontSize: "11.5px",
-                    fontWeight: 700,
-                    color: "#fff",
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  {totalSessions >= 1000
-                    ? `${Math.round(totalSessions / 100) / 10}k`
-                    : totalSessions}{" "}
-                  sessions
-                </Box>
-              )}
-              {/* 🆕 28t.19 — hide until rebook data is meaningful. Showing
-                  "0% rebook" reads as "nobody rebooks" AND contradicts the
-                  Reviews tab, which gates loyalty stats until ≥5 unique
-                  guests. parseFloat("0%")===0 → hidden; "16%"→shown. */}
-              {rebookRate && rebookRate !== "—" && parseFloat(rebookRate) > 0 && (
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    background: "rgba(255,255,255,0.18)",
-                    backdropFilter: "blur(8px)",
-                    border: "1px solid rgba(255,255,255,0.28)",
-                    borderRadius: "999px",
-                    padding: "3px 10px",
-                    fontFamily: SANS,
-                    fontSize: "11.5px",
-                    fontWeight: 700,
-                    color: "#fff",
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  {rebookRate} rebook
-                </Box>
-              )}
-              {rating && rating !== "—" && (
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "3px",
-                    background: "rgba(255,255,255,0.18)",
-                    backdropFilter: "blur(8px)",
-                    border: "1px solid rgba(255,255,255,0.28)",
-                    borderRadius: "999px",
-                    padding: "3px 10px",
-                    fontFamily: SANS,
-                    fontSize: "11.5px",
-                    fontWeight: 700,
-                    color: "#fff",
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  <Box component="span" sx={{ color: "#F5A623", fontSize: "12px" }}>★</Box>
-                  {rating}
-                  {reviewCount != null && reviewCount > 0 && (
-                    <Box component="span" sx={{ fontWeight: 400, opacity: 0.85 }}>
-                      {" "}· {reviewCount} reviews
-                    </Box>
-                  )}
-                </Box>
-              )}
-            </Box>
-          ) : null}
-        </Box>
+        {/* 🆕 Round 28x.176 — name/location/stat-chip overlay removed from
+            the photo (founder reference: a clean product photo, all
+            identity info in a card below — see IdentityCard.tsx, rendered
+            by the page right after this component). The photo is now
+            purely visual: grid, top icons, dot pager. */}
       </Box>
 
       {/* 🆕 Round 28b6 — Fullscreen viewer redesigned for native

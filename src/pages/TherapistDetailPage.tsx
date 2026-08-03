@@ -33,6 +33,7 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 //   dropped along with the tab bar block.
 
 import DetailHero from "@/components/therapist/detail/DetailHero";
+import IdentityCard from "@/components/therapist/detail/IdentityCard";
 // StatsCard removed Round 28s362 — replaced by inline chip row
 // 🆕 28s344 — reuse the rich rebook/loyalty panel (benchmark · customer mix ·
 //   rebook timing) inside the Reviews tab.
@@ -1300,25 +1301,11 @@ const TherapistDetailPage: React.FC = () => {
       >
         <DetailHero
           name={therapist.name}
-          age={therapist.age}
           area={therapist.area}
-          // Round 28s53 — real GPS distance label (null until the
-          // guest grants location). Tapping the "Allow location"
-          // chip fires requestLocation; geoStatus drives the
-          // pending/denied prompt copy inside DetailHero.
-          distanceLabel={distanceLabel}
-          onRequestLocation={requestLocation}
-          geoStatus={geoStatus}
           // 🆕 Round 28aq — pass full 3-state status from the real engine
           //   so the hero dot/label reads "Online" (green) / "Busy" (orange)
           //   / "Offline" (gray) consistently with the StatusPill below.
           online={livePillStatus}
-          // 🆕 Round 28s365 — rating chip next to name in hero
-          rating={displayRating !== "—" ? displayRating : undefined}
-          reviewCount={therapist.reviewCount > 0 ? therapist.reviewCount : undefined}
-          // 🆕 Round 28s366 — stat chips under name
-          totalSessions={therapist.totalSessions > 0 ? therapist.totalSessions : undefined}
-          rebookRate={therapist.rebookRate || undefined}
           photoBg={therapist.photoBg}
           images={therapist.images}
           // 🆕 Round 28s207 (audit #6) — Working hours formatted as
@@ -1360,6 +1347,23 @@ const TherapistDetailPage: React.FC = () => {
           order: { xs: 2 },
         }}
       >
+        {/* 🆕 Round 28x.176 — name/location/stat-chip card, overlapping the
+            hero photo (founder reference: pet-adoption listing, card over
+            plain photo instead of text-on-photo). Renders first so the
+            bio StatsCard right below it (overlapPhoto=false — this card
+            already owns the overlap) reads as one continuous panel. */}
+        <IdentityCard
+          name={therapist.name}
+          age={therapist.age}
+          distanceLabel={distanceLabel}
+          onRequestLocation={requestLocation}
+          geoStatus={geoStatus}
+          rating={displayRating !== "—" ? displayRating : undefined}
+          reviewCount={therapist.reviewCount > 0 ? therapist.reviewCount : undefined}
+          totalSessions={therapist.totalSessions > 0 ? therapist.totalSessions : undefined}
+          rebookRate={therapist.rebookRate || undefined}
+        />
+
         {/* 🆕 Round 28s364 — StatsCard with bioCells (bio mode).
             White floating card (negative top overlap) with bio data:
             sex · height/weight · style · language.
@@ -1400,6 +1404,7 @@ const TherapistDetailPage: React.FC = () => {
               totalSessions={therapist.totalSessions}
               rebookRate={therapist.rebookRate ?? ""}
               bioCells={bioCells}
+              overlapPhoto={false}
             />
           );
         })()}

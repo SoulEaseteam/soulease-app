@@ -45,6 +45,15 @@ interface Props {
    * on mobile a 4-cell layout collapses to 2×2.
    */
   bioCells?: Array<{ value: React.ReactNode; label: string }>;
+  /**
+   * 🆕 Round 28x.176 — when IdentityCard renders right above this card
+   * (the founder's card-over-photo reference), IdentityCard already owns
+   * the negative-margin overlap into the hero photo; stacking a SECOND
+   * negative margin here would pull this card up into IdentityCard
+   * instead of the photo. Set false to use normal top spacing.
+   * Default true preserves the original standalone-overlap behavior.
+   */
+  overlapPhoto?: boolean;
 }
 
 const StatsCard: React.FC<Props> = ({
@@ -57,6 +66,7 @@ const StatsCard: React.FC<Props> = ({
   onTapProfile,
   onTapLoyalty,
   bioCells,
+  overlapPhoto = true,
 }) => {
   const { t } = useTranslation();
 
@@ -168,7 +178,9 @@ const StatsCard: React.FC<Props> = ({
     return (
       <Box
         sx={{
-          margin: { xs: "-30px 14px 18px", md: "0 0 24px" },
+          margin: overlapPhoto
+            ? { xs: "-30px 14px 18px", md: "0 0 24px" }
+            : { xs: "0 14px 18px", md: "0 0 24px" },
           position: "relative",
           zIndex: 5,
         }}
@@ -249,7 +261,9 @@ const StatsCard: React.FC<Props> = ({
         // is in the LEFT column, so the overlap bleeds off the top of
         // the column and makes the card look cramped/floating. Reset
         // the margin on md+ so it starts clean at the column top.
-        margin: { xs: "-30px 14px 18px", md: "0 0 24px" },
+        margin: overlapPhoto
+          ? { xs: "-30px 14px 18px", md: "0 0 24px" }
+          : { xs: "0 14px 18px", md: "0 0 24px" },
         position: "relative",
         zIndex: 5,
       }}
