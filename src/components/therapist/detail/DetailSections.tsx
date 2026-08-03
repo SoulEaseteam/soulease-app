@@ -177,6 +177,12 @@ export const About: React.FC<{
   /** 🆕 28t.13 — extra content (Languages + Credentials) revealed BELOW the
    *  bio when the box is expanded (founder "ไปใส่ไว้ข้างใน About หุบ/กางได้"). */
   extra?: React.ReactNode;
+  /**
+   * 🆕 Round 28x.179 — when true, skip dSection's own 20px horizontal
+   * padding (a parent card, e.g. IdentityCard, already pads its content;
+   * stacking both indented About's rows relative to everything above it).
+   */
+  bare?: boolean;
 }> = ({
   name,
   facts = [],
@@ -187,6 +193,7 @@ export const About: React.FC<{
   enhance,
   galleryAltBase,
   extra,
+  bare = false,
 }) => {
   const { t } = useTranslation();
   // Round 28s31 (founder 2026-05-31, "ตรงเกี่ยวกับ ปรับใหม่") —
@@ -292,7 +299,7 @@ export const About: React.FC<{
       : null;
 
   return (
-    <Box sx={dSection}>
+    <Box sx={bare ? { padding: "0 0 20px" } : dSection}>
       {/* 🆕 Round 28b4 — title row with gender icon trailing the
           italic name. Wrapped in flex so the icon sits on the same
           baseline as the name. */}

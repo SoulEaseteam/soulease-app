@@ -1418,20 +1418,23 @@ const TherapistDetailPage: React.FC = () => {
               />
             );
           })()}
-        </IdentityCard>
+          {/* 🆕 28t.12 — Trust chips (Data verified · Vaccinated) removed
+              (founder "เอาออก"). Verification is conveyed by the Credentials
+              section below the gallery. */}
 
-        {/* 🆕 28t.12 — Trust chips (Data verified · Vaccinated) removed
-            (founder "เอาออก"). Verification is conveyed by the Credentials
-            section below the gallery. */}
+          {/* 🆕 28t.10 — Credentials moved back INTO the Photos tab, below the
+              gallery (founder "ย้ายไป ด้านล่างรูป แถบ Photos"). See the About
+              panel in GRID CHILD 4. */}
 
-        {/* 🆕 28t.10 — Credentials moved back INTO the Photos tab, below the
-            gallery (founder "ย้ายไป ด้านล่างรูป แถบ Photos"). See the About
-            panel in GRID CHILD 4. */}
-
-        {/* 🆕 Round 28s366 — About bio + Languages moved here (above tab bar).
-            Replaces the same content previously shown inside the Photos tab. */}
-        <Box sx={{ margin: "14px 14px 0" }}>
+          {/* 🆕 Round 28s366 — About bio + Languages.
+              🆕 Round 28x.179 (founder: "รวมกัน และกดดูที่ซ่อนไว้") — was its
+              own sibling section sitting directly on the page background
+              (About already had no card chrome of its own, per 28s52); now
+              a second child of IdentityCard so it's inside the SAME white
+              card as the identity/bio-stats rows above, behind its own
+              hairline. */}
           <About
+            bare
             name={therapist.name}
             rows={[]}
             facts={[]}
@@ -1595,7 +1598,7 @@ const TherapistDetailPage: React.FC = () => {
               </>
             }
           />
-        </Box>
+        </IdentityCard>
 
         {/* 🆕 Round 28x.177 (founder reference screenshot, a pet-adoption
             app's heart + big-CTA footer row: "ปุ่มนี้ล่าา ช่วยออกแบบ ให้เข้ากับ
