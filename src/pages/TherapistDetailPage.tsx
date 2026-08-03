@@ -72,6 +72,10 @@ import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 //   sheet popup. Component file stays on disk in case we ever
 //   need to reintroduce a deep-dive tab.
 import StatusPill from "@/components/therapist/detail/StatusPill";
+// 🆕 Round 28x.177 — heart save-button next to the StatusPill CTA.
+import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
+import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
+import { useSavedTherapist } from "@/hooks/useSavedTherapist";
 // 🗑️ 28s350 — FeaturesPanel (Rolodex physical-descriptor table) retired
 //   per founder ("Features ไม่ใช้แล้ว ลบ"). Component file kept on disk.
 // 🗑️ 28s375 — BioStatsBar (28s351 pink strip) removed: 28s364 moved the
@@ -957,6 +961,12 @@ const TherapistDetailPage: React.FC = () => {
   //   utils/photoViews.ts + hooks/usePhotoViews.ts for the write/read path.
   const photoViews = usePhotoViews(id);
 
+  // 🆕 Round 28x.177 — heart save-toggle next to the StatusPill CTA.
+  //   localStorage-backed (see the hook's own header for why: guests
+  //   are anonymous, so a Firestore favorites path has no `user` to
+  //   key off of most of the time).
+  const { isSaved, toggle: toggleSaved } = useSavedTherapist(id ?? "");
+
   // Round 28s53 — Real GPS distance. autoStart:false so we never
   // prompt without a user gesture; the DetailHero "Allow location"
   // chip calls `requestLocation()` on tap. Once a position resolves,
@@ -1586,7 +1596,54 @@ const TherapistDetailPage: React.FC = () => {
           />
         </Box>
 
-        <Box sx={{ marginTop: "10px" }}>
+        {/* 🆕 Round 28x.177 (founder reference screenshot, a pet-adoption
+            app's heart + big-CTA footer row: "ปุ่มนี้ล่าา ช่วยออกแบบ ให้เข้ากับ
+            ที่เรามี") — StatusPill already IS this app's big-pill CTA
+            (28x.169/172 restyled it to exactly that button language); this
+            adds the heart on its left, in-palette (rose, not the
+            reference's teal) and actually wired to a real save toggle
+            instead of the no-op stub 28t.18 removed. */}
+        <Box
+          sx={{
+            marginTop: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+          }}
+        >
+          <Box
+            component="button"
+            type="button"
+            onClick={toggleSaved}
+            aria-label={isSaved ? "Remove from saved" : "Save practitioner"}
+            aria-pressed={isSaved}
+            sx={{
+              flexShrink: 0,
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              border: "1px solid var(--sr-hairline)",
+              background: "var(--sr-panel)",
+              boxShadow: "var(--sr-card-shadow)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              transition: "transform 0.16s ease",
+              "&:active": { transform: "scale(0.94)" },
+              "&:focus-visible": {
+                outline: "2px solid #FF9999",
+                outlineOffset: 2,
+              },
+            }}
+          >
+            {isSaved ? (
+              <FavoriteRoundedIcon sx={{ fontSize: 20, color: "#FF9999" }} />
+            ) : (
+              <FavoriteBorderRoundedIcon sx={{ fontSize: 20, color: "var(--sr-muted)" }} />
+            )}
+          </Box>
           <StatusPill
             nextBookingAt={
               livePillStatus === "online" ? nextBookingAt : null
