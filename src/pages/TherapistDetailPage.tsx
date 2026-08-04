@@ -1609,7 +1609,16 @@ const TherapistDetailPage: React.FC = () => {
             instead of the no-op stub 28t.18 removed. */}
         <Box
           sx={{
+            // 🆕 Round 28x.181 (founder: "มันชิดขอบไป") — StatusPill's own
+            //   `margin: auto` (12x.169) absorbs the row's free space before
+            //   this container's justifyContent ever gets a say, so the
+            //   heart — first in the row, no auto margin of its own — was
+            //   landing flush at x:0 (confirmed via getBoundingClientRect,
+            //   not just eyeballed). Padding is a hard floor auto margins
+            //   can't eat into; 14px matches IdentityCard's own side
+            //   margin above it so the two rows line up.
             marginTop: "10px",
+            padding: "0 14px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
