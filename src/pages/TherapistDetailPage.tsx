@@ -1627,14 +1627,23 @@ const TherapistDetailPage: React.FC = () => {
               width: 44,
               height: 44,
               borderRadius: "50%",
-              border: "1px solid var(--sr-hairline)",
-              background: "var(--sr-panel)",
-              boxShadow: "var(--sr-card-shadow)",
+              border: isSaved
+                ? "1px solid rgba(255,153,153,0.45)"
+                : "1px solid rgba(217,124,149,0.28)",
+              background: isSaved
+                ? "rgba(255,153,153,0.14)"
+                : "var(--sr-panel)",
+              boxShadow: isSaved
+                ? "0 6px 16px rgba(255,153,153,0.35)"
+                : "var(--sr-card-shadow)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              transition: "transform 0.16s ease",
+              transition: "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
+              "@media (hover: hover)": {
+                "&:hover": { transform: "translateY(-1px)" },
+              },
               "&:active": { transform: "scale(0.94)" },
               "&:focus-visible": {
                 outline: "2px solid #FF9999",
@@ -1645,7 +1654,7 @@ const TherapistDetailPage: React.FC = () => {
             {isSaved ? (
               <FavoriteRoundedIcon sx={{ fontSize: 20, color: "#FF9999" }} />
             ) : (
-              <FavoriteBorderRoundedIcon sx={{ fontSize: 20, color: "var(--sr-muted)" }} />
+              <FavoriteBorderRoundedIcon sx={{ fontSize: 20, color: "#D9A0AF" }} />
             )}
           </Box>
           <StatusPill
