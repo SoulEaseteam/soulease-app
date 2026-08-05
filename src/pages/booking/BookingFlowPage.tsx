@@ -325,15 +325,20 @@ const BookingFlowPage: React.FC = () => {
   //   skipped (they set codes by hand). The min-spend floor + View's
   //   Telegram confirmation still gate whether it actually discounts.
   const autoFilledWelcome = useRef(false);
+  // 🆕 Round 28x.167 — remember WHICH code the auto-fill planted (null once
+  //   the guest touches the field). Needed so the corrective effect below can
+  //   tell "our suggestion" apart from a code the guest typed themselves.
+  const autoWelcomeCode = useRef<string | null>(null);
   useEffect(() => {
     if (autoFilledWelcome.current) return;
     if (!PROMOS_ENABLED || !signedIn || isAdminBooking || memberLoading) return;
     autoFilledWelcome.current = true;
-    setForm((prev) =>
-      prev.discountCode?.trim()
-        ? prev
-        : { ...prev, discountCode: welcomeCodeFor(isReturning) },
-    );
+    setForm((prev) => {
+      if (prev.discountCode?.trim()) return prev;
+      const code = welcomeCodeFor(isReturning);
+      autoWelcomeCode.current = code;
+      return { ...prev, discountCode: code };
+    });
   }, [signedIn, isReturning, isAdminBooking, memberLoading]);
 
   // 🌧 Warm the rain-status cache on mount — surcharge surfaces in the
@@ -847,6 +852,33 @@ const BookingFlowPage: React.FC = () => {
       referralRedeemCount,
       isAdminBooking,
     ]
+  );
+
+  // 🆕 Round 28x.167 (founder: "โค้ดส่วนลด ก็ใส่ไม่ได้" — the guest-side half;
+  //   28x.166 fixed admin only) — the auto-fill above plants a welcome code
+  //   BEFORE knowing whether it can apply to the chosen ticket. On the
+  //   bestseller (premium PROMO_BLOCKED) or below the code's min-spend
+  //   (Thai 60' ฿1,200 < N4K9's ฿1,400 floor), the shop's own suggestion then
+  //   renders "Code not recognised" — a manufactured broken moment on the two
+  //   most common tickets. If OUR auto-filled code is the one failing, clear
+  //   it quietly; a code the guest typed themselves is never touched (they
+  //   deserve the honest hint), and once cleared we never re-plant.
+  useEffect(() => {
+    if (!autoWelcomeCode.current) return;
+    if (form.discountCode !== autoWelcomeCode.current) {
+      // Guest edited/replaced our suggestion — stop tracking it.
+      autoWelcomeCode.current = null;
+      return;
+    }
+    // Don't judge while the ticket is still resolving (no service picked yet /
+    // price not loaded → base 0 → every min-spend "fails" transiently). Only a
+    // REAL mismatch on a real priced ticket clears the suggestion.
+    if (!form.serviceId || discountableBase <= 0) return;
+    if (!discount.valid) {
+      autoWelcomeCode.current = null;
+      setForm((p) => ({ ...p, discountCode: "" }));
+    }
+  }, [discount.valid, form.discountCode, form.serviceId, discountableBase]
   );
   // 🆕 Round 28r63 (r59 follow-up) — resolve which tier (if any)
   //   fired for the current SUN-XXXX code + count, so we can (a) show
