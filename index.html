@@ -31,6 +31,18 @@
          browser still resolves DNS but doesn't waste a TLS handshake on
          origins that may never be hit during the first paint. -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <!-- 🆕 Round 28x.187 (founder: "หน้า services แสดงผลช้าไป") — measured via
+         Resource Timing (not guessed): the /services page's hero photos load
+         straight from firebasestorage.googleapis.com (admin-uploaded overrides,
+         no local default) and took 1.6–3.9s EACH on a cold connection — this is
+         the real bottleneck, not app code. Re-enabling the Cloudinary proxy
+         (28x.158) is off the table on purpose: that's the same dependency that
+         caused a full site-wide image outage (28x.156). A preconnect here can't
+         cause that failure mode — worst case it's a wasted handshake — and it's
+         the same fix already applied to firestore.googleapis.com below. This
+         origin is hit on every page with therapist/service/review photos, not
+         a "may never fire" case, so it earns a real preconnect, not dns-prefetch. -->
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin />
     <!-- 🔴 28x.158 — Cloudinary preconnect removed with the proxy itself; a
          warmed connection to a host we no longer request is pure overhead. -->
     <link rel="dns-prefetch" href="https://www.googleapis.com" />

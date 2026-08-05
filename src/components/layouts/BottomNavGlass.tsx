@@ -13,8 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { UserCircle } from "phosphor-react";
-import { FaRegHeart } from "react-icons/fa";
-import { SpaOutlined } from "@mui/icons-material";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { Spa, SpaOutlined } from "@mui/icons-material";
 import { useAuth } from "@/providers/AuthProvider";
 import { brand, fonts } from "@/theme";
 
@@ -29,10 +29,15 @@ import { brand, fonts } from "@/theme";
 //   second door to a page Profile already opens, not a second page.
 //   /booking/history itself is untouched; it just loses its bottom-nav
 //   entry and folds into "Profile" for active-tab purposes below.
+// 🆕 Round 28x.184 (founder: "แถบล่างทำให้มันมีลูกเล่นขึ้นหน่อย") — each icon
+//   now SWAPS shape on active, not just color (outline → filled), the
+//   Instagram/Grab tab-bar convention. Reads as real polish rather than a
+//   flat color toggle, and costs nothing extra now that there are only 3
+//   tabs to draw.
 const TABS = [
-  { label: "Practitioners", value: "/",         icon: (a: boolean) => <FaRegHeart  size={18} color={a ? "#fff" : "#9AA0AC"} /> },
-  { label: "Services",      value: "/services", icon: (a: boolean) => <SpaOutlined sx={{ fontSize: 20, color: a ? "#fff" : "#9AA0AC" }} /> },
-  { label: "Profile",       value: "/profile",  icon: (a: boolean) => <UserCircle  size={20} color={a ? "#fff" : "#9AA0AC"} /> },
+  { label: "Practitioners", value: "/",         icon: (a: boolean) => a ? <FaHeart size={18} color="#fff" /> : <FaRegHeart size={18} color="#9AA0AC" /> },
+  { label: "Services",      value: "/services", icon: (a: boolean) => a ? <Spa sx={{ fontSize: 20, color: "#fff" }} /> : <SpaOutlined sx={{ fontSize: 20, color: "#9AA0AC" }} /> },
+  { label: "Profile",       value: "/profile",  icon: (a: boolean) => <UserCircle size={20} color={a ? "#fff" : "#9AA0AC"} weight={a ? "fill" : "regular"} /> },
 ] as const;
 
 // 🆕 28x.79 (founder: "ไปทำหน้าแยก เว็บแยก แต่ใช้โดเมนเดียวกัน") — the
@@ -155,12 +160,18 @@ const BottomNavGlass: React.FC = () => {
             overflow: "hidden",
           }}
         >
-          {/* Sliding pill — x-transform, pure pixel interpolation */}
+          {/* Sliding pill — x-transform, pure pixel interpolation.
+              🆕 Round 28x.184 (founder: "แถบล่างทำให้มันมีลูกเล่นขึ้นหน่อย") —
+              was a flat #FF9999 fill + plain black shadow; swapped for a
+              soft gradient + a rose-tinted glow (matches the heart button's
+              own 28x.180 glow language) so the active tab reads as a lit
+              accent instead of a grey UI shadow. Slightly bouncier spring
+              (damping 42→30) so the landing has a little overshoot. */}
           {pillW > 0 && (
             <motion.div
               initial={false}
               animate={{ x: pillX }}
-              transition={{ type: "spring", stiffness: 500, damping: 42, mass: 0.9 }}
+              transition={{ type: "spring", stiffness: 480, damping: 30, mass: 0.9 }}
               style={{
                 position: "absolute",
                 top: INSET,
@@ -168,8 +179,9 @@ const BottomNavGlass: React.FC = () => {
                 left: 0,
                 width: pillW,
                 borderRadius: 999,
-                background: "#FF9999",
-                boxShadow: "0 4px 14px rgba(0, 0, 0, 0.30)",
+                background: "linear-gradient(135deg, #FFADAD 0%, #FF8484 100%)",
+                boxShadow:
+                  "0 4px 16px rgba(255,153,153,0.55), 0 2px 6px rgba(255,132,132,0.35)",
                 zIndex: 0,
                 pointerEvents: "none",
               }}
