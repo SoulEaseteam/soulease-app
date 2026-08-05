@@ -139,27 +139,35 @@ const TIER_4_PER_KM = 10;    // applies to km 40+
 //   applies when it's raining (getCachedRainStatus().tier !== "none") —
 //   a motorcycle isn't a safe or practical dispatch in the rain.
 //
-// 🆕 Round 28x.115 (founder: "ปรับขาไป 30 ขากลับ 20 · กม.ที่ 0-3 เริ่มที่ 100")
-//   — replaces the 28x.99n Grab-spot-check checkpoints with the founder's own
-//   flat per-leg rate: a ฿100 floor for 0–3 km, then every km beyond 3 adds
-//   ฿30 for the outbound leg + ฿20 for the return leg (฿50/km combined — the
-//   full round trip, same "both legs, no discount" principle as 28s308).
-//   Still expressed as CHECKPOINTS (not a closed-form formula in
-//   motoRoundTripFare) so the admin Settings editor and the linear-
-//   interpolation/round-to-฿10 machinery below keep working unchanged — the
-//   checkpoints below are just points ON that ฿50/km line:
-//     3 km → ฿100 · 6 km → ฿250 · 10 km → ฿450 · 15 km → ฿700
-//   (ADMIN_QUOTE_KM = 15, so nothing prices automatically past this last
-//   point — nice, since it's also the cutoff.)
+// 🆕 Round 28x.166 (founder: "แก้ทั้งหมด อิงตามค่ามอไซต์แกรป ปัดเศษ") — the
+//   28x.115 curve (฿30/km out + ฿20/km back = ฿50/km) had drifted WAY above
+//   reality: it priced a 10 km moto trip at ฿450 round-trip, which is roughly
+//   GrabCAR round-trip money (Grab shows ~฿255 one-way car), not a bike. A
+//   founder screenshot comparing our ฿460 travel fee against the live Grab app
+//   (Standard Bike ~10 km = ฿68 one-way, ฿72 struck) made the gap obvious —
+//   we were ~3× the real round-trip bike cost and it inflated every total.
 //
-//   If founder re-tunes the per-km rate again later, update these
-//   checkpoints — they're a live rate card, not a permanent formula.
+//   These checkpoints are now anchored to the REAL GrabBike Bangkok fare,
+//   charged ROUND-TRIP (the therapist genuinely rides out AND back — same
+//   both-legs principle as 28s308, just at the honest rate instead of the
+//   inflated one), rounded to a clean ฿10:
+//     GrabBike one-way ≈ ฿25 min · +฿6/km  →  round-trip = one-way × 2
+//     3 km → ฿70 · 6 km → ฿100 · 10 km → ฿140 · 15 km → ฿200
+//   So a 10 km trip returns the therapist ~฿140 (real round-trip bike cost
+//   ฿136–144), not ฿450. The night surge (PEAK_SURGE_PCT) and the 5% online
+//   saving still ride on top via calcTaxiFare — those are separate admin
+//   levers, untouched here.
+//
+//   Still CHECKPOINTS (not a formula) so the admin Settings editor + the
+//   interpolation/round-to-฿10 machinery below keep working. Re-tune here if
+//   GrabBike rates move; ADMIN_QUOTE_KM (15) still routes anything past the
+//   last point to a manual concierge quote.
 let MOTO_FARE_CHECKPOINTS: [km: number, roundTripTHB: number][] = [
-  [0, 100],
-  [3, 100],
-  [6, 250],
-  [10, 450],
-  [15, 700],
+  [0, 50],
+  [3, 70],
+  [6, 100],
+  [10, 140],
+  [15, 200],
 ];
 
 /**

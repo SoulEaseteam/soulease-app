@@ -829,6 +829,14 @@ const BookingFlowPage: React.FC = () => {
         //   highest tier whose minRedeems<=count. Ignored for every
         //   non-referral code.
         referralRedeemCount,
+        // 🆕 Round 28x.166 (founder: "โค้ดส่วนลด ก็ใส่ไม่ได้" — SUNRED-R7M2
+        //   showed "not recognised" while she booked Gentleman's as ADMIN ·
+        //   VIEWING AS CUSTOMER) — same lift as the concierge slip (28x.43):
+        //   when the operator herself is booking, the premium-tier
+        //   PROMO_BLOCKED gate steps aside so she can honour a welcome code
+        //   on a premium ticket. Real guests (role !== "admin") keep the
+        //   guard exactly as before.
+        adminOverride: isAdminBooking,
       }),
     [
       form.discountCode,
@@ -837,6 +845,7 @@ const BookingFlowPage: React.FC = () => {
       form.serviceId,
       taxiFare,
       referralRedeemCount,
+      isAdminBooking,
     ]
   );
   // 🆕 Round 28r63 (r59 follow-up) — resolve which tier (if any)
