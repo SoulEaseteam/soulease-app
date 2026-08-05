@@ -69,21 +69,19 @@ View corrected the strategic framing during this session:
 - Marketing more is now reasonable — supply can flex up
 - **Rule: still match marketing to actual nightly availability**
 
-**Pricing (THB) — Round 28w.36, explicit per-duration, NOT a multiplier:**
-- `xSR-Thai` Thai Massage — 1,200 / 1,600 / 2,000 (60 / 90 / 120min)
-- `SR-Aroma` Aromatherapy — 1,400 / 1,800 / 2,400 (60 / 90 / 120min)
-- `SR-HJ2200` Gentleman's Signature (Aroma + HJ release) — 2,200 / 3,000 (70 / 120min — no 60/90 tier)
-- `SR-B2B3200` SunRed Therapeutic (B2B/nuru genre) — 3,200 / 4,000 (70 / 120min — no 60/90 tier)
+**Pricing (THB) — Round 28w.36, explicit per-duration, NOT a multiplier.**
+4 SKUs (`xSR-Thai`, `SR-Aroma`, `SR-HJ2200`, `SR-B2B3200`), each with its
+own per-duration price — read the real numbers from
+`src/utils/servicePricing.ts`, never memorize them here (see the drift
+warning below for why).
 - ⚠️ The old "90min = base × 1.5 · 120min = base × 2.0" multiplier rule
-  is DEAD — 28w.36 replaced it with the explicit numbers above. This
-  file listed the dead multiplier for weeks after the change, and
+  is DEAD — 28w.36 replaced it with the explicit per-duration model.
   @SunRedGreeterBot's hardcoded FAQ copy silently drifted from real
-  pricing as a result (caught + fixed 28x.82 from a founder screenshot).
-  If you change prices again: update `src/utils/servicePricing.ts`
-  DURATION_PRICE_OVERRIDES, THIS block, AND
-  `functions/src/telegram-concierge-bot/faq.ts` PRICING — all three,
-  every time.
-- See `src/utils/servicePricing.ts` for canonical pricing
+  pricing after that change (caught + fixed 28x.82 from a founder
+  screenshot) because the price numbers live in two places. If you
+  change prices again: update `src/utils/servicePricing.ts`
+  DURATION_PRICE_OVERRIDES AND `functions/src/telegram-concierge-bot/faq.ts`
+  PRICING — both, every time.
 - **Payment surcharge (Round 28s77):** WeChat Pay + Alipay carry a
   transfer fee = `round(total × 5%) + ฿200` (FX/processor markup +
   flat handling). Cash / PromptPay = no fee. Logic in
@@ -285,9 +283,42 @@ they prefer.
   A one-time scheduled reminder (`sammyboy-attribution-checkin`, fires
   2026-08-05) will pull ~2 weeks of real attribution data — its job is
   to answer reason #1 with real numbers, NOT to recommend resuming on
-  its own; reason #2 is View's call to make, present both. If that
-  reminder has already fired by the time you're reading this, check
-  whether View acted on it before repeating the analysis.
+  its own; reason #2 is View's call to make, present both.
+
+  **✅ That reminder FIRED 2026-08-05. Result — re-run
+  `node scripts/auditAttributionCheckin.mjs` (read-only) rather than
+  rebuilding the query:**
+  - **The dropdown ships but is barely used.** Only 3 bookings were
+    created through the admin New Booking form in the 2 weeks since the
+    fix; 1 was tagged (`telegram`), 2 left blank. All-time only **1 of
+    32** tagged bookings was hand-picked by admin — the other 31 are
+    `direct`/`google` auto-written by `classifyReferrer()` in the
+    CUSTOMER web flow. So the attribution GAP is not closed; the tool
+    exists and the habit doesn't.
+  - ⚠️ **Don't read "tagged" as "admin tagged it."** `direct`/`google`
+    can only come from the web flow, AND `BookingFlowPage` also stamps
+    `createdBy:"admin"` when View books while logged in as admin — so
+    `createdBy` alone can't separate them. The one field that can:
+    `AdminBookingAddPage` hardcodes `userId: null`, `BookingFlowPage`
+    writes `user?.uid`. Test `createdBy==="admin" && !userId`.
+  - **Sammyboy: NOT relisted.** 0 bookings ever tagged `sammyboy`;
+    0 samsguide/sammyboyforum referrer hits since the pause. All-time
+    forum traffic 280 hits / 213 sessions, range 2026-05-07 → 2026-07-09
+    — it stops dead at the cancellation, confirming the ฿15,200/cycle
+    was buying real traffic that ended when she stopped paying.
+  - ⚠️ **Two numbers in this file are stale**: `bookings` now holds
+    **537** docs, not 615, and the pre-fix tagged baseline is **27/529**,
+    not 32/615 (32 is the ALL-TIME tagged count, incl. post-fix). ~78
+    docs are gone since 2026-07-22 — cause not established; the audit
+    didn't delete anything (`scripts/deleteTestBookings.mjs` exists and
+    is the likely candidate). Worth confirming before anyone treats a
+    booking-count trend as real.
+  - ⚠️ **Volume collapse, unexplained and bigger than the Sammyboy
+    question**: bookings/month ran 83 (Oct 25) → 45 (May 26) → **12
+    (Jun) → 24 (Jul) → 3 (Aug 1-5)**. Only 7 bookings in the whole
+    check-in window, which is why the attribution percentages above are
+    a tiny sample. Raised with View 2026-08-05; her call on whether to
+    dig in.
 
 ---
 
@@ -746,80 +777,13 @@ Do NOT propose:
 - "Show Google reviews on site"
 - Any flow that asks guests to publicly attribute their experience
 
-### 🔐 Trust + customer-acquisition playbook (privacy-first)
+### 🔐 Trust + customer-acquisition playbook
 
-**Codified 2026-06-XX after Round 28s205.** Replaces every "Google
-reviews / mainstream listing" suggestion that would expose guests.
-Every tactic here keeps the guest **anonymous by default** and
-matches outcall-vertical norms.
-
-**🔴 Do this week (highest leverage)**
-
-1. **Anonymous TG channel testimonials** ⭐⭐⭐
-   - View asks new guest for a 1-2 sentence permission-based blurb
-   - Post to `@SunRed_BKK` + `@manguyujianniSPA` as
-     `Anonymous · 2 days ago · ⭐⭐⭐⭐⭐ "Yuri was punctual…"`
-   - Cadence target: 1-2/week → 8-16 reviews in 2 months
-   - All identities masked, never first names from real guests
-2. **Anon-friendly directory listings** — `secretthai`, `bangkok101.net`,
-   `eros guide`. Reviewers are anon nicks by convention in these
-   spaces. (⚠️ Confirmed 2026-07-22: `Stickman Bangkok` and `Lookpasi`
-   were never actually used — this list was a research suggestion,
-   not real history, don't cite them as tried tactics. `Sammyboy /
-   Samsguide` WAS real — billed every 2 months at ฿15,200, paused on
-   cost, see §6
-   "Paused channel" for real performance data before deciding
-   whether to relist. Treat #7 below the same way.)
-3. **Reddit soft engagement** — `r/Bangkok`, `r/ThailandTourism`,
-   `r/asia_travel_buddy`. Answer real travel questions; when a
-   "anyone know outcall in BKK?" thread appears, DM the OP from
-   an anon avatar. Founder identity stays hidden.
-
-**🟡 Mid-term (2-4 weeks)**
-
-4. **Self-hosted trust badge system on cards** — `✓ Verified by
-   SunRed concierge` + `Member since 2023` + `N sessions completed`
-   + `Returning guest 5×` chips. We own the trust stack; no Google.
-5. **Anonymous in-app reviews (already shipped)** — improve UI:
-   `Verified booking` badge + count + Bayesian aggregate. Reviewer
-   identity never surfaced.
-6. **Practitioner reputation chips** — `Top Rated · 4.9★ (30 reviews)`,
-   `98% rebook rate`, `Member since 2024 · 200+ sessions`. All from
-   our Firestore aggregates, all anonymous reviewers.
-
-**🟢 Long-term (1-3 months)**
-
-7. ~~**Stickman weekly column pitch**~~ — founder confirmed 2026-07-22
-   she has never used or heard of Stickman Bangkok; this was an
-   untested research suggestion, not a real tactic in progress. Drop
-   it from active planning unless picked up fresh.
-8. **Niche blog mentions** — Bangkok expat + travel bloggers. Pitch
-   "discreet outcall service". Backlinks + brand mentions = SEO +
-   trust without exposing guests.
-9. **WeChat OA testimonials in 中文** — Chinese guests share
-   Moments naturally; `@manguyujianniSPA` reposts anon blurbs.
-10. **TG cross-promo** — DM 5-10 BKK travel/expat TG channel admins.
-    Trade promo slots. Each cross-promo ≈ 50-200 subs.
-
-**❌ HARD-BANNED tactics (privacy violations)**
-
-- Google Business Profile + Google reviews
-- TripAdvisor, Yelp, Trustpilot
-- Facebook reviews, Instagram tagged posts
-- "Tag us on Instagram" / public UGC campaigns
-- Email newsletters that name customers
-- Any campaign that publishes a guest's identity
-
-**Default priority order when View asks "how do we get more trust /
-more customers?":**
-1. Telegram channel testimonials (Tier 🔴 #1)
-2. Directory listings (Tier 🔴 #2)
-3. Self-hosted badge upgrades on cards (Tier 🟡 #4-6)
-4. Reddit / TG cross-promo (Tier 🔴 #3 / 🟢 #10)
-5. Editorial pitches (Tier 🟢 #7-8)
-
-When proposing any new acquisition idea, **first verify it keeps
-guests anonymous**. If it can't, drop it.
+Moved to the `trust-acquisition-playbook` skill (loads on demand instead
+of every session) — see `.claude/skills/trust-acquisition-playbook/SKILL.md`.
+Load it whenever View asks how to get more trust/customers/reviews, or
+proposes a new acquisition idea that needs checking against the
+privacy-first rules.
 
 ### 🎨 Theme palette — MOKO restyle (Round 28s378-384, CURRENT on home)
 
