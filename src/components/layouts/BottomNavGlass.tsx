@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { UserCircle } from "phosphor-react";
-import { FaRegHeart, FaRegFileAlt } from "react-icons/fa";
+import { FaRegHeart } from "react-icons/fa";
 import { SpaOutlined } from "@mui/icons-material";
 import { useAuth } from "@/providers/AuthProvider";
 import { brand, fonts } from "@/theme";
@@ -22,11 +22,17 @@ import { brand, fonts } from "@/theme";
 //   table: therapist → practitioner (more premium register). Tab is the
 //   most-visible label in the app — was the loudest remaining brand
 //   violation after the title/meta rewrite.
+// 🆕 Round 28x.183 (founder: "ตัดหน้า history ออก เอาไปใส่ไว้ได้โปรไฟล์") —
+//   History dropped as its own tab. ProfilePage already has a "Booking
+//   History" row (Reservations section → /booking/history) — that was
+//   always the SAME destination this tab pointed at, so this tab was a
+//   second door to a page Profile already opens, not a second page.
+//   /booking/history itself is untouched; it just loses its bottom-nav
+//   entry and folds into "Profile" for active-tab purposes below.
 const TABS = [
-  { label: "Practitioners", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "#9AA0AC"} /> },
-  { label: "Services",      value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "#9AA0AC" }} /> },
-  { label: "History",       value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "#9AA0AC"} /> },
-  { label: "Profile",       value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "#9AA0AC"} /> },
+  { label: "Practitioners", value: "/",         icon: (a: boolean) => <FaRegHeart  size={18} color={a ? "#fff" : "#9AA0AC"} /> },
+  { label: "Services",      value: "/services", icon: (a: boolean) => <SpaOutlined sx={{ fontSize: 20, color: a ? "#fff" : "#9AA0AC" }} /> },
+  { label: "Profile",       value: "/profile",  icon: (a: boolean) => <UserCircle  size={20} color={a ? "#fff" : "#9AA0AC"} /> },
 ] as const;
 
 // 🆕 28x.79 (founder: "ไปทำหน้าแยก เว็บแยก แต่ใช้โดเมนเดียวกัน") — the
@@ -63,7 +69,6 @@ const BottomNavGlass: React.FC = () => {
   // ── active tab ───────────────────────────────────────────────────
   const currentTab = (() => {
     if (location.pathname.startsWith("/services"))        return "/services";
-    if (location.pathname.startsWith("/booking/history")) return "/booking/history";
     if (
       location.pathname.startsWith("/profile")     ||
       location.pathname.startsWith("/admin")       ||
@@ -71,6 +76,8 @@ const BottomNavGlass: React.FC = () => {
       location.pathname.startsWith("/my-codes")    ||
       location.pathname.startsWith("/notifications") ||
       location.pathname.startsWith("/saved")       ||
+      // 🆕 28x.183 — History folded into Profile (see TABS comment above).
+      location.pathname.startsWith("/booking/history") ||
       location.pathname === "/login"               ||
       location.pathname === "/register"
     ) return "/profile";
