@@ -291,6 +291,35 @@ const AdminFloatingChat: React.FC = () => {
 
   return (
     <>
+      {/* 🆕 Round 28x.168 (founder funnel audit: chat_open 153 → 4/mo) — scrim
+          behind the EXPANDED panel, same treatment 28x.161 gave the greeting
+          bubble. Without it the panel floated bare over the therapist photo
+          grid, and its 82%-alpha glass background let the bright photos bleed
+          straight through — the whole panel read as an unreadable ghost, so a
+          guest who tapped the chat bubble saw "nothing" and closed it. The
+          scrim dims the page, the panel reads as an intentional sheet, and
+          tapping outside collapses it. */}
+      <AnimatePresence>
+        {isExpanded && (
+          <Box
+            key="concierge-scrim"
+            component={motion.div}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            onClick={() => setIsExpanded(false)}
+            sx={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1499,
+              background: "rgba(12, 10, 14, 0.45)",
+              backdropFilter: "blur(2px)",
+              WebkitBackdropFilter: "blur(2px)",
+            }}
+          />
+        )}
+      </AnimatePresence>
       {/* Expanded panel — glass card with header + 5 chat pills */}
       <AnimatePresence>
         {isExpanded && (
@@ -328,7 +357,14 @@ const AdminFloatingChat: React.FC = () => {
               borderRadius: "20px",
               // 🆕 28w.3 — day/night surface (was hardcoded #fff + navy),
               //   so the popup isn't a bright-white card in night mode.
-              background: "var(--sr-panel)",
+              // 🆕 28x.168 — --sr-panel alone is 72-82% alpha; floated over the
+              //   photo grid the photos bled through and the panel was
+              //   unreadable. Layering it OVER the opaque page ground makes the
+              //   surface solid while still following both themes.
+              background:
+                "linear-gradient(var(--sr-panel), var(--sr-panel)), var(--sr-bg, #17181D)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
               border: "1px solid var(--sr-hairline)",
               boxShadow: "0 8px 32px rgba(138, 58, 87, 0.16), 0 2px 8px rgba(0,0,0,0.10)",
               transformOrigin: "bottom right",
@@ -601,7 +637,9 @@ const AdminFloatingChat: React.FC = () => {
               maxWidth: 220,
               padding: "10px 14px 10px 12px",
               borderRadius: "16px",
-              background: "var(--sr-panel)",
+              // 🆕 28x.168 — solid surface (see the expanded panel's note).
+              background:
+                "linear-gradient(var(--sr-panel), var(--sr-panel)), var(--sr-bg, #17181D)",
               border: "1px solid var(--sr-hairline)",
               boxShadow: "0 8px 28px rgba(138, 58, 87, 0.14), 0 2px 6px rgba(0,0,0,0.08)",
               cursor: "pointer",
@@ -613,7 +651,8 @@ const AdminFloatingChat: React.FC = () => {
                 right: -7,
                 width: 14,
                 height: 14,
-                background: "var(--sr-panel)",
+                background:
+                  "linear-gradient(var(--sr-panel), var(--sr-panel)), var(--sr-bg, #17181D)",
                 borderRight: "1px solid var(--sr-hairline)",
                 borderBottom: "1px solid var(--sr-hairline)",
                 transform: "rotate(-45deg)",

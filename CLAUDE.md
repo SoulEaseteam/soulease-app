@@ -394,6 +394,33 @@ What 28x.156 changed so it can't blank the site again:
   heavier). Deliberate — a slow photo beats no photo on a site whose product
   IS the photo.
 
+**📉 Funnel audit 2026-08-05 (Round 28x.166-168) — read this before touching
+pricing/promos/chat:**
+Real analytics_events funnel: home→booking_start stable ~6% every month, but
+(a) start→complete fell 40%→~25% after May, (b) concierge_chat_open collapsed
+153 (May) → 44 (Jun, the 28s140-202 overhaul month) → 4 (Aug 1-5). Three causes
+found + fixed that night:
+- Travel fare was ~3× real GrabBike (10 km ฿450 vs ฿136 real) → re-anchored to
+  the real Grab round-trip (28x.166: 0→฿50 · 3→฿70 · 6→฿100 · 10→฿140 ·
+  15→฿200), verified live in the prod bundle. Note: the fare is the
+  THERAPIST's money (cash jobs she keeps it) — old curve gave her ~฿300 hidden
+  margin per 10 km job, now ~breakeven; watch for far-job refusals.
+- Auto-filled welcome code showed "Code not recognised" on the bestseller
+  (premium PROMO_BLOCKED) and Thai 60' (below ฿1,400 min) → 28x.167 silently
+  clears OUR auto-filled code when it can't apply; guest-typed codes still get
+  the honest hint.
+- The concierge FAB's expanded panel was an unreadable ghost — 82%-alpha
+  --sr-panel floated bare over the photo grid (photos bled through, no scrim).
+  28x.168: solid layered background + scrim, same treatment as 28x.161's
+  greeting bubble. This was very likely THE chat-collapse cause.
+Still owed / View's call:
+- ALL builtin promo codes are admin-deleted (FIRST10/WELCOME20/TONIGHT500/
+  VIP100/FREETAXI) → the ฿2,200 bestseller has ZERO working codes for real
+  guests. Re-enabling VIP100 (฿100, premium-safe) is the one-switch fix —
+  money decision, not made unilaterally.
+- ADMIN_QUOTE_KM still 15; with honest fares now, 20 km is defensible.
+- Re-check concierge_chat_open in ~1 week to confirm the fix moved the number.
+
 **Open / not done:**
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
   `createCustomToken` signs via IAM, so the functions' runtime service account
