@@ -27,7 +27,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import { fonts } from "@/theme";
 import { CONCIERGE } from "@/config/concierge";
 
@@ -52,22 +52,23 @@ const HomeFooterV2: React.FC = () => {
   //   every page. A Japanese guest browsing an otherwise-Japanese site hit a
   //   Thai nav block at the bottom of every screen. English source + locales.
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
-  const scrollToTherapistGrid = () => {
-    const el = document.getElementById("therapist-grid");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      // Not on home page — navigate home then scroll
-      void navigate("/");
-    }
-  };
-
+  // 🆕 Round 28x.186 (founder: "ปรับแถบนี้ให้มันดูดีขึ้นเป็นทางการขึ้น
+  //   อะไรที่มีอยู่แล้วให้ตัดออก") — dropped "Practitioners" specifically:
+  //   it was the one entry in this column NOT using `to=` (it fired
+  //   `scrollToTherapistGrid` via onClick instead), so unlike its siblings
+  //   it was never a real crawlable link — no SEO value lost cutting it —
+  //   and it duplicates "Home" one row above for a guest just reading link
+  //   labels. Every OTHER link below stays: TopNav/BottomNavGlass both
+  //   navigate via onClick+navigate() (see NAV_ITEMS in TopNav.tsx), which
+  //   Googlebot's link-discovery crawler can't see — confirmed the hard way
+  //   in 28x.99d, when the 5 district pages below showed "Referring page:
+  //   None detected" in Search Console despite being real pages. This
+  //   footer is the ONLY real <a href> path to Home/Services/Pricing/
+  //   Journal on the whole site; cutting them would silently undo that.
   const menuLinks: FooterLink[] = [
     { label: t("footer.home", "Home"), to: "/" },
     { label: t("footer.services", "Services"), to: "/services" },
-    { label: t("footer.practitioners", "Practitioners"), onClick: scrollToTherapistGrid },
     { label: t("footer.nearMe", "Near me"), to: "/near-me" },
     { label: t("footer.pricing", "Pricing"), to: "/pricing" },
     // 🆕 Round 28x.108 — the SEO journal. This footer renders on the home page
@@ -96,10 +97,14 @@ const HomeFooterV2: React.FC = () => {
   // 🆕 28x.141 (founder: "เอาแค่อันที่ไม่ซ้ำ") — this column had its own
   //   "Contact us" link (→ WhatsApp) that duplicated the entire dedicated
   //   "Contact us" column (LINE/Call/Telegram) sitting right next to it.
+  // 🆕 28x.186 (founder: "อะไรที่มีอยู่แล้วให้ตัดออก") — same pattern one
+  //   level down: "How to book" / "Payment" / "FAQ" were three DIFFERENT
+  //   labels pointing at the literal SAME href (/services?tab=how). Three
+  //   anchors to one URL earn no extra crawl value over one — Google
+  //   collapses repeat same-page links from one source anyway — so this
+  //   was pure visual repetition, unlike the menu/area links above.
   const helpLinks: FooterLink[] = [
-    { label: t("footer.howToBook", "How to book"), to: "/services?tab=how" },
-    { label: t("footer.payment", "Payment"), to: "/services?tab=how" },
-    { label: t("footer.faq", "FAQ"), to: "/services?tab=how" },
+    { label: t("footer.howToBookFaq", "How to book & FAQ"), to: "/services?tab=how" },
   ];
 
   const contactLinks: FooterLink[] = [
@@ -219,17 +224,37 @@ const HomeFooterV2: React.FC = () => {
       >
         {columns.map((col) => (
           <Box key={col.title}>
+            {/* 🆕 Round 28x.186 (founder: "ให้มันดูดีขึ้นเป็นทางการขึ้น") —
+                sentence-case headings read as casual sub-labels; switched to
+                the same uppercase/letter-spaced "eyebrow" treatment used for
+                every other section label in the app (Profile's REWARDS /
+                RESERVATIONS, the identity card's SEX / HEIGHT · WEIGHT),
+                plus a short accent rule so each column reads as its own
+                titled block instead of a loose list of links. */}
             <Box
               sx={{
                 fontFamily: fonts.body,
-                fontSize: 11.5,
-                fontWeight: 600,
-                color: "var(--sr-ink)", // IVORY — column heading
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "var(--sr-muted)",
                 marginBottom: "10px",
               }}
             >
               {col.title}
             </Box>
+            <Box
+              aria-hidden
+              sx={{
+                width: 18,
+                height: "2px",
+                borderRadius: "1px",
+                background: "#FF9999",
+                opacity: 0.55,
+                marginBottom: "12px",
+              }}
+            />
             <Box
               component="ul"
               sx={{
@@ -238,7 +263,7 @@ const HomeFooterV2: React.FC = () => {
                 margin: 0,
                 display: "flex",
                 flexDirection: "column",
-                gap: "6px",
+                gap: "8px",
               }}
             >
               {col.links.map((link) => (
@@ -247,7 +272,7 @@ const HomeFooterV2: React.FC = () => {
                   key={link.label}
                   sx={{
                     fontFamily: fonts.body,
-                    fontSize: 11,
+                    fontSize: 11.5,
                     fontWeight: 400,
                     color: "var(--sr-body)", // CREAM — links
                     lineHeight: 1.5,
