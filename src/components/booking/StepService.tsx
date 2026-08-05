@@ -221,9 +221,23 @@ const StepService: React.FC<Props> = ({
     <Box
       role="radiogroup"
       aria-label="Choose service"
-      sx={{ display: "flex", flexDirection: "column", gap: "12px" }}
+      sx={{
+        // 🆕 Round 28x.182 (founder, re: zenorabkk.com's Service Menu:
+        //   "อยากเปลี่ยนโฉม ให้มันล้ำกว่านี้") — one continuous "menu" card
+        //   (Zenora's certificate-style list: lettered rows, hairline
+        //   dividers, single frame) instead of separate boxed cards per
+        //   service. Kept SunRed's own rose family rather than Zenora's
+        //   literal gold — this page is still built from the same rose
+        //   accent as the price/pill/CTA around it; swapping to gold here
+        //   only would read as a mismatched patch, not a refresh.
+        borderRadius: "18px",
+        background: "var(--sr-panel)",
+        border: "1px solid var(--sr-hairline)",
+        boxShadow: "var(--sr-card-shadow)",
+        overflow: "hidden",
+      }}
     >
-      {visibleServices.map((s) => {
+      {visibleServices.map((s, idx) => {
         const isSelected = value === s.id;
         // 🆕 28r123 (founder mockup 2026-07-13 · therapist services list
         //   compact horizontal cards) — replaced the r28s86 full-bleed
@@ -232,6 +246,8 @@ const StepService: React.FC<Props> = ({
         //   tiers removed per r122+r118 direction (ซ่อนราคา).  Only
         //   name + '60 min · Type' subtitle surface.
         const typeLabel = SERVICE_TYPE_TAG[s.id] ?? "Signature";
+        // 🆕 28x.182 — A/B/C/D row marker, echoing Zenora's lettered menu.
+        const letter = String.fromCharCode(65 + idx);
         return (
           <Box
             key={s.id}
@@ -250,26 +266,19 @@ const StepService: React.FC<Props> = ({
               display: "flex",
               alignItems: "stretch",
               gap: 0,
-              borderRadius: "14px",
-              background: "var(--sr-panel)",
-              border: isSelected
-                ? "1.5px solid #FF9999"
-                : "1px solid var(--sr-hairline)",
-              boxShadow: "var(--sr-card-shadow)",
-              overflow: "hidden",
+              // 🆕 28x.182 — hairline between rows instead of a border
+              //   around each card; first row carries none.
+              borderTop: idx === 0 ? "none" : "1px solid var(--sr-line)",
+              background: isSelected ? "rgba(255,153,153,0.07)" : "transparent",
               cursor: "pointer",
               userSelect: "none",
-              transition:
-                "transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
+              transition: "background 0.18s ease",
               "@media (hover: hover)": {
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  borderColor: "rgba(217,124,149,0.5)",
-                },
+                "&:hover": { background: "rgba(217,124,149,0.05)" },
               },
               "&:focus-visible": {
                 outline: "2px solid #FF9999",
-                outlineOffset: 2,
+                outlineOffset: -2,
               },
             }}
           >
@@ -282,6 +291,7 @@ const StepService: React.FC<Props> = ({
             {s.image && (
               <Box
                 sx={{
+                  position: "relative",
                   flex: "0 0 auto",
                   width: 108,
                   height: 108,
@@ -306,6 +316,33 @@ const StepService: React.FC<Props> = ({
                     objectPosition: "center top",
                   }}
                 />
+                {/* 🆕 28x.182 — lettered menu marker, corner-mounted on the
+                    photo (Zenora's own ringed-letter badge, translated into
+                    the rose family). */}
+                <Box
+                  aria-hidden
+                  sx={{
+                    position: "absolute",
+                    top: 6,
+                    left: 6,
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "rgba(20,10,14,0.55)",
+                    border: "1px solid rgba(255,255,255,0.55)",
+                    backdropFilter: "blur(4px)",
+                    fontFamily: SANS,
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.02em",
+                    color: "#fff",
+                  }}
+                >
+                  {letter}
+                </Box>
               </Box>
             )}
 
