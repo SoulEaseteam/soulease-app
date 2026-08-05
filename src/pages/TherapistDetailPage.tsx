@@ -12,7 +12,7 @@
 // to match Phase 2 design. Real data integration via `therapistsData` lookup
 // + Firestore live status in Task 7 (i18n sweep / data wiring).
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -923,6 +923,24 @@ const TherapistDetailPage: React.FC = () => {
   //   The #gallery section renders a responsive photo grid; tapping
   //   any tile opens the fullscreen viewer with prev/next/close.
   const [galleryIdx, setGalleryIdx] = useState<number | null>(null);
+  // 🆕 Round 28x.185 (founder: "เลื่อนดูรูปได้ผ่านการปัดด้วยมือ แบบลื่นไหล") —
+  //   the lightbox was click-only prev/next (no touch swipe). Mirrors
+  //   DetailHero's OWN fullscreen viewer, which already solved this with a
+  //   horizontal scroll-snap track: scrolling IS the swipe gesture, so it's
+  //   native-feeling for free — no custom touch-delta math to get wrong.
+  //   This ref scrolls to `galleryIdx` on open AND on every prev/next
+  //   button tap, so buttons and finger-swipe drive the same state and
+  //   never fall out of sync.
+  const lightboxScrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (galleryIdx === null) return;
+    const el = lightboxScrollRef.current;
+    if (!el) return;
+    const id = window.requestAnimationFrame(() => {
+      el.scrollTo({ left: galleryIdx * el.clientWidth, behavior: "instant" as ScrollBehavior });
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [galleryIdx]);
 
   // Round 28s55 — `liveBookings` now comes from the shared
   // useTherapistBookingFeed above (one listener for bookings + stats).
@@ -1244,6 +1262,17 @@ const TherapistDetailPage: React.FC = () => {
     ...(therapist.images ?? []).map((url) => ({ url, type: "image" as const })),
     ...(therapist.videos ?? []).map((url) => ({ url, type: "video" as const })),
   ];
+
+  // 🆕 Round 28x.185 — scroll-snap swipe sync for the lightbox (see the
+  //   ref/effect declared with the other hooks above, near galleryIdx).
+  const handleLightboxScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (!el.clientWidth) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx !== galleryIdx && idx >= 0 && idx < galleryMedia.length) {
+      setGalleryIdx(idx);
+    }
+  };
 
   return (
     <Box
@@ -2349,7 +2378,16 @@ const TherapistDetailPage: React.FC = () => {
           Backdrop dim + tap-to-close · warm-taupe glyphs · fixed z 9999
           so it floats above every other page chrome (sticky nav,
           detail hero, InfoSheet). Only mounted while `galleryIdx`
-          is a number. */}
+          is a number.
+          🆕 Round 28x.185 (founder: "เลื่อนดูรูปได้ผ่านการปัดด้วยมือ
+          แบบลื่นไหล") — the single centered image/video is now a
+          horizontal scroll-snap track of every item, same mechanic
+          DetailHero's own fullscreen viewer already uses: the swipe
+          gesture IS the browser's native scroll, so it's fluid for
+          free instead of hand-rolled touch-delta math. Prev/next
+          buttons and finger-swipe both just move `galleryIdx`; the
+          ref/effect declared near the state keeps the scroll position
+          in sync with it either way. */}
       {galleryIdx !== null &&
         galleryMedia.length > 0 && (
           <Box
@@ -2359,16 +2397,11 @@ const TherapistDetailPage: React.FC = () => {
               "detail.gallery.lightboxAria",
               "Photo viewer"
             )}
-            onClick={() => setGalleryIdx(null)}
             sx={{
               position: "fixed",
               inset: 0,
               zIndex: 9999,
               background: "rgba(0, 0, 0, 0.90)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "20px",
             }}
           >
             <Box
@@ -2383,6 +2416,7 @@ const TherapistDetailPage: React.FC = () => {
                 position: "absolute",
                 top: 20,
                 right: 20,
+                zIndex: 2,
                 background: "rgba(255,255,255,0.10)",
                 border: "none",
                 borderRadius: "999px",
@@ -2423,6 +2457,7 @@ const TherapistDetailPage: React.FC = () => {
                   left: { xs: 12, md: 32 },
                   top: "50%",
                   transform: "translateY(-50%)",
+                  zIndex: 2,
                   background: "rgba(255,255,255,0.10)",
                   border: "none",
                   borderRadius: "999px",
@@ -2444,39 +2479,84 @@ const TherapistDetailPage: React.FC = () => {
               </Box>
             )}
 
-            {/* 🆕 Round 28x.174 — video plays inline with native controls;
-                autoPlay is intentional here (this is a modal the guest just
-                opened by tapping the clip, not an ambient background loop —
-                muted-autoplay-on-page-load rules don't apply). */}
-            {galleryMedia[galleryIdx]?.type === "video" ? (
-              <Box
-                component="video"
-                src={galleryMedia[galleryIdx].url}
-                controls
-                autoPlay
-                onClick={(e) => e.stopPropagation()}
-                sx={{
-                  maxWidth: "92vw",
-                  maxHeight: "86vh",
-                  borderRadius: "10px",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.50)",
-                }}
-              />
-            ) : (
-              <Box
-                component="img"
-                src={galleryMedia[galleryIdx]?.url}
-                alt={`${therapist.name} photo ${galleryIdx + 1}`}
-                onClick={(e) => e.stopPropagation()}
-                sx={{
-                  maxWidth: "92vw",
-                  maxHeight: "86vh",
-                  objectFit: "contain",
-                  borderRadius: "10px",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.50)",
-                }}
-              />
-            )}
+            {/* Horizontal scroll-snap track — one slide per media item.
+                Tapping the dimmed padding around a slide closes the
+                lightbox (mirrors the old backdrop tap-to-close); tapping
+                the media itself stops propagation. */}
+            <Box
+              ref={lightboxScrollRef}
+              onScroll={handleLightboxScroll}
+              sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                overflowX: "auto",
+                overflowY: "hidden",
+                scrollSnapType: "x mandatory",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": { display: "none" },
+              }}
+            >
+              {galleryMedia.map((item, i) => (
+                <Box
+                  key={`${item.url}-${i}`}
+                  onClick={() => setGalleryIdx(null)}
+                  sx={{
+                    flexShrink: 0,
+                    width: "100%",
+                    height: "100%",
+                    scrollSnapAlign: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "20px",
+                    boxSizing: "border-box",
+                    cursor: "pointer",
+                  }}
+                >
+                  {/* 🆕 Round 28x.174 — video plays inline with native
+                      controls; autoPlay is intentional here (this is a
+                      modal the guest just opened by tapping the clip,
+                      not an ambient background loop — muted-autoplay-
+                      on-page-load rules don't apply). Only the CURRENT
+                      slide autoplays so swiping past a clip doesn't
+                      leave audio playing off-screen. */}
+                  {item.type === "video" ? (
+                    <Box
+                      component="video"
+                      src={item.url}
+                      controls
+                      autoPlay={i === galleryIdx}
+                      onClick={(e) => e.stopPropagation()}
+                      sx={{
+                        maxWidth: "92vw",
+                        maxHeight: "86vh",
+                        borderRadius: "10px",
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.50)",
+                        cursor: "default",
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      component="img"
+                      src={item.url}
+                      alt={`${therapist.name} photo ${i + 1}`}
+                      loading={Math.abs(i - galleryIdx) <= 1 ? "eager" : "lazy"}
+                      onClick={(e) => e.stopPropagation()}
+                      sx={{
+                        maxWidth: "92vw",
+                        maxHeight: "86vh",
+                        objectFit: "contain",
+                        borderRadius: "10px",
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.50)",
+                        cursor: "default",
+                      }}
+                    />
+                  )}
+                </Box>
+              ))}
+            </Box>
 
             {galleryMedia.length > 1 && (
               <Box
@@ -2496,6 +2576,7 @@ const TherapistDetailPage: React.FC = () => {
                   right: { xs: 12, md: 32 },
                   top: "50%",
                   transform: "translateY(-50%)",
+                  zIndex: 2,
                   background: "rgba(255,255,255,0.10)",
                   border: "none",
                   borderRadius: "999px",
@@ -2525,6 +2606,7 @@ const TherapistDetailPage: React.FC = () => {
                   bottom: 24,
                   left: "50%",
                   transform: "translateX(-50%)",
+                  zIndex: 2,
                   fontFamily: SANS,
                   fontSize: "11px",
                   fontWeight: 700,
@@ -2534,6 +2616,7 @@ const TherapistDetailPage: React.FC = () => {
                   background: "rgba(0,0,0,0.32)",
                   padding: "4px 10px",
                   borderRadius: "999px",
+                  pointerEvents: "none",
                 }}
               >
                 {galleryIdx + 1} / {galleryMedia.length}
