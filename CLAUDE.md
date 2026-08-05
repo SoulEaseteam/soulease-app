@@ -148,9 +148,7 @@ warning below for why).
 - **Repo**: `/Users/varissarahirunto/sunred-vite/`
 
 ### Key files & where things live
-- `src/data/services.ts` — service catalog (4 services)
 - `src/data/therapists.ts` — therapist roster + servicesAvailable
-- `src/utils/servicePricing.ts` — pricing model
 - `src/utils/serviceCatalog.ts` — legacy slug → SKU resolver
 - `src/hooks/useServiceUsageStats.ts` — Firestore booking aggregator
   - `servedById` — completed/done count (used by public chip)
@@ -343,127 +341,23 @@ of changelog were costing tokens on every run with no daily-operational value. R
 CLAUDE-HISTORY.md or `git log` for detail. Durable design decisions & "don't-redo"
 lessons stay in §12 below.
 
-## 9. Current state (2026-07-21, updated Round 28x.99f)
+## 9. Current state (updated 2026-08-05)
 
-**zh-TW (Traditional Chinese) locale shipped.** Founder asked for a real
-market-data-backed target ("หาตลาดคนจีนกำลังจ่ายสูง") — research showed
-China is the clear #1 target (already fully built: zh locale + WeChat
-Pay) but flagged that Taiwan/HK/Macau (zh-TW device locale) was silently
-falling back to Simplified content the whole time, per a deliberate
-28-something decision documented in i18n.ts ("covers tw users via
-i18next fallback"). Founder chose the full build over the cheaper
-"homepage-only" option, so it now touches EVERY layer:
-- `src/locales/zh-TW/translation.json` — full 677-key Traditional
-  translation (not a character conversion — 上门→到府 etc, Taiwan
-  register)
-- `src/data/districts.ts` + `scripts/prerender-routes.mjs` — zh-TW
-  district/service/pricing copy, kept in sync per the file's own
-  comment
-- `src/data/reviewTemplates.ts` — zh-TW review templates + phone-prefix
-  detection (+886/+852/+853 now route to zh-TW, not zh)
-- Concierge bot (`functions/src/telegram-concierge-bot/*`) — zh-TW
-  greetings/FAQ, routes to the same `@YuNiSpaBkk` handle as zh
-- `public/sitemap.xml` — 22 new zh-TW URLs + hreflang entries
-- i18n.ts detection: `load` switched from `"languageOnly"` to
-  `"currentOnly"` + `nonExplicitSupportedLngs` — this was a REQUIRED
-  change, not cosmetic; `"languageOnly"` unconditionally strips every
-  region code including zh-TW's, so it would have kept silently
-  collapsing to zh no matter what else shipped
+Round-by-round detail for what shipped recently — zh-TW locale, staff app
+self-service, Telegram bot copy CMS, the analytics fix, the full booking-chat
+build, the SEO blog pipeline, and the security audit — moved to
+**[CLAUDE-HISTORY.md](CLAUDE-HISTORY.md)** (bottom of file, 2026-07-21 through
+2026-07-24 entries) on 2026-08-05, same reason as §8: those are "what we built
+and why", not "what's still owed", so they don't need to be resident every
+session. **The open items below are NOT part of that move** — they stay here
+because §10 depends on this section being read first every session.
 
-**Deliberately NOT done — a real decision, not an oversight:**
-- The promo/broadcast Telegram bot (`telegram-post-bot/*`, scheduled
-  channel posts) does NOT support zh-TW. `@manguyujianniSPA` is a
-  dedicated mainland-CN sub-brand channel — posting Traditional Chinese
-  there would mismatch its actual subscriber base. A Taiwan/HK channel
-  is a real new acquisition-channel decision for the founder to make,
-  not a code default. `GREETER_LANGS` (6, concierge) and `PROMO_LANGS`
-  (5, broadcast) are intentionally separate lists in
-  `getTelegramBotCopyPreview` (functions/src/index.ts) — don't merge
-  them without that decision being made explicitly first.
-- The 32-vs-14 therapist-bios task from the original brief **could not
-  be completed — the premise didn't match live data**. The live
-  `therapists` Firestore collection has 14 docs (matches CLAUDE.md's
-  "12 on roster" note more than "32"), and **none of them have any
-  `bios.*` field populated** (all null or `{}`). `generate-bios.ts`
-  (the Gemini-based multi-language bio generator) appears to have
-  never actually been run against production, or its output was never
-  written back. There is no Simplified-Chinese bio text anywhere to
-  translate zh-TW FROM. Nothing was written to Firestore. If bios are
-  wanted, `generate-bios.ts` needs to run first for all 5 original
-  languages, THEN a zh-TW pass can genuinely translate from real
-  `bios.zh` content — flag this to the founder, don't just re-attempt
-  it silently next session.
-
-**Staff app** now has 3 tabs (Home · Jobs · Profile). Home is a quick-menu
-grid (Reports, Performance, Gallery, Services, Features, Languages, Bio,
-Payout) topped by a shared identity card (`TherapistIdentityCard` +
-`useTherapistIdentityStats`, also used on Profile — same source, can't
-drift). Working Status + Working Hours (Wed/Sun-only, UI-enforced not
-rules-enforced) live on Profile. New self-service surfaces: gallery
-uploads go through a `galleryRequests` moderation queue reviewed at
-`/admin/staff-requests`; Payout Account is self-editable (was admin-only)
-with a Telegram alert to admin on every change as a safety net.
-
-**Telegram bot copy** (Greeter welcome/button/nudge/FAQ, Promo Bot's 7-day
-rotation + 5 holiday themes + shared footer) is now Firestore-backed and
-self-editable from `/admin/telegram` → "Bot Copy" — Firestore is an
-override layer the bots check first, code is the fallback, so an empty
-`botCopy` collection sends byte-identical messages to before. Full-message
-previews are collapsed by default there (keep it that way — see 28x.98).
-
-**Analytics** (`/admin/analytics`) no longer counts admin/therapist
-sessions browsing the real site (was counting founder's own testing +
-"Viewing as Customer" mode as guest traffic). Traffic-source attribution
-now prefers an explicit `?utm_source=`/`?src=` tag over referrer-guessing
-— use it for any TikTok/LINE/Telegram link since those in-app browsers
-often don't send a usable `document.referrer`.
-
-**💬 Booking chat shipped — Round 28x.140 (2026-07-29)**
-
-Founder: "ต้องจองแล้วเท่านั้นถึงจะแชทกับพนักงานเพื่อคอนเฟิร์มออเดอได้". Until
-now the only "chat" was `AdminFloatingChat` — a set of deep links OUT to LINE/
-WhatsApp/WeChat/Telegram. A guest who uses none of those had no way to reach
-anyone from inside the site, right after committing to a booking.
-
-The thread is a subcollection of the reservation (`bookings/{id}/messages`), so
-"has booked" isn't a flag anything checks — it's the only address a message can
-have. Three surfaces, one component (`src/components/chat/BookingChatThread.tsx`):
-- **Guest** — `/booking/success/:id?t=…`. It shipped below the concierge
-  deep-links; 28x.153 then moved it INTO the 2×2 quick-action grid, where the
-  "Chat with {name}" tile (previously a Telegram redirect) toggles the thread
-  inline. 28x.152 added Grab-style one-tap quick-reply chips — those send
-  through the same `send()` and the same 4-key payload, so they needed no rules
-  change (verified against the diff, not just the commit message).
-- **Practitioner** — `/therapist/jobs`, a "แชท" button per ACCEPTED job (same
-  masking rule as her address/phone: no contact before she accepts).
-- **Concierge** — the `/admin/bookings` detail drawer, so View can actually
-  REPLY (Telegram only notifies her; it can't answer a thread).
-
-How guest identity works — read before touching it:
-- A guest is signed out. `claimBookingChat` (functions/src/index.ts) verifies the
-  same `accessToken` capability `getBookingPublic` uses and exchanges it for a
-  **custom token** carrying `bookingChat: <bookingId>`. Rules read that claim;
-  the secret never reaches Firestore.
-- That token signs into a **SECOND Firebase app** (`src/lib/bookingChat.ts`), not
-  the primary one — otherwise opening a guest link would sign a practitioner or
-  View out of her own session. One Auth instance per app is a Firebase limit, so
-  the second app IS the mechanism. Don't "simplify" it away.
-- Staff use their normal session; `therapistUid` (uid-to-uid, 28x.66) is the match.
-- `onBookingChatMessage` pings the Telegram report channel + the practitioner's DM
-  on GUEST messages only, and maintains `bookingChatMeta/{bookingId}` — one
-  summary doc so the job list's unread dot is ONE query, not a listener per job.
-  It deliberately does NOT write to the booking doc (that would re-trigger
-  onBookingWriteSyncStats + syncTherapistDailyCount on every "hi").
-- 25 new rules tests in `tests/rules.test.mjs` (98 total, all passing) cover the
-  claim being scoped to one booking, sender-label forgery, immutability, and the
-  exact client payloads. The message payload is pinned by `keys().hasOnly()` —
-  **adding a field to a message without updating the rule silently breaks every
-  send** (the 28x.116 failure mode, again).
-- Kill switches, both default ON, on `adminSettings/advanced`:
-  `bookingChatEnabled` (whole feature) and `bookingChatTherapistEnabled`
-  (practitioner side only — flip false and the thread stays open with the
-  concierge alone). They exist because a direct guest↔practitioner line is also
-  how a repeat booking could get arranged off-platform; View is in every thread.
+**Live guardrail (from the zh-TW build):** `GREETER_LANGS` (6, concierge) and
+`PROMO_LANGS` (5, broadcast) are intentionally separate lists in
+`getTelegramBotCopyPreview` (functions/src/index.ts) — the promo bot
+deliberately does NOT support zh-TW (`@manguyujianniSPA` is a mainland-CN-only
+sub-brand channel). Don't merge the two lists; a Taiwan/HK promo channel is a
+real new acquisition-channel decision for View to make, not a code default.
 
 **🖼️ Every image on the site depends on ONE external CDN — Round 28x.156**
 
@@ -529,68 +423,6 @@ What 28x.156 changed so it can't blank the site again:
 - `/admin/staff-requests` (gallery photo approval queue) shipped and
   passed typecheck/build/rules-tests, but was never visually confirmed
   live in an actual admin browser session — worth a first real look.
-
-**📝 SEO blog shipped — Round 28x.108 (2026-07-24)**
-
-`/blog` (The SunRed Journal) is live: 5 English articles targeting top-of-
-funnel "which service / what are my options" queries (choosing a service,
-Singaporean guide, after-flight recovery, late-night options, business-trip
-recovery) — the earlier, less-contested intent the money pages don't cover.
-Founder direction was "เจาะทุกกลุ่ม" (all segments), so the Singaporean/
-business-traveller pieces are included even though that audience skews
-one-time-tourist (see §6 Sammyboy note — same customer-mix caveat applies if
-judging these by traffic alone).
-
-How it's wired (so you don't re-derive it):
-- **Content source of truth = `SEO_Blog_Pack/*.md`** (the drafts that sat
-  unused for weeks). `scripts/buildBlogData.mjs` parses them → the committed
-  `src/data/blogPosts.mjs`. BOTH the React pages (`Blog{Index,Post}Page`) and
-  the crawler prerender import that ONE module — no drift.
-- **To add / edit an article**: edit the markdown, run `npm run build` (or just
-  `node scripts/buildBlogData.mjs`) locally, commit the regenerated
-  `blogPosts.mjs` + `public/sitemap.xml`, deploy. The generator also rewrites
-  the sitemap's `<!-- BLOG:START/END -->` block, so a new article needs no
-  separate sitemap edit.
-- **⚠️ SEO_Blog_Pack is .vercelignore'd** (marketing files aren't build
-  inputs), and Vercel materialises an EMPTY `SEO_Blog_Pack/` dir. So on Vercel
-  the generator finds 0 articles and **must** no-op, consuming the committed
-  `blogPosts.mjs`. It guards on the article COUNT for exactly this — do NOT
-  change that guard to `existsSync`, and never let it write an empty result
-  (28x.108b/c: an existsSync guard shipped a blank /blog to prod once).
-- Each article prerenders a crawlable shell: unique title/description,
-  BlogPosting JSON-LD, and the FULL article HTML (tables included) in
-  `<noscript>`. Real `<a href="/blog">Journal</a>` in the home footer for
-  crawl discovery.
-
-**🔐 Security posture after Round 28x.107 (2026-07-24 audit)**
-
-Founder asked point-blank: "เว็บเรา มีการป้องกันอะไรบ้าง หากถูกเจาะ หรือ
-โจมตี". Four holes were found and closed the same night — see the 28x.107
-commit for detail. What matters going forward:
-
-- **Auth model is now claim-based, not collection-based.** `role`
-  ("admin" | "therapist" | "customer") and `tid` (the therapist DOC id)
-  ride inside the ID token. `storage.rules` reads them directly;
-  `firestore.rules` still uses `exists(/admins/$(uid))`, which is fine
-  there — Firestore CAN do that read, Storage cannot.
-  ⚠️ **Never** reintroduce `firestore.exists()` into storage.rules. It was
-  tried in 28s280 and silently denied every real admin upload (28s281).
-  The claim is the workaround, not a preference.
-- `syncAdminClaim` (trigger on `admins/{uid}`) keeps the claim honest even
-  when an admin is added by hand in the Firebase console. If you add a new
-  way to grant staff status, you do NOT need to call anything — but you DO
-  need the write to land in `/admins`, or the claim never updates.
-- `scripts/backfillRoleClaims.mjs` is idempotent — re-run it (dry run
-  first, no flag) any time claims look stale.
-- Two test suites now guard rules changes. Run BOTH before deploying rules:
-  - `npx firebase emulators:exec --only firestore --project soulease-spa "node tests/rules.test.mjs"` (73 tests)
-  - `npx firebase emulators:exec --only storage --project soulease-spa "node tests/storage.rules.test.mjs"` (19 tests)
-  - Both need `PATH="/opt/homebrew/opt/openjdk/bin:$PATH"` prefixed.
-- `telegramWebhook` verifies `X-Telegram-Bot-Api-Secret-Token` and **fails
-  closed**. If the bot ever goes silent after a deploy, check that first:
-  `node scripts/setTelegramWebhook.mjs` shows Telegram's side. Re-registering
-  must happen BEFORE deploying new code, not after — the order is in that
-  file's header.
 
 **Security follow-ups still owed:**
 - **App Check is still off** (`enforceAppCheck: false`, functions/src/index.ts).

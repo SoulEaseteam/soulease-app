@@ -108,6 +108,11 @@ import { paymentSurcharge } from "@/utils/paymentSurcharge";
 // 🆕 Round 28x.38 — concierge can key a discount code straight on the booking
 //   slip; same validator the customer flow uses, so amounts/rules match.
 import { validateDiscount } from "@/utils/discount";
+// 🆕 28x.141 — real phone-keyed SunPoints ledger. The concierge redeems points
+//   straight on the slip (View's call: concierge-controlled, redeem anytime);
+//   redeeming stamps `pointsRedeemed` so the derived balance drops permanently.
+import { filterCustomerBookings, sunPointsSummary } from "@/utils/sunPoints";
+import { sunPointTHB } from "@/config/anniversary";
 // 🆕 28w.59 — customer membership tiers (Bronze/Silver/Gold/BlackVIP) + no-show
 //   flag, badged on each order. Full-history per-phone aggregate, tier from the
 //   shared membership util (same config as the Membership admin page).
@@ -202,6 +207,7 @@ interface Booking {
   staffBonus?: number;      // 🆕 28x.114 — shop→therapist bonus on this job (settlement +)
   staffDeduction?: number;  // 🆕 28x.114 — therapist penalty on this job (settlement −)
   discountLabel?: string;   // 🆕 28w.58 — human-readable promo label
+  pointsRedeemed?: number;  // 🆕 28x.141 — SunPoints spent ON this booking (the ledger debit; balance = earned − Σ pointsRedeemed)
   attributionSource?: string; // 🆕 28x.99t — which channel the guest came from
   taxiFee?: number;
   paymentFee?: number;      // 🆕 28s260 — WeChat/Alipay surcharge, recomputed if payment method is edited
@@ -440,6 +446,36 @@ const AdminBookingListPage: React.FC = () => {
           normPhone((bk.phone ?? "").trim()) === p &&
           String(bk.discountCode ?? "").trim().toUpperCase() === c,
       ).length;
+    };
+  }, [bookings]);
+
+  // 🆕 28x.141 — a customer's SunPoints ledger, keyed on phone from full
+  //   history (src/utils/sunPoints.ts). Returns:
+  //     earned  = points earned across ALL their delivered bookings
+  //     balance = earned − Σ pointsRedeemed (spendable now, across everything)
+  //     availableForThis = balance + whatever THIS booking already redeemed,
+  //       so re-editing a booking that already spent points can re-allocate
+  //       up to that amount without double-counting its own debit.
+  //   Reads the in-memory list — complete only when the feed isn't date-scoped
+  //   (dateMode === "all"); the drawer gates redemption on that so points are
+  //   never redeemed against a partial history (see pointsHistoryComplete).
+  const sunPointsFor = useMemo(() => {
+    return (phone: string, excludeId: string) => {
+      // Exclude test/placeholder bookings the same way every customer-facing
+      // stat does (membership.ts) — otherwise the shop's own placeholder phone
+      // (634350987, 126 docs) or a QA test address would mint a bogus balance.
+      const rows = filterCustomerBookings(bookings, { phone }).filter(
+        (bk) => !isReservedShopBooking(bk) && !isTestLocationBooking(bk),
+      );
+      const { earned, redeemed } = sunPointsSummary(rows);
+      const thisRow = rows.find((r) => r.id === excludeId);
+      const thisRedeemed =
+        thisRow && typeof thisRow.pointsRedeemed === "number"
+          ? Math.max(0, Math.floor(thisRow.pointsRedeemed))
+          : 0;
+      const balance = Math.max(0, earned - redeemed);
+      const availableForThis = Math.max(0, earned - (redeemed - thisRedeemed));
+      return { earned, redeemed, balance, availableForThis };
     };
   }, [bookings]);
 
@@ -1182,6 +1218,8 @@ const AdminBookingListPage: React.FC = () => {
             onChangeStatus={(status) => changeStatus(detailBooking.id, status)}
             onSaveDetails={(patch, auditDetail) => { void saveDetails(detailBooking.id, patch, auditDetail); }}
             countPriorCodeUses={countPriorCodeUses}
+            sunPointsFor={sunPointsFor}
+            pointsHistoryComplete={dateMode === "all"}
           />
         )}
       </Drawer>
@@ -1747,7 +1785,11 @@ const DetailPanel: React.FC<{
   // 🆕 28x.43 — how many OTHER bookings this phone already has under a code
   //   (the redemption memory made visible on the slip).
   countPriorCodeUses: (phone: string, code: string, excludeId: string) => number;
-}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails, countPriorCodeUses }) => {
+  // 🆕 28x.141 — this phone's SunPoints ledger + whether the loaded history is
+  //   complete enough to safely redeem against (feed not date-scoped).
+  sunPointsFor: (phone: string, excludeId: string) => { earned: number; redeemed: number; balance: number; availableForThis: number };
+  pointsHistoryComplete: boolean;
+}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails, countPriorCodeUses, sunPointsFor, pointsHistoryComplete }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
   const cfg        = cfgFor(b.status);
   const isCancelled = b.status === "cancelled";
@@ -1778,8 +1820,12 @@ const DetailPanel: React.FC<{
       duration: b.duration ?? 60,
       servicePrice: String(b.servicePrice ?? 0),
       taxiFee: String(b.taxiFee ?? 0),
-      total: String(b.totalPrice ?? b.total ?? 0),
+      // 🆕 28x.141 — stored totalPrice is the NET (points already deducted), but
+      //   the edit form treats `total` as the bill BEFORE points. Reconstruct
+      //   the pre-points bill so re-editing doesn't double-deduct: net + points.
+      total: String((b.totalPrice ?? b.total ?? 0) + (b.pointsRedeemed ?? 0) * sunPointTHB()),
       discountCode: b.discountCode ?? "",
+      pointsRedeem: b.pointsRedeemed ? String(b.pointsRedeemed) : "",
       attributionSource: b.attributionSource ?? "",
       staffBonus: b.staffBonus ? String(b.staffBonus) : "",
       staffDeduction: b.staffDeduction ? String(b.staffDeduction) : "",
@@ -1798,8 +1844,11 @@ const DetailPanel: React.FC<{
     duration: b.duration ?? 60,
     servicePrice: String(b.servicePrice ?? 0),
     taxiFee: String(b.taxiFee ?? 0),
-    total: String(b.totalPrice ?? b.total ?? 0),
+    // 🆕 28x.141 — pre-points bill (see startEdit): net + points-worth.
+    total: String((b.totalPrice ?? b.total ?? 0) + (b.pointsRedeemed ?? 0) * sunPointTHB()),
     discountCode: b.discountCode ?? "",
+    // 🆕 28x.141 — SunPoints spent on this booking (blank = none).
+    pointsRedeem: b.pointsRedeemed ? String(b.pointsRedeemed) : "",
     // 🆕 28x.99t — most bookings (admin-created) never captured this;
     //   lets the operator tag it after the fact, from memory.
     attributionSource: b.attributionSource ?? "",
@@ -1867,8 +1916,34 @@ const DetailPanel: React.FC<{
   //   concierge doesn't hand the same welcome code to a guest twice.
   const editCodeTrim = editForm.discountCode.trim().toUpperCase();
   const priorCodeUses = editCodeTrim ? countPriorCodeUses(editForm.phone, editCodeTrim, b.id) : 0;
+
   const computedTotal    = Math.max(0, editServicePrice + editTaxiFee + editSurcharge - editDiscountAmount);
   const editTotal        = Number(editForm.total) || 0;
+
+  // 🆕 28x.141 — SunPoints redemption (concierge-controlled). DELIBERATELY kept
+  //   as a SEPARATE deduction off the collected bill (`editTotal`), NOT folded
+  //   into the free Total field. Two reasons:
+  //     1. Safety — baking it into Total means clearing the points field would
+  //        leave a stale reduced Total with pointsRedeemed=0 (a silent
+  //        undercharge). As a separate line, `netTotal` always tracks the
+  //        current points value and restores the moment points are cleared.
+  //     2. The existing discount-code auto-sync (28x.99l) on Total stays
+  //        byte-for-byte unchanged, so the money path she already relies on
+  //        doesn't regress.
+  //   Two hard caps so the operator can't over-redeem: the guest's own balance
+  //   (availableForThis) and the bill itself (redeeming past ฿0 just wastes
+  //   points — leftover stays for next time). Points never touch servicePrice
+  //   or discountAmount, so the therapist's commission base is untouched — the
+  //   shop absorbs the points as a loyalty cost, like a shop-funded promo.
+  const editRedeemTHB = sunPointTHB(); // ฿ per point
+  const sp = sunPointsFor(editForm.phone, b.id);
+  const maxRedeemablePoints = editRedeemTHB > 0
+    ? Math.max(0, Math.min(sp.availableForThis, Math.floor(editTotal / editRedeemTHB)))
+    : 0;
+  const pointsRedeemRaw = Math.max(0, Math.floor(Number(editForm.pointsRedeem) || 0));
+  const pointsRedeem = Math.min(pointsRedeemRaw, maxRedeemablePoints);
+  const pointsRedeemAmount = pointsRedeem * editRedeemTHB;
+  const netTotal = Math.max(0, editTotal - pointsRedeemAmount); // what the customer actually pays
 
   // 🆕 Round 28x.99l (founder: "ยอด ไม่ตัด ส่วนลด") — a valid discount code
   // used to only ever surface as a "Use computed" suggestion the admin had
@@ -1882,7 +1957,8 @@ const DetailPanel: React.FC<{
   // a manual override typed AFTER the code is applied is still respected;
   // it only re-syncs if service/taxi/duration changes again afterward.
   // The no-discount case (a manually-agreed custom price) keeps full free
-  // editability, unchanged.
+  // editability, unchanged. (SunPoints do NOT participate here — they're a
+  // separate deduction applied at save via netTotal, see 28x.141 above.)
   useEffect(() => {
     if (editDiscountAmount > 0) {
       setEditForm((f) =>
@@ -1934,9 +2010,9 @@ const DetailPanel: React.FC<{
     const prevCreatedMs = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : null;
 
     const audit: Record<string, unknown> = {};
-    if (editTotal !== oldTotal) {
+    if (netTotal !== oldTotal) {
       audit.priceChangedFrom = oldTotal;
-      audit.priceChangedTo = editTotal;
+      audit.priceChangedTo = netTotal;
     }
     if (scheduleChanged && prevCreatedMs !== null) {
       audit.createdAtChangedFrom = fmtBKK(new Date(prevCreatedMs), "YYYY-MM-DD HH:mm");
@@ -1958,7 +2034,10 @@ const DetailPanel: React.FC<{
         servicePrice: editServicePrice,
         taxiFee: editTaxiFee,
         paymentFee: editSurcharge,
-        totalPrice: editTotal,
+        // 🆕 28x.141 — netTotal = the collected bill (editTotal) minus SunPoints.
+        //   servicePrice/discountAmount above are untouched, so commission is
+        //   computed on the full service and the shop absorbs the points.
+        totalPrice: netTotal,
         startAt,
         // 28x.131 — see the note above saveEdit's guard: keeps the list's
         // own sort/filter key pointing at the job, not at the typing session.
@@ -1972,6 +2051,12 @@ const DetailPanel: React.FC<{
         discountCode: editForm.discountCode.trim().toUpperCase(),
         discountAmount: editDiscountAmount,
         discountLabel: editDiscountAmount > 0 ? editDiscount.label : "",
+        // 🆕 28x.141 — the SunPoints ledger debit. Stored separately from
+        //   discountAmount ON PURPOSE: points are shop-funded loyalty, so they
+        //   knock ฿ off the customer's Total (already reflected above) but must
+        //   NOT reduce the commission base (service − discount). Writing it here
+        //   is what permanently lowers the derived balance.
+        pointsRedeemed: pointsRedeem,
         // 🆕 28x.114 — per-job staff settlement adjustments (0 clears).
         staffBonus: editStaffBonus,
         staffDeduction: editStaffDeduction,
@@ -2063,7 +2148,7 @@ const DetailPanel: React.FC<{
           {[
             { label: "Service", labelTh: "บริการ",  value: formatTHB(editing ? editServicePrice : (isCancelled ? 0 : (b.servicePrice || 0))) },
             { label: "Taxi",    labelTh: "แท็กซี่",  value: formatTHB(editing ? editTaxiFee : (isCancelled ? 0 : (b.taxiFee || 0))) },
-            { label: "Total",   labelTh: "รวมทั้งหมด", value: formatTHB(editing ? editTotal : total), accent: true },
+            { label: "Total",   labelTh: "รวมทั้งหมด", value: formatTHB(editing ? netTotal : total), accent: true },
           ].map((s, i) => (
             <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
               <Typography sx={{ ...adminFigureSx, fontSize: 16, color: s.accent ? adminColor.accent : adminColor.text, lineHeight: 1 }}>{s.value}</Typography>
@@ -2108,6 +2193,32 @@ const DetailPanel: React.FC<{
                 −{formatTHB(b.discountAmount as number)}
               </Typography>
             )}
+          </Box>
+        )}
+
+        {/* 🆕 28x.141 — SunPoints redeemed on this booking (read-only view). */}
+        {(b.pointsRedeemed ?? 0) > 0 && (
+          <Box
+            sx={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+              borderRadius: "14px", background: `${adminColor.green}0D`,
+              border: `1px solid ${adminColor.green}33`, px: 1.75, py: 1.25, mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              <Star size={18} weight="duotone" color={adminColor.green} />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.green, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1 }}>
+                  SunPoints · แต้ม
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: adminColor.text, mt: 0.4 }}>
+                  ใช้ {b.pointsRedeemed} แต้ม
+                </Typography>
+              </Box>
+            </Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 15, fontWeight: 800, color: adminColor.green, flexShrink: 0 }}>
+              −{formatTHB(b.pointsRedeemed! * sunPointTHB())}
+            </Typography>
           </Box>
         )}
 
@@ -2340,6 +2451,76 @@ const DetailPanel: React.FC<{
                         ⚠️ เบอร์นี้เคยใช้โค้ด {editCodeTrim} แล้ว {priorCodeUses} ครั้ง
                       </Typography>
                     </Box>
+                  )}
+                </Box>
+
+                {/* 🆕 28x.141 — SunPoints redemption (concierge-controlled). The
+                    balance is derived from THIS phone's full booking history
+                    (earned − already-redeemed), so it works for guests with no
+                    account. Redeeming here stamps pointsRedeemed and knocks ฿ off
+                    the Total — shop-funded, so the therapist's split is untouched. */}
+                <Box sx={{ mt: 1.25 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: adminColor.muted }}>
+                      SunPoints · แต้มสะสม
+                    </Typography>
+                    {pointsHistoryComplete && (
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 800, color: sp.availableForThis > 0 ? adminColor.green : adminColor.dim }}>
+                        คงเหลือ {sp.availableForThis} แต้ม · {formatTHB(sp.availableForThis * editRedeemTHB)}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {!pointsHistoryComplete ? (
+                    <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
+                      สลับตัวกรองวันที่เป็น <b>ทั้งหมด</b> เพื่อเช็ก/แลกแต้ม (ยอดแต้มต้องดูจากประวัติเต็ม)
+                    </Typography>
+                  ) : sp.earned === 0 ? (
+                    <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
+                      เบอร์นี้ยังไม่มีแต้มสะสม
+                    </Typography>
+                  ) : (
+                    <>
+                      <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+                        <TextField
+                          label="ใช้แต้ม · Redeem (pts)" size="small" fullWidth
+                          value={editForm.pointsRedeem}
+                          onChange={(e) => setEditForm((f) => ({ ...f, pointsRedeem: e.target.value.replace(/[^0-9]/g, "") }))}
+                          sx={editFieldSx}
+                          inputProps={{ inputMode: "numeric" }}
+                          disabled={maxRedeemablePoints === 0}
+                        />
+                        <Box
+                          component="button"
+                          type="button"
+                          onClick={() => setEditForm((f) => ({ ...f, pointsRedeem: String(maxRedeemablePoints) }))}
+                          disabled={maxRedeemablePoints === 0}
+                          sx={{
+                            flexShrink: 0, mt: 0.25, px: 1.5, py: 1, borderRadius: "10px", cursor: maxRedeemablePoints === 0 ? "default" : "pointer",
+                            border: `1px solid ${adminColor.line}`, background: adminColor.panel, color: adminColor.text,
+                            fontFamily: SANS, fontSize: 11.5, fontWeight: 800, whiteSpace: "nowrap",
+                            opacity: maxRedeemablePoints === 0 ? 0.5 : 1,
+                          }}
+                        >
+                          ใช้สูงสุด {maxRedeemablePoints}
+                        </Box>
+                      </Box>
+                      {pointsRedeem > 0 && (
+                        <Box sx={{ mt: 0.6, display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
+                          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, color: adminColor.green }}>
+                            −{formatTHB(pointsRedeemAmount)} · ใช้ {pointsRedeem} แต้ม (เหลือ {sp.availableForThis - pointsRedeem})
+                          </Typography>
+                          <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 800, color: adminColor.text, whiteSpace: "nowrap" }}>
+                            ยอดรับจริง {formatTHB(netTotal)}
+                          </Typography>
+                        </Box>
+                      )}
+                      {pointsRedeemRaw > maxRedeemablePoints && (
+                        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.amber, mt: 0.4 }}>
+                          ปรับลงเหลือ {maxRedeemablePoints} แต้ม — {sp.availableForThis < pointsRedeemRaw ? "แต้มคงเหลือไม่พอ" : "เกินยอดบิลนี้ (แต้มที่เหลือเก็บไว้ครั้งหน้า)"}
+                        </Typography>
+                      )}
+                    </>
                   )}
                 </Box>
 
