@@ -561,6 +561,26 @@ commit for detail. What matters going forward:
   must happen BEFORE deploying new code, not after — the order is in that
   file's header.
 
+**⭐ Review links shipped — Round 28x.162 (2026-08-14) · ONE ACTION OWED**
+
+Founder: "เรื่องส่งลิ้งให้ลูกค้ารีวิว ทำได้ไหม". Shipped: anonymous link-based
+guest reviews (see §12 for the two durable rules). Deploy order matters:
+
+1. `firebase deploy --only firestore:rules,functions` — the rules add
+   `reviewsPublic`, and the new `submitBookingReview` +
+   `onBookingWriteSyncPublicReview` must exist before the page can be used.
+2. **`node scripts/backfillPublicReviews.mjs` (dry run first, then `--apply`)**
+   — ⚠️ **REQUIRED, not optional.** The mirror trigger only fires on future
+   writes, so until this runs, `/reviewsPublic` is empty and the site shows
+   ZERO reviews — including every review that already exists. Needs
+   `scripts/serviceAccountKey.json`.
+3. Deploy the frontend.
+
+Not visually confirmed in a browser (this container has no project
+credentials): nobody has yet watched a real guest open a review link, submit,
+and seen the stars land on a practitioner's card. Worth one real end-to-end run
+on a completed test booking.
+
 **Security follow-ups still owed:**
 - **App Check is still off** (`enforceAppCheck: false`, functions/src/index.ts).
   Booking create is deliberately open to logged-out guests and rules cannot
@@ -714,6 +734,37 @@ You'll have ALL context. No re-explanation needed.
   the queried field, and don't trust a code-level default as evidence it exists.
   The two duplicate copies of that state list are now one function
   (`collectBusyTherapists`) — the old comment already admitted they "disagree".
+- **Public reviews live in `reviewsPublic`, NEVER in `bookings` (28x.162).**
+  Reviews are authored as `rating` + `reviewText` on the booking doc, but the
+  public surface reads a redacted mirror: `reviewsPublic/{bookingId}` =
+  therapistId · rating · text · serviceName · duration · createdAt, written
+  ONLY by the `onBookingWriteSyncPublicReview` trigger (`allow write: if false`
+  for every client, View included — a world-writable review doc is the
+  "คู่แข่งแกล้ง" fake-review vector). Why it exists: 28w.91 removed anonymous
+  `allow list` on `bookings` after verifying against production that the public
+  review listener was returning real guests' **addresses, phone numbers and
+  GPS** (a LIST hands back whole documents). Right call — but its own comment
+  said "see /reviewsPublic below" and that collection was never built, while
+  `useTherapistReviews` kept querying `bookings`. Net effect: **reviews were
+  invisible to every logged-out visitor from 28w.91 until 28x.162**, and it
+  never looked like a bug — the hook catches permission-denied and renders the
+  same empty list as "no reviews yet". If reviews ever look empty again, check
+  the browser console for that warning FIRST. Run
+  `node scripts/backfillPublicReviews.mjs` (dry run, then `--apply`) after any
+  bulk review edit made outside the app.
+- **Guest reviews are anonymous BY STRUCTURE, not by discipline (28x.162).**
+  `/review/b/:bookingId?t=<accessToken>` — the concierge copies it from the
+  booking drawer ("Copy review link", shown only on completed jobs that aren't
+  rated yet) and sends it privately. **The link is a bearer credential**: never
+  post one to a channel, and any page whose URL carries a token must pass
+  `noIndex` to `useDocumentMeta` or the hook copies the full href — token and
+  all — into `<link rel="canonical">`. `submitBookingReview` verifies the token
+  server-side (same capability as `getBookingPublic`/`claimBookingChat`),
+  requires status completed/done, allows one review per booking, and writes no
+  identity field at all. Don't add one: the deleted `/review/:id` page published
+  `userName: user.email`, and `ReviewListPage` rendered `userName ?? userEmail`
+  as the public byline — both were live guest-identity leaks in the middle of a
+  §🔐 playbook whose whole premise is that guests stay anonymous.
 - **An admin control that writes a field nobody reads is invisible failure —
   grep for the READER before trusting a settings UI (28x.161).** The founder
   reported "ป้าย New ไม่ขึ้น" (2026-08-14). `/admin/therapists/:id` has shipped

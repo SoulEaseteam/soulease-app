@@ -48,6 +48,7 @@ import { priceForDuration, durationsFor, formatTHB } from "@/utils/servicePricin
 import { stampSplit } from "@/utils/commission";
 import { estimateTaxiFare, resolveFareOrigin } from "@/utils/taxiFare";
 import { paymentSurcharge, hasPaymentSurcharge } from "@/utils/paymentSurcharge";
+import { mintAccessToken } from "@/utils/bookingAccessToken";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import {
   ArrowLeft, CalendarBlank, Clock, User, Phone, MapPin,
@@ -377,6 +378,11 @@ const AdminBookingAddPage: React.FC = () => {
       const mapUrl    = loc.mapUrl ?? buildMapUrl(loc.placeName || loc.address, loc.lat, loc.lng);
 
       const ref = await addDoc(collection(db, "bookings"), {
+        // 🆕 28x.162 — mint the capability token here too. BookingFlowPage has
+        //   done this since 28x.107, but concierge-created reservations (the
+        //   majority of real volume) had none, so there was no link that could
+        //   authenticate the guest for the review page.
+        accessToken:   mintAccessToken(),
         userId:        null,
         // 🆕 28s249 — write BOTH: dashboards read customerName; the server
         //   Telegram formatter (formatBookingForAdmin) reads contactName.

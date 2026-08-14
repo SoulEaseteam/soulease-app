@@ -96,7 +96,10 @@ const RegisterPage: React.FC = () => {
     // 🆕 Round 28x.60 — refuse a signup that claims the shop's own identity.
     //   Both branches matter: `phone` becomes the login alias AND is what
     //   membership/bookings key on, and a `username` of "sunred" becomes the
-    //   public byline on reviews (ReviewPage derives userName from the account).
+    //   public byline anywhere an account name is shown. (28x.162: the old
+    //   ReviewPage that derived a review byline from the account is gone —
+    //   guest reviews are anonymous now — but the `phone` half of this check
+    //   still guards membership/booking lookups, so the rule stands.)
     if (isReservedIdentity({ name: resolved.canonical, phone: resolved.canonical })) {
       toast.error(
         t('auth.register.error.reservedIdentity', RESERVED_IDENTITY_MESSAGE)

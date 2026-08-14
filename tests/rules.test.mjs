@@ -948,6 +948,86 @@ await check("admin CANNOT write a chat summary (function-only)", () =>
   )
 );
 
+// ── reviewsPublic (28x.162) ──────────────────────────────────────────────
+// The redacted public review mirror. 28w.91 closed anonymous `list` on
+// `bookings` because a booking doc carries the guest's address, phone and GPS
+// — which also made every review invisible. This collection is the fix, so the
+// tests that matter are: a logged-out guest CAN read it, and NOBODY can write
+// it from a client (it is written only by onBookingWriteSyncPublicReview via
+// the admin SDK, which bypasses rules entirely).
+console.log("\nreviewsPublic · 28x.162");
+
+await testEnv.withSecurityRulesDisabled(async (ctx) => {
+  await setDoc(doc(ctx.firestore(), "reviewsPublic", "bk-owned"), {
+    bookingId: "bk-owned",
+    therapistId: THERAPIST_UID,
+    rating: 5,
+    text: "Punctual and professional.",
+    serviceName: "Aromatherapy",
+    duration: 90,
+  });
+});
+
+await check("a logged-out guest CAN read a public review", () =>
+  assertSucceeds(getDoc(doc(anon(), "reviewsPublic", "bk-owned")))
+);
+// This is the whole point of the collection — the listener in
+// useTherapistReviews runs for signed-out visitors, which is ~all real traffic.
+await check("a logged-out guest CAN list a practitioner's public reviews", () =>
+  assertSucceeds(
+    getDocs(
+      query(collection(anon(), "reviewsPublic"), where("therapistId", "==", THERAPIST_UID))
+    )
+  )
+);
+await check("a logged-out guest CANNOT forge a public review", () =>
+  assertFails(
+    setDoc(doc(anon(), "reviewsPublic", "bk-fake"), {
+      therapistId: THERAPIST_UID,
+      rating: 1,
+      text: "sabotage",
+    })
+  )
+);
+await check("a signed-in customer CANNOT forge a public review", () =>
+  assertFails(
+    setDoc(doc(asUser(GUEST_UID), "reviewsPublic", "bk-fake-2"), {
+      therapistId: THERAPIST_UID,
+      rating: 5,
+      text: "self-praise",
+    })
+  )
+);
+// Even View. Every public review must be provably attached to a real booking,
+// which means it can only arrive through the mirror trigger.
+await check("admin CANNOT write a public review directly (function-only)", () =>
+  assertFails(
+    setDoc(doc(asUser(ADMIN_UID), "reviewsPublic", "bk-owned"), { rating: 5, text: "hi" })
+  )
+);
+await check("a practitioner CANNOT edit her own public review", () =>
+  assertFails(
+    updateDoc(doc(asUser(THERAPIST_UID), "reviewsPublic", "bk-owned"), { rating: 5 })
+  )
+);
+await check("nobody can delete a public review from a client", () =>
+  assertFails(deleteDoc(doc(asUser(ADMIN_UID), "reviewsPublic", "bk-owned")))
+);
+
+// The retired `reviews` collection (28x.162): its only writer, ReviewPage.tsx,
+// is deleted. Create is now denied so an unread collection can't be used as a
+// free write target.
+await check("the retired `reviews` collection rejects new client writes", () =>
+  assertFails(
+    setDoc(doc(asUser(GUEST_UID), "reviews", "r-new"), {
+      userId: GUEST_UID,
+      rating: 5,
+      status: "pending",
+      comment: "hello",
+    })
+  )
+);
+
 await testEnv.cleanup();
 
 console.log(`\n${passed} passed · ${failed} failed`);

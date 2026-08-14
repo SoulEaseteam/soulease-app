@@ -45,26 +45,22 @@ type FirestoreDateLike = Timestamp | Date | string | number | null | undefined;
 interface Review {
   id: string;
   therapistId: string;
-  userId?: string | null;
   rating: number;
   comment: string;
   createdAt: FirestoreDateLike;
+  /** 🆕 28x.162 — always "Booking #XXXX". Never a real person's name. */
   userName: string;
-  photoURL?: string;
 }
 
-/** narrow shape ของ booking doc ที่ ReviewListPage อ่าน — รับเฉพาะฟิลด์ที่ใช้จริง */
-interface BookingReviewDoc {
-  id?: string;
+/** 🆕 28x.162 — a doc in `reviewsPublic` (the redacted mirror), not a booking.
+ *  There is deliberately no name / email / avatar field to read: the mirror
+ *  never copies one. */
+interface PublicReviewDoc {
+  bookingId?: string;
   therapistId?: string;
-  userId?: string | null;
   rating?: number;
-  reviewText?: string;
-  startAt?: FirestoreDateLike;
+  text?: string;
   createdAt?: FirestoreDateLike;
-  userName?: string;
-  userEmail?: string;
-  userAvatar?: string;
 }
 
 interface TherapistInfo {
@@ -130,30 +126,38 @@ const ReviewListPage: React.FC = () => {
   }, [id]);
 
   // =======================================================
-  // LOAD REVIEWS (from bookings)
+  // LOAD REVIEWS (from `reviewsPublic` — the redacted mirror)
   // =======================================================
+  // 🆕 28x.162 — was `collection(db, "bookings")` filtered on reviewText.
+  //   Two problems, both fixed by the switch:
+  //     1. 28w.91 removed anonymous `allow list` on bookings, so this query
+  //        has permission-denied for every logged-out visitor since — this
+  //        public page has been showing an empty list to real guests.
+  //     2. It rendered `userName ?? userEmail` as the byline, i.e. published
+  //        a guest's EMAIL on a public page whenever the field was set. That
+  //        is precisely the exposure CLAUDE.md §🔐 bans Google reviews over.
+  //   The mirror carries no identity field at all, so the byline below is now
+  //   structurally anonymous rather than anonymous-by-luck.
   useEffect(() => {
     if (!id) return;
 
     const q = query(
-      collection(db, "bookings"),
-      where("therapistId", "==", id),
-      where("reviewText", "!=", "")
+      collection(db, "reviewsPublic"),
+      where("therapistId", "==", id)
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
-      // enrich with fallback reviewer name + avatar
       const enriched: Review[] = snapshot.docs.map((d) => {
-        const r = d.data() as BookingReviewDoc;
+        const r = d.data() as PublicReviewDoc;
+        const bookingId = r.bookingId ?? d.id;
         return {
-          id: d.id, // ใช้ docId ของจริง ไม่ใช่ field `id` ที่อาจไม่มี
+          id: d.id,
           therapistId: r.therapistId ?? "",
-          userId: r.userId ?? null,
           rating: typeof r.rating === "number" ? r.rating : 5,
-          comment: r.reviewText ?? "",
-          createdAt: r.startAt ?? r.createdAt ?? null,
-          userName: r.userName ?? r.userEmail ?? `Booking: ${d.id}`,
-          photoURL: r.userAvatar ?? "/images/default-avatar.png",
+          comment: r.text ?? "",
+          createdAt: r.createdAt ?? null,
+          // The only label a guest ever gets. No name, no email, no avatar.
+          userName: `Booking #${bookingId.slice(0, 4).toUpperCase()}`,
         };
       });
 
@@ -437,10 +441,9 @@ const ReviewListPage: React.FC = () => {
               }}
             >
               <Stack direction="row" spacing={2} alignItems="center" mb={1}>
-                <Avatar
-                  src={r.photoURL}
-                  sx={{ width: 58, height: 58, border: "2px solid #fff" }}
-                />
+                {/* 🆕 28x.162 — no `src`. There is no guest photo to show and
+                    there never should be; MUI renders its neutral fallback. */}
+                <Avatar sx={{ width: 58, height: 58, border: "2px solid #fff" }} />
                 <Box>
                   <Typography fontWeight="bold" fontSize={15}>
                     {r.userName}

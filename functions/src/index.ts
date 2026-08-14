@@ -488,6 +488,87 @@ interface OpenAIModerationResponse {
   results: OpenAIModerationResult[];
 }
 
+/**
+ * 🆕 28x.162 — the OpenAI moderation call, extracted so more than one
+ * endpoint can use it. `moderateText` (the callable the client wraps in
+ * src/utils/moderate.ts) and `submitBookingReview` now share this exactly,
+ * which means a guest's review is screened by the same rules as a booking
+ * note instead of a second, drifting copy.
+ *
+ * FAIL-OPEN on every failure path (no key, API error, exception) — matching
+ * the documented contract of src/utils/moderate.ts. A moderation outage must
+ * never swallow a real guest's review; an admin still sees every review in
+ * /admin/reviews and can delete one.
+ *
+ * ⚠️ Any caller must declare `secrets: [OPENAI_API_KEY]` in its options, or
+ *    `.value()` reads empty at runtime and screening silently turns off.
+ */
+async function moderateTextCore(
+  text: string
+): Promise<{ flagged: boolean; reason: string; categories?: string[] }> {
+  const apiKey = OPENAI_API_KEY.value().trim();
+  if (!apiKey) {
+    // ถ้าไม่ได้ตั้ง key → ไม่ block flow, แค่ log
+    logger.warn("[moderateText] OPENAI_API_KEY not set — skipping moderation");
+    return { flagged: false, reason: "moderation-disabled" };
+  }
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/moderations", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: text,
+        model: "omni-moderation-latest",
+      }),
+    });
+
+    if (!res.ok) {
+      logger.error("[moderateText] OpenAI API error", { status: res.status });
+      // fail-open: ถ้า OpenAI down ก็ไม่ block user
+      return { flagged: false, reason: "moderation-error" };
+    }
+
+    const data = (await res.json()) as OpenAIModerationResponse;
+    const result = data.results[0];
+
+    if (result.flagged) {
+      // เลือก category ที่ flag ตัวแรก
+      const flaggedCategories = Object.entries(result.categories)
+        .filter(([, flagged]) => flagged)
+        .map(([cat]) => cat);
+
+      logger.warn("[moderateText] FLAGGED", {
+        categories: flaggedCategories,
+        textPreview: text.slice(0, 100),
+      });
+
+      return {
+        flagged: true,
+        reason: flaggedCategories.join(", "),
+        categories: flaggedCategories,
+      };
+    }
+
+    return { flagged: false, reason: "" };
+  } catch (err) {
+    logger.error("[moderateText] error", err);
+    // fail-open
+    return { flagged: false, reason: "moderation-error" };
+  }
+}
+
+/** 🆕 28x.162 — boolean convenience wrapper for server-side callers. */
+async function isTextFlagged(text: string): Promise<boolean> {
+  const t = text.trim();
+  if (t.length < 3) return false;
+  if (t.length > 4000) return false;
+  return (await moderateTextCore(t)).flagged;
+}
+
 export const moderateText = onCall(
   {
     secrets: [OPENAI_API_KEY],
@@ -504,59 +585,7 @@ export const moderateText = onCall(
       throw new HttpsError("invalid-argument", "text too long");
     }
 
-    const apiKey = OPENAI_API_KEY.value().trim();
-    if (!apiKey) {
-      // ถ้าไม่ได้ตั้ง key → ไม่ block flow, แค่ log
-      logger.warn("[moderateText] OPENAI_API_KEY not set — skipping moderation");
-      return { flagged: false, reason: "moderation-disabled" };
-    }
-
-    try {
-      const res = await fetch("https://api.openai.com/v1/moderations", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          input: text,
-          model: "omni-moderation-latest",
-        }),
-      });
-
-      if (!res.ok) {
-        logger.error("[moderateText] OpenAI API error", { status: res.status });
-        // fail-open: ถ้า OpenAI down ก็ไม่ block user
-        return { flagged: false, reason: "moderation-error" };
-      }
-
-      const data = (await res.json()) as OpenAIModerationResponse;
-      const result = data.results[0];
-
-      if (result.flagged) {
-        // เลือก category ที่ flag ตัวแรก
-        const flaggedCategories = Object.entries(result.categories)
-          .filter(([, flagged]) => flagged)
-          .map(([cat]) => cat);
-
-        logger.warn("[moderateText] FLAGGED", {
-          categories: flaggedCategories,
-          textPreview: text.slice(0, 100),
-        });
-
-        return {
-          flagged: true,
-          reason: flaggedCategories.join(", "),
-          categories: flaggedCategories,
-        };
-      }
-
-      return { flagged: false, reason: "" };
-    } catch (err) {
-      logger.error("[moderateText] error", err);
-      // fail-open
-      return { flagged: false, reason: "moderation-error" };
-    }
+    return moderateTextCore(text);
   }
 );
 
@@ -4715,6 +4744,137 @@ export const claimBookingChat = onCall(
   }
 );
 
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.162 — anonymous guest review, submitted from a link.
+//
+// Founder (2026-08-14): "เรื่องส่งลิ้งให้ลูกค้ารีวิว ทำได้ไหม".
+//
+// Why a callable and not a Firestore rule: the guest is signed out, so there
+// is no uid to match on. What she holds is the booking's `accessToken`, and
+// rules cannot verify a client-supplied secret on a write without the client
+// also being able to read it. Same reasoning that produced getBookingPublic
+// and claimBookingChat — this is the third user of that one capability.
+//
+// PRIVACY (CLAUDE.md §🔐 — the reason Google reviews are banned here): this
+// writes ONLY `rating` + `reviewText` + a timestamp. No name, no email, no
+// uid, no phone. The public hook (useTherapistReviews) already displays
+// nothing but "Booking #XXXX", so a review can never identify the guest who
+// left it. Do not add an author field to this payload later.
+//
+// The old /review/:id page did the opposite — it required a login and stamped
+// `userName: user.email` onto a public doc. It is retired this round.
+// ─────────────────────────────────────────────────────────────
+const REVIEWABLE_STATUSES = new Set(["completed", "done"]);
+const MAX_REVIEW_CHARS = 2000;
+
+export const submitBookingReview = onCall(
+  // OPENAI_API_KEY must be declared here or moderateTextCore reads an empty
+  // key and silently stops screening (see its doc comment).
+  { region: "asia-southeast1", secrets: [OPENAI_API_KEY] },
+  async (request) => {
+    const data = request.data as
+      | { bookingId?: string; token?: string; rating?: number; text?: string }
+      | undefined;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    const token = String(data?.token ?? "").trim();
+    const rating = Number(data?.rating);
+    const text = String(data?.text ?? "").trim();
+
+    if (!bookingId) {
+      throw new HttpsError("invalid-argument", "bookingId is required.");
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new HttpsError("invalid-argument", "rating must be 1-5.");
+    }
+    if (!text) {
+      throw new HttpsError("invalid-argument", "A written review is required.");
+    }
+    if (text.length > MAX_REVIEW_CHARS) {
+      throw new HttpsError("invalid-argument", "Review is too long.");
+    }
+
+    const db = getFirestore();
+    const ref = db.collection("bookings").doc(bookingId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      // Same code AND message as a bad token below, so this endpoint can't be
+      // used to enumerate real booking ids. Keep in step with
+      // getBookingPublic / claimBookingChat.
+      throw new HttpsError("permission-denied", "Booking not found.");
+    }
+    const b = snap.data() as Record<string, unknown>;
+
+    const uid = request.auth?.uid ?? null;
+    const storedToken =
+      typeof b.accessToken === "string" ? b.accessToken.trim() : "";
+    const tokenOk = storedToken.length > 0 && token === storedToken;
+    const ownerOk = uid != null && b.userId === uid;
+    if (!tokenOk && !ownerOk) {
+      throw new HttpsError("permission-denied", "Booking not found.");
+    }
+
+    // A review is a statement about work that happened. Anything not yet
+    // served (or cancelled/refunded) has nothing to review.
+    const status = typeof b.status === "string" ? b.status : "";
+    if (!REVIEWABLE_STATUSES.has(status)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This reservation is not complete yet."
+      );
+    }
+
+    // One review per booking. Holding the link is not a licence to rewrite
+    // the rating repeatedly — and an edit would silently change a number the
+    // practitioner's public average is built from.
+    if (typeof b.rating === "number" && b.rating >= 1) {
+      throw new HttpsError("already-exists", "This booking is already reviewed.");
+    }
+
+    if (typeof b.therapistId !== "string" || !b.therapistId) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This reservation has no practitioner to review."
+      );
+    }
+
+    // Reuse the same OpenAI moderation the booking notes and the old review
+    // page used. Fail-OPEN on an outage, matching src/utils/moderate.ts: a
+    // moderation blip must not eat a real guest's review.
+    try {
+      const flagged = await isTextFlagged(text);
+      if (flagged) {
+        throw new HttpsError(
+          "invalid-argument",
+          "Your review contains content we can't publish. Please reword it."
+        );
+      }
+    } catch (err) {
+      if (err instanceof HttpsError) throw err;
+      logger.warn("[submitBookingReview] moderation unavailable — allowing", { err });
+    }
+
+    await ref.set(
+      {
+        rating,
+        reviewText: text,
+        reviewedAt: FieldValue.serverTimestamp(),
+        // How the review arrived. Lets the admin list tell a guest-written
+        // review apart from one seeded by AdminSeedReviewsPage.
+        reviewSource: tokenOk ? "guest_link" : "guest_account",
+      },
+      { merge: true }
+    );
+
+    logger.info("[submitBookingReview] review saved", {
+      bookingId,
+      rating,
+      therapistId: b.therapistId,
+    });
+
+    return { ok: true, therapistId: b.therapistId };
+  }
+);
+
 // 🆕 Round 28x.140 — a guest message has to reach a human who is not looking
 //   at the admin panel. Staff live in Telegram (§5 of CLAUDE.md: View runs
 //   everything from her phone), so that is where the alert goes.
@@ -5446,6 +5606,109 @@ async function recomputeTherapistSessionStats(therapistId: string): Promise<void
     statsUpdatedAt: FieldValue.serverTimestamp(),
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.162 — mirror a booking's review into the PUBLIC `reviewsPublic`
+//   collection.
+//
+// WHY THIS EXISTS — reviews have been invisible to logged-out guests since
+// 28w.91. That round removed `allow list` on `bookings` for anonymous users
+// after verifying against production that the public review listener was
+// handing out real guests' addresses, phone numbers and GPS (a booking doc
+// carries all three, and a LIST returns whole documents). That was the right
+// call. But its own comment — "Reviews must come from a separate collection
+// holding ONLY rating + text (see /reviewsPublic below)" — described a
+// collection that was never actually built, and useTherapistReviews kept
+// querying `bookings`. So every guest's review list has been silently
+// permission-denied ever since; the hook logs the code and renders empty.
+//
+// This trigger is that missing collection. It copies ONLY safe fields, so the
+// public surface can never leak what 28w.91 closed:
+//     therapistId · rating · text · serviceName · duration · createdAt
+// No phone, no address, no lat/lng, no note, no customer name, no userId.
+//
+// It runs on EVERY booking write rather than only inside submitBookingReview
+// so all three sources land in the same place: a guest rating from her link,
+// an admin edit in /admin/bookings, and the AdminSeedReviewsPage backfill.
+// It is also the backfill mechanism itself — touching an old rated booking
+// mirrors it.
+//
+// Doc id = the booking id, so re-running is idempotent and an edited review
+// updates in place instead of duplicating.
+// ─────────────────────────────────────────────────────────────────────────────
+interface BookingReviewFields {
+  therapistId?: string;
+  rating?: number;
+  reviewText?: string;
+  serviceName?: string;
+  duration?: number;
+  reviewedAt?: Timestamp;
+  createdAt?: Timestamp;
+  startAt?: Timestamp;
+}
+
+export const onBookingWriteSyncPublicReview = onDocumentWritten(
+  {
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const bookingId = event.params.bookingId;
+    const before = event.data?.before.data() as BookingReviewFields | undefined;
+    const after = event.data?.after.data() as BookingReviewFields | undefined;
+
+    const reviewOf = (b?: BookingReviewFields) => {
+      const rating = typeof b?.rating === "number" ? b.rating : 0;
+      const text = (b?.reviewText ?? "").trim();
+      return rating >= 1 && text ? { rating, text } : null;
+    };
+    const prev = reviewOf(before);
+    const next = reviewOf(after);
+
+    // Nothing review-shaped changed — skip before doing any write. Bookings are
+    // written constantly (status, price, GPS, chat meta); mirroring on each one
+    // would be pure churn.
+    const therapistChanged = (before?.therapistId ?? null) !== (after?.therapistId ?? null);
+    if (
+      prev?.rating === next?.rating &&
+      prev?.text === next?.text &&
+      !therapistChanged
+    ) {
+      return;
+    }
+
+    const db = getFirestore();
+    const ref = db.collection("reviewsPublic").doc(bookingId);
+
+    // Review removed, booking deleted, or practitioner unassigned → the public
+    // copy must go too, or a deleted review would live on forever.
+    if (!next || !after?.therapistId) {
+      try {
+        await ref.delete();
+      } catch (err) {
+        logger.warn("[syncPublicReview] delete failed", { bookingId, err });
+      }
+      return;
+    }
+
+    try {
+      await ref.set({
+        bookingId,
+        therapistId: after.therapistId,
+        rating: next.rating,
+        text: next.text,
+        // Service context only — "Thai 90 min". Never the guest's own words
+        // from the booking note.
+        serviceName: after.serviceName ?? "",
+        duration: typeof after.duration === "number" ? after.duration : null,
+        createdAt: after.reviewedAt ?? after.createdAt ?? after.startAt ?? FieldValue.serverTimestamp(),
+      });
+      logger.info("[syncPublicReview] mirrored", { bookingId, rating: next.rating });
+    } catch (err) {
+      logger.warn("[syncPublicReview] write failed", { bookingId, err });
+    }
+  }
+);
 
 export const onBookingWriteSyncStats = onDocumentWritten(
   {

@@ -546,29 +546,38 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── reviews ────────────────────────────────────────────────────
-    // Round 28s1: tightened. Was open create with only rating-range
-    // check — anyone could spam fake 5★ self-praise or 1★ competitor
-    // sabotage via the SDK. Now requires sign-in, matching userId,
-    // forced status='pending' (so customer can't auto-approve their
-    // own review), and a comment size cap to prevent quota abuse.
-    // ReviewPage.tsx already gates UX behind login + completed-booking;
-    // this just makes the rules match the intent.
+    // ── reviewsPublic ────────────────────────────────────────────────
+    // 🆕 28x.162 — the redacted public review mirror that 28w.91's comment
+    //   promised ("see /reviewsPublic below") but never actually created.
+    //
+    //   Between 28w.91 and this round there was NO public review surface at
+    //   all: useTherapistReviews listed `bookings`, and 28w.91 had removed
+    //   anonymous `allow list` there (correctly — a booking doc carries the
+    //   guest's address, phone and GPS, and a LIST returns whole documents).
+    //   Every logged-out guest's review query has been permission-denied
+    //   since, which the hook swallows into an empty list.
+    //
+    //   Docs here are written ONLY by onBookingWriteSyncPublicReview, which
+    //   copies six safe fields and nothing else. Admin SDK bypasses rules, so
+    //   the client needs no write access at all — and must not have any:
+    //   world-writable review docs are exactly the "คู่แข่งแกล้ง" fake-review
+    //   vector, and going through the booking mirror means every public
+    //   review is provably attached to a real reservation.
+    match /reviewsPublic/{bookingId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ⚠️ 28x.162 — this `reviews` collection is now WRITE-DEAD. Its only
+    //   writer was ReviewPage.tsx, deleted this round (its route param never
+    //   matched, it demanded a login SunRed guests don't have, and it stamped
+    //   the guest's email as a public byline). Nothing reads it either — the
+    //   public review surface is /reviewsPublic above. Kept read-only for any
+    //   legacy documents; create is now denied so an orphaned, unread
+    //   collection can't be used as a free write target.
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isSignedIn()
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.rating is int
-                    && request.resource.data.rating >= 1
-                    && request.resource.data.rating <= 5
-                    && request.resource.data.status == 'pending'
-                    && (!('comment' in request.resource.data)
-                        || (request.resource.data.comment is string
-                            && request.resource.data.comment.size() <= 2000))
-                    // 🆕 28x.60 — userName is the public byline on the review
-                    //   list; a review signed "SunRed" reads as the shop
-                    //   vouching for itself.
-                    && !claimsReservedIdentity(request.resource.data);
+      allow create: if false;
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
