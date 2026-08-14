@@ -118,6 +118,15 @@ export const isPayrollExcluded = (status: string | null | undefined): boolean =>
   !!status && PAYROLL_EXCLUDED_STATUSES.has(status);
 
 /**
+ * 🆕 28x.162 — the same set, read as "this booking never happened", for the
+ * NON-payroll callers that need it: a cancelled or refunded order must not
+ * burn a promo code's `maxRedemptions`. Same statuses, different question —
+ * aliased rather than duplicated so the two can't drift apart the way the
+ * four hand-rolled `SERVED` sets across the admin pages already have.
+ */
+export const didNotHappen = isPayrollExcluded;
+
+/**
  * 🆕 28x.99u (audit) — was defined byte-for-byte identically in both
  * AdminEarningsPage.tsx and AdminTherapistPayoutsPage.tsx (the second file's
  * own comment already admitted it: "same messy `payment` field as the
