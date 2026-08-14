@@ -66,7 +66,9 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           // 🆕 28x.99u — was `travelBands` (dead flat-band shape, see
           //   taxiFare.ts applyLiveFareConfig comment); reconnected to the
           //   checkpoint model calcTaxiFare actually uses.
-          motoFareCheckpoints: data?.motoFareCheckpoints as [number, number][] | undefined,
+          // Stored as {km, thb} maps (Firestore nested-array ban) —
+          // applyLiveFareConfig deserializes either shape itself.
+          motoFareCheckpoints: data?.motoFareCheckpoints,
         });
         applyLivePromosEnabled(data?.promosEnabled === true);
         applyLiveAnniversaryConfig(

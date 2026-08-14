@@ -43,7 +43,12 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography, Switch, TextField, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { motoFareCheckpoints, motoRoundTripFare } from "@/utils/taxiFare";
+import {
+  motoFareCheckpoints,
+  motoRoundTripFare,
+  serializeFareCheckpoints,
+  deserializeFareCheckpoints,
+} from "@/utils/taxiFare";
 import { Clock, CreditCard, Wallet, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
 import { adminColor, adminFont } from "@/theme/adminTheme";
 import { SectionCard, fieldSx } from "./therapistFormKit";
@@ -133,7 +138,19 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           getDoc(doc(db, "adminSettings", "publicRules")),
           getDoc(doc(db, "adminSettings", "advanced")),
         ]);
-        if (rulesSnap.exists()) setRules((prev) => ({ ...prev, ...rulesSnap.data() }));
+        if (rulesSnap.exists()) {
+          const saved = rulesSnap.data();
+          // Checkpoints are stored as {km, thb} maps (Firestore can't nest
+          // arrays) — back into [km, thb] pairs before they hit the editor,
+          // which destructures them. Empty result = never saved → keep the
+          // code defaults already in state.
+          const savedPoints = deserializeFareCheckpoints(saved.motoFareCheckpoints);
+          setRules((prev) => ({
+            ...prev,
+            ...saved,
+            motoFareCheckpoints: savedPoints.length >= 2 ? savedPoints : prev.motoFareCheckpoints,
+          }));
+        }
         if (advSnap.exists()) setSettings((prev) => ({ ...prev, ...advSnap.data() }));
       } catch (err) {
         console.error("Failed to load admin settings:", err);
@@ -146,7 +163,18 @@ const AdminAdvancedSettingsPage: React.FC = () => {
     setLoading(true);
     try {
       await Promise.all([
-        setDoc(doc(db, "adminSettings", "publicRules"), { ...rules, updatedAt: serverTimestamp() }, { merge: true }),
+        setDoc(
+          doc(db, "adminSettings", "publicRules"),
+          {
+            ...rules,
+            // Nested-array ban again (see load above): without this map the
+            // whole Save silently failed with INVALID_ARGUMENT whenever the
+            // checkpoint table was present — i.e. always, since 28x.99u.
+            motoFareCheckpoints: serializeFareCheckpoints(rules.motoFareCheckpoints),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        ),
         setDoc(doc(db, "adminSettings", "advanced"), { ...settings, updatedAt: serverTimestamp() }, { merge: true }),
       ]);
       void logAdminAction("settings.update", {

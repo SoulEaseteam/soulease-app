@@ -213,13 +213,42 @@ export function surgePctForHour(bkkHour?: number | null): number {
 /** Apply live Firestore-sourced overrides (called once at boot + on every
  *  live update — see MaintenanceGate.tsx). Ignores out-of-range values so
  *  a bad write can't break pricing. */
+/** Firestore cannot hold an array directly inside an array, so the
+ *  checkpoint table is STORED as `[{km, thb}, …]` and only lives as
+ *  `[km, thb][]` pairs in memory. Discovered 2026-08-14: every write of the
+ *  in-memory shape (admin Save, scripts) had been rejected by Firestore with
+ *  "Nested arrays are not allowed" since 28x.99u — the override lever never
+ *  actually worked. */
+export type StoredFareCheckpoint = { km: number; thb: number };
+
+export function serializeFareCheckpoints(points: [number, number][]): StoredFareCheckpoint[] {
+  return points.map(([km, thb]) => ({ km, thb }));
+}
+
+/** Accepts both the stored `{km, thb}` shape and legacy `[km, thb]` pairs;
+ *  anything else falls out and setMotoFareCheckpoints' >=2-points guard
+ *  keeps the defaults. */
+export function deserializeFareCheckpoints(raw: unknown): [number, number][] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((p): [number, number] | null => {
+      if (Array.isArray(p) && p.length === 2) return [Number(p[0]), Number(p[1])];
+      if (p && typeof p === "object" && "km" in p && "thb" in p) {
+        const o = p as { km: unknown; thb: unknown };
+        return [Number(o.km), Number(o.thb)];
+      }
+      return null;
+    })
+    .filter((p): p is [number, number] => p !== null);
+}
+
 export function applyLiveFareConfig(cfg: {
   adminQuoteKm?: number;
   roundTripMultiplier?: number;
   grabBookingFee?: number;
   rushSurgePct?: number;
   peakSurgePct?: number;
-  motoFareCheckpoints?: [number, number][];
+  motoFareCheckpoints?: unknown;
 }): void {
   // 🆕 28x.99u — was `travelBands` (TravelBand[] flat-band shape), which fed
   //   the dead `travelBudgetForKm()`/`calcTravelBudgetResult()` pair: nothing
@@ -228,7 +257,7 @@ export function applyLiveFareConfig(cfg: {
   //   edits here silently stopped affecting any real fare. Reconnected to
   //   the checkpoint model that's actually live now — setMotoFareCheckpoints
   //   already validates/sorts/no-ops on bad input, same guarantee as before.
-  if (Array.isArray(cfg.motoFareCheckpoints)) setMotoFareCheckpoints(cfg.motoFareCheckpoints);
+  if (Array.isArray(cfg.motoFareCheckpoints)) setMotoFareCheckpoints(deserializeFareCheckpoints(cfg.motoFareCheckpoints));
   if (typeof cfg.adminQuoteKm === "number" && cfg.adminQuoteKm > 0) ADMIN_QUOTE_KM = cfg.adminQuoteKm;
   if (typeof cfg.roundTripMultiplier === "number" && cfg.roundTripMultiplier > 1) ROUND_TRIP_MULTIPLIER = cfg.roundTripMultiplier;
   if (typeof cfg.grabBookingFee === "number" && cfg.grabBookingFee >= 0) GRAB_BOOKING_FEE = cfg.grabBookingFee;
