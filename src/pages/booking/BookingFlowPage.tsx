@@ -129,7 +129,7 @@ import {
 import { priceForDuration, formatTHB, isServiceEnabled } from "@/utils/servicePricing";
 // 🆕 28w.43 — freeze the split on admin-created (born-confirmed) bookings; a
 //   customer booking (born pending) gets stamped when the admin confirms it.
-import { stampSplit } from "@/utils/commission";
+import { stampSplit, didNotHappen } from "@/utils/commission";
 import { formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import { getServiceById } from "@/utils/serviceCatalog";
@@ -1303,8 +1303,19 @@ const BookingFlowPage: React.FC = () => {
             let total = 0;
             let byPhone = 0;
             usedSnap.forEach((d) => {
+              const data = d.data() as { phone?: string; status?: string };
+              // 🆕 28x.162 — a cancelled / refunded / rejected / no-show order
+              //   must NOT burn a redemption. This counted every booking
+              //   carrying the code regardless of status, so a promo capped at
+              //   N was exhausted by orders that never happened and real
+              //   guests were turned away with "reached its usage limit" —
+              //   on the acquisition path, which is the worst place to leak.
+              //   Filtered here rather than in the query: `status not-in [...]`
+              //   alongside the `discountCode ==` equality would need a new
+              //   composite index and is capped at 10 values.
+              if (didNotHappen(data.status)) return;
               total += 1;
-              if (normPhone(String((d.data() as { phone?: string }).phone ?? "")) === myPhone) {
+              if (normPhone(String(data.phone ?? "")) === myPhone) {
                 byPhone += 1;
               }
             });

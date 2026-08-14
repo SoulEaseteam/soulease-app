@@ -85,7 +85,7 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   before, so Earnings behaviour is unchanged.
 import {
   therapistPctFor, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
-  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES, noShowCompFor, isCashPayment,
+  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES, noShowCompFor, isCashPayment, didNotHappen,
 } from "@/utils/commission";
 
 // 🆕 Round 28s245 — this page predates adminTheme.ts and still carried its
@@ -380,7 +380,9 @@ const AdminEarningsPage: React.FC = () => {
 
     for (const b of filteredBookings) {
       if (b.status && EXCLUDED_STATUSES.has(b.status)) {
-        countCancelled += 1;
+        // 🆕 28x.162 — same split as AdminReportPage: pending earns nothing but
+        //   is an unconfirmed checkout, not a cancellation.
+        if (didNotHappen(b.status)) countCancelled += 1;
         // 🆕 28w.52/53 — no-show owes the therapist a taxi comp (max ฿200 /
         //   actual fare). Keep it on the same payout + outstanding lines so
         //   Earnings agrees with Reports; other cancels pay ฿0.
@@ -404,19 +406,18 @@ const AdminEarningsPage: React.FC = () => {
       const taxi = b.taxiFee ?? 0;
       const discount = b.discountAmount ?? 0;
       const tPct = therapistPctFor(b.serviceId);
-      // 🆕 Round 28r27 (founder 2026-05-07) — Therapist commission
-      //   now applies on the DISCOUNTED service price, not the full
-      //   list price. Founder said "ไม่คุ่มเสี่ยงเกินไป" — under the
-      //   old rule (full-price commission) the shop absorbed 100% of
-      //   every promo's cost. The new rule splits the promo cost
-      //   proportionally:
-      //     therapist loses: tPct × discount
-      //     shop loses:      (1 − tPct) × discount
-      //   E.g. ฿330 promo on Gentleman tier 65% → therapist −฿215,
-      //   shop −฿115. Same fair share that retail / commission
-      //   businesses use everywhere.
-      // 🆕 28w.39 — fixed per-(service, duration) therapist split; falls
-      //   back to the tier % for legacy/odd durations. Shop share derives.
+      // 🆕 28w.39 — fixed per-(service, duration) therapist split; falls back
+      //   to the tier % for legacy/odd durations. Shop share derives.
+      //
+      // ⚠️ 28x.162 — the 28r27 block that used to sit here described the
+      //   OPPOSITE of what this line does and was left in place for months.
+      //   It said a promo is split proportionally ("therapist loses tPct ×
+      //   discount, shop loses (1 − tPct) × discount"). That rule is dead:
+      //   28w.39's fixed split means the therapist keeps her whole rate and
+      //   the SHOP absorbs the entire promo — which is what commission.ts
+      //   states and what therapistPayoutFor() actually computes. Removed
+      //   rather than reworded, because a comment contradicting the code
+      //   right under it is how the pricing drift in CLAUDE.md started.
       const payout = therapistPayoutFor(b);
 
       totalCollected += collected;
