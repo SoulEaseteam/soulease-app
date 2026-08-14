@@ -195,8 +195,24 @@ export function therapistPayoutFor(b: {
 }
 
 /** The shop's cut of ONE booking's service revenue (taxi excluded) =
- *  (servicePrice − discount) − therapist payout, floored at 0. Prefers the
- *  frozen shopShare; otherwise reconciles with therapistPayoutFor. */
+ *  (servicePrice − discount) − therapist payout, floored at 0.
+ *
+ *  🆕 28x.161 — this used to prefer the FROZEN `shopShare` stamped on the
+ *  booking, and that was wrong. Unlike `therapistShare` (a real payout, frozen
+ *  on purpose by 28w.43 so a later split-table edit can't move a confirmed
+ *  job), the shop's cut is a pure RESIDUAL of the booking's own numbers. The
+ *  moment any of those numbers is edited after confirm — and a promo keyed on
+ *  the slip is exactly that, see AdminBookingListPage's edit drawer, which
+ *  writes `discountAmount` and never re-stamps — the frozen residual is stale,
+ *  and every baht of the promo lands on the therapist's settlement instead of
+ *  the shop's. That contradicts the promo rule stated in this very file
+ *  ("promo absorbed by the shop, therapist keeps her full rate").
+ *
+ *  Deriving it always is also what AdminEarningsPage and SplitTableEditor
+ *  already did on their own — Reports was the one surface still trusting the
+ *  stamp, so the two payroll screens silently disagreed on discounted jobs.
+ *  The field is still WRITTEN (it's in the Excel export and the booking
+ *  record); it is simply never trusted over the arithmetic on read. */
 export function shopShareFor(b: {
   serviceId?: string | null;
   servicePrice?: number | null;
@@ -205,7 +221,6 @@ export function shopShareFor(b: {
   therapistShare?: number | null;
   shopShare?: number | null;
 }): number {
-  if (typeof b.shopShare === "number" && b.shopShare >= 0) return Math.round(b.shopShare);
   return Math.max(0, commissionBaseFor(b) - therapistPayoutFor(b));
 }
 
