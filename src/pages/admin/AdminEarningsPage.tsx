@@ -85,7 +85,7 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   before, so Earnings behaviour is unchanged.
 import {
   therapistPctFor, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
-  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES, noShowCompFor, isCashPayment,
+  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES, noShowCompFor, isCashPayment, didNotHappen,
 } from "@/utils/commission";
 
 // 🆕 Round 28s245 — this page predates adminTheme.ts and still carried its
@@ -380,7 +380,9 @@ const AdminEarningsPage: React.FC = () => {
 
     for (const b of filteredBookings) {
       if (b.status && EXCLUDED_STATUSES.has(b.status)) {
-        countCancelled += 1;
+        // 🆕 28x.162 — same split as AdminReportPage: pending earns nothing but
+        //   is an unconfirmed checkout, not a cancellation.
+        if (didNotHappen(b.status)) countCancelled += 1;
         // 🆕 28w.52/53 — no-show owes the therapist a taxi comp (max ฿200 /
         //   actual fare). Keep it on the same payout + outstanding lines so
         //   Earnings agrees with Reports; other cancels pay ฿0.

@@ -101,11 +101,16 @@ export function therapistFixedFor(
 }
 
 /**
- * Statuses that must NOT earn payroll — cancelled/refunded/no-show/etc.
- * Includes both British and American spellings of "cancel(l)ed". A booking
- * outside this set is a real, payable job.
+ * Statuses for an order that is definitively DEAD — it will never be served.
+ * Includes both British and American spellings of "cancel(l)ed".
+ *
+ * 🆕 28x.162 — note what is NOT here: "pending". A pending order is dead for
+ * PAYROLL (see below) but still live for a promo code, because View confirms
+ * it by hand and it usually becomes a real job. The two questions genuinely
+ * differ, so they get two predicates instead of one shared list that would
+ * have to be wrong for one of them.
  */
-export const PAYROLL_EXCLUDED_STATUSES = new Set([
+const NEVER_HAPPENED_STATUSES = new Set([
   "cancelled",
   "canceled",
   "refunded",
@@ -114,17 +119,35 @@ export const PAYROLL_EXCLUDED_STATUSES = new Set([
   "no_show",
 ]);
 
+/**
+ * Statuses that must NOT earn payroll. A booking outside this set is a real,
+ * payable job.
+ *
+ * 🆕 28x.162 (founder call) — "pending" added. A guest who reaches checkout
+ * gets a booking written at status "pending" with a 10-minute hold; if they
+ * never confirm, `releaseExpiredHolds` stamps holdState "expired" and leaves
+ * the STATUS at "pending" forever. Nothing else ever moved it, and pending
+ * was absent from this set, so `bookingSettlement` classified every abandoned
+ * checkout as "real service work" and paid the practitioner her full rate on
+ * a job nobody drove to. CLAUDE.md's own status model already listed pending
+ * as excluded — the code was the half that disagreed.
+ */
+export const PAYROLL_EXCLUDED_STATUSES = new Set([
+  ...NEVER_HAPPENED_STATUSES,
+  "pending",
+]);
+
 export const isPayrollExcluded = (status: string | null | undefined): boolean =>
   !!status && PAYROLL_EXCLUDED_STATUSES.has(status);
 
 /**
- * 🆕 28x.162 — the same set, read as "this booking never happened", for the
- * NON-payroll callers that need it: a cancelled or refunded order must not
- * burn a promo code's `maxRedemptions`. Same statuses, different question —
- * aliased rather than duplicated so the two can't drift apart the way the
- * four hand-rolled `SERVED` sets across the admin pages already have.
+ * "This order will never be served" — for the non-payroll callers. Used by the
+ * promo redemption gate: a cancelled or refunded order must not burn a code's
+ * `maxRedemptions`, but a pending one still counts against it, since it is
+ * one confirm tap away from being real.
  */
-export const didNotHappen = isPayrollExcluded;
+export const didNotHappen = (status: string | null | undefined): boolean =>
+  !!status && NEVER_HAPPENED_STATUSES.has(status);
 
 /**
  * 🆕 28x.99u (audit) — was defined byte-for-byte identically in both
