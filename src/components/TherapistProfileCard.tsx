@@ -48,6 +48,7 @@ import type { MassageService } from "@/data/services";
 import { brand, fonts, accents } from "@/theme";
 import type { LiveLocation } from "@/hooks/useUserLocation";
 import { canonicalServiceIds } from "@/utils/serviceCatalog";
+import { bayesianRatingFromAggregate } from "@/utils/rating";
 
 /** ---------------- Utility ---------------- */
 
@@ -438,12 +439,9 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
   const ratingNum = useMemo(() => {
     const seed = Number(profile.rating) || 0;
     if (reviewCount === 0) return seed.toFixed(1);
-    const PRIOR_MEAN = 4.5;
-    const PRIOR_WEIGHT = 10;
-    const adjusted =
-      (PRIOR_MEAN * PRIOR_WEIGHT + reviewRatingSum) /
-      (PRIOR_WEIGHT + reviewCount);
-    return adjusted.toFixed(1);
+    // 2026-08-14 — was an inline copy of the Bayesian prior that had
+    // diverged from rating.ts / the sync script; one owner now.
+    return bayesianRatingFromAggregate(reviewRatingSum, reviewCount).toFixed(1);
   }, [profile.rating, reviewCount, reviewRatingSum]);
   const languages = useMemo(
     () => parseLanguagePills(profile.features.language),

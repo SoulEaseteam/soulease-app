@@ -35,8 +35,10 @@ const SERVED = new Set(["completed", "done"]);
 //   dominates once they pass ~m reviews; below that it's pulled toward C.
 //   Tuned so Yuri (7 reviews) is the clear top and single 5.0s sit below her.
 //   Standard method (IMDb Top 250); endorsed in CLAUDE.md §🔐 "Bayesian aggregate".
-const PRIOR_MEAN = 4.6; // C — assumed baseline for an unproven practitioner
-const PRIOR_WEIGHT = 3; // m — review count at which own avg ≈ dominates
+// 2026-08-14 — constants moved to src/utils/rating.ts (this script's local
+//   4.6/3 had silently diverged from the app's 4.5/10, so the review section
+//   disagreed with the card it sat under). One owner; both import it.
+import { bayesianRatingFromAggregate } from "../src/utils/rating";
 const round1 = (x: number) => Math.round(x * 10) / 10;
 
 async function main() {
@@ -108,9 +110,7 @@ async function main() {
     const rRated = ratedCount.get(tid) ?? 0;
     const rawAvg = rRated ? ratingSum.get(tid)! / rRated : 0;
     // Bayesian-weighted rating = what the card shows; ratingRaw = true average.
-    const weighted = rRated
-      ? (rRated * rawAvg + PRIOR_WEIGHT * PRIOR_MEAN) / (rRated + PRIOR_WEIGHT)
-      : 0;
+    const weighted = rRated ? bayesianRatingFromAggregate(ratingSum.get(tid)!, rRated) : 0;
     const rating = round1(weighted);
     const ratingRaw = round1(rawAvg);
 

@@ -32,8 +32,15 @@
 //
 // Documented for the customer in /faq so the rating is auditable.
 
-export const PRIOR_MEAN = 4.5;
-export const PRIOR_WEIGHT = 10;
+// 2026-08-14 — retuned to match scripts/syncTherapistRatings.ts (28s388,
+// the later founder-approved tuning: "Yuri clear top, single 5.0s below
+// her"). The codebase briefly held TWO Bayesian priors — 4.5/10 here (and
+// copy-pasted into TherapistProfileCard + HomeMapBrowse) vs 4.6/3 in the
+// sync script — so the review section could show 4.6 while the card and
+// header showed 4.8 for the same practitioner. This file is now the ONLY
+// owner of these constants; every consumer imports.
+export const PRIOR_MEAN = 4.6;
+export const PRIOR_WEIGHT = 3;
 
 export interface ReviewLike {
   /** Star rating, 1-5 (integers or decimals both accepted). */

@@ -44,6 +44,7 @@ import { fmtBKK } from "@/utils/time";
 //   card can show ชื่อเมนูเด่น (e.g. "Aroma · Therapeutic") inline
 //   beside the rating, matching the founder mockup layout.
 import { getServiceById } from "@/utils/serviceCatalog";
+import { bayesianRatingFromAggregate } from "@/utils/rating";
 
 // Compact display name for the floating-card service tags.
 // Full catalog names ("SunRed Therapeutic Experience") would clip on
@@ -257,15 +258,14 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
   const active = top[activeIdx];
   const activePrice = priceById?.get(active.id);
 
-  // Bayesian rating — same formula used by TherapistProfileCard
-  // (PRIOR_MEAN 4.5, PRIOR_WEIGHT 10) so card + map agree.
+  // Bayesian rating — imported from rating.ts (2026-08-14: this block used
+  // to inline its own PRIOR constants, which silently diverged from the
+  // sync script's; one owner now) so card + map agree.
   const activeRatingNum = (() => {
     const seed = Number(active.rating) || 0;
     if (activeReviewCount === 0) return seed;
     const sum = activeReviews.reduce((s, r) => s + r.rating, 0);
-    const PRIOR_MEAN = 4.5;
-    const PRIOR_WEIGHT = 10;
-    return (PRIOR_MEAN * PRIOR_WEIGHT + sum) / (PRIOR_WEIGHT + activeReviewCount);
+    return bayesianRatingFromAggregate(sum, activeReviewCount);
   })();
   const activeRatingLabel = activeRatingNum.toFixed(1);
 
