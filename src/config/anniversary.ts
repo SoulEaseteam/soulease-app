@@ -83,6 +83,29 @@ const DEFAULTS: AnniversaryConfig = {
 
 let live: AnniversaryConfig = DEFAULTS;
 
+// ── Reactivity (2026-08-14) ──────────────────────────────────────────
+// Same external-store pattern as servicePricing/useServiceConfigVersion:
+// the live config lands async from Firestore AFTER first paint, and it can
+// change mid-session (the founder ending the campaign must pull the banner
+// off screens that are already open). Consumers subscribe via
+// useSyncExternalStore and re-render on every apply.
+let version = 0;
+const listeners = new Set<() => void>();
+
+export function subscribeAnniversaryConfig(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
+
+export function getAnniversaryConfigVersion(): number {
+  return version;
+}
+
+// Visibility truth for guest-facing surfaces is the existing
+// anniversaryIsLive() further down this file — do not add a second one.
+
 /** True when the value is a usable reward row (guards a half-typed admin edit). */
 function cleanRewards(raw: unknown, fallback: AnniversaryReward[]): AnniversaryReward[] {
   if (!Array.isArray(raw)) return fallback;
@@ -103,7 +126,9 @@ function cleanRewards(raw: unknown, fallback: AnniversaryReward[]): AnniversaryR
 }
 
 export function applyLiveAnniversaryConfig(raw: Partial<AnniversaryConfig> | null | undefined): void {
-  if (!raw) { live = DEFAULTS; return; }
+  version += 1;
+  const notify = () => listeners.forEach((cb) => cb());
+  if (!raw) { live = DEFAULTS; notify(); return; }
   live = {
     enabled: raw.enabled !== false,
     startISO: typeof raw.startISO === "string" && raw.startISO ? raw.startISO : DEFAULTS.startISO,
@@ -119,6 +144,7 @@ export function applyLiveAnniversaryConfig(raw: Partial<AnniversaryConfig> | nul
     earnPerTHB: typeof raw.earnPerTHB === "number" && raw.earnPerTHB > 0 ? raw.earnPerTHB : DEFAULTS.earnPerTHB,
     redeemTHB: typeof raw.redeemTHB === "number" && raw.redeemTHB > 0 ? raw.redeemTHB : DEFAULTS.redeemTHB,
   };
+  notify();
 }
 
 /** The live campaign — what the admin has configured, or the defaults. */

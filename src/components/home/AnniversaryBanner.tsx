@@ -18,6 +18,8 @@ import { Box } from "@mui/material";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import AnniversaryDialog from "./AnniversaryDialog";
+import { anniversaryIsLive } from "@/config/anniversary";
+import { useAnniversaryConfigVersion } from "@/hooks/useAnniversaryConfigVersion";
 
 const BANNER_IMG = "/images/anniversary/banner.jpg";
 
@@ -28,7 +30,16 @@ interface Props {
 const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  // 2026-08-14 — this component used to render UNCONDITIONALLY: it never
+  // consulted anniversaryIsLive(), so the banner would have outlived its own
+  // endISO forever, and the founder's "end it now" (anniversary.enabled=false)
+  // had nothing to switch off. The version subscription makes the gate live —
+  // MaintenanceGate's snapshot pulls the banner off already-open screens
+  // without a reload.
+  useAnniversaryConfigVersion();
   void variant;
+
+  if (!anniversaryIsLive()) return null;
 
   return (
     <>

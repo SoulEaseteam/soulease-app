@@ -27,6 +27,7 @@ import { useDocumentMeta } from "@/utils/useDocumentMeta";
 //   1st-anniversary privileges card here while the campaign is live, and
 //   stop showing "No promotions running" when it is.
 import { anniversaryIsLive } from "@/config/anniversary";
+import { useAnniversaryConfigVersion } from "@/hooks/useAnniversaryConfigVersion";
 import AnniversaryDialog from "@/components/home/AnniversaryDialog";
 
 const ANNIV_IMG = "/images/anniversary/privileges.jpg";
@@ -51,6 +52,10 @@ const PromotionsPage: React.FC = () => {
   const [copied, setCopied] = useState<string | null>(null);
   // 🆕 28x.16 — anniversary campaign card + its reward dialog.
   const [annivOpen, setAnnivOpen] = useState(false);
+  // 2026-08-14 — subscribe so ending the campaign (config lands async /
+  // changes mid-session) removes this card without a reload; a bare
+  // anniversaryIsLive() read only re-evaluates when something ELSE re-renders.
+  useAnniversaryConfigVersion();
   const annivLive = anniversaryIsLive();
 
   useDocumentMeta({
