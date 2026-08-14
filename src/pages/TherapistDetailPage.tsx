@@ -1888,7 +1888,12 @@ const TherapistDetailPage: React.FC = () => {
               <Box
                 sx={{ display: "flex", flexDirection: "column", gap: "12px" }}
               >
-                {/* Rating summary — real average + count */}
+                {/* Rating summary — SAME weighted number as the card/header.
+                    2026-08-14: this block used to show the raw mean of the
+                    visible reviews, which sat right under a header showing the
+                    doc's bayesianRating — "★4.6" above, "5.0" below, on every
+                    low-review practitioner. One formula everywhere now; the
+                    bucket bars below still show the real star distribution. */}
                 <Box
                   sx={{
                     display: "flex",
@@ -1906,7 +1911,7 @@ const TherapistDetailPage: React.FC = () => {
                       lineHeight: 1,
                     }}
                   >
-                    {liveReviews.avgRating.toFixed(1)}
+                    {formatRating(bayesianRating(liveReviews.reviews))}
                   </Typography>
                   <Box sx={{ display: "flex" }} aria-hidden="true">
                     {[1, 2, 3, 4, 5].map((n) => (
@@ -1915,7 +1920,7 @@ const TherapistDetailPage: React.FC = () => {
                         sx={{
                           fontSize: 17,
                           color:
-                            n <= Math.round(liveReviews.avgRating)
+                            n <= Math.round(bayesianRating(liveReviews.reviews))
                               ? "#E0A82E"
                               : "var(--sr-dim)",
                         }}

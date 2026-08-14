@@ -68,8 +68,15 @@ export async function syncTherapistRatings(
 
   const byTherapist: Record<string, number[]> = {};
   rated.forEach((d) => {
-    const b = d.data() as { therapistId?: string; rating?: number };
+    const b = d.data() as { therapistId?: string; rating?: number; reviewText?: string };
     if (!b.therapistId || typeof b.rating !== "number") return;
+    // 2026-08-14 (founder: "รีวิว หน้าเว็บ ไม่ตรงกัน สักอัน", round 2 of this
+    // complaint) — count ONLY written reviews, same filter as
+    // useTherapistReviews' visible list. A star-only rating fed this count but
+    // could never appear in the list, so the card claimed e.g. "36 reviews"
+    // over a list of 32 and no two surfaces agreed. One definition now:
+    // a review is something the guest can actually read.
+    if (!(b.reviewText ?? "").trim()) return;
     (byTherapist[b.therapistId] ??= []).push(b.rating);
   });
 

@@ -46,11 +46,16 @@ async function main() {
   const ratedCount = new Map<string, number>();
   const ratingSum = new Map<string, number>();
   bSnap.forEach((d) => {
-    const b = d.data() as { therapistId?: string; status?: string; rating?: number };
+    const b = d.data() as { therapistId?: string; status?: string; rating?: number; reviewText?: string };
     const tid = b.therapistId;
     if (!tid) return;
     if (b.status && SERVED.has(b.status)) served.set(tid, (served.get(tid) ?? 0) + 1);
-    if (typeof b.rating === "number" && b.rating >= 1) {
+    // 2026-08-14 — WRITTEN reviews only (rating + non-empty reviewText), the
+    // same filter as useTherapistReviews' visible list and the in-app
+    // src/utils/syncTherapistRatings.ts. Star-only ratings inflated the card
+    // count past what the detail list could ever show ("36 reviews" over a
+    // list of 32) — one definition everywhere now.
+    if (typeof b.rating === "number" && b.rating >= 1 && (b.reviewText ?? "").trim()) {
       ratedCount.set(tid, (ratedCount.get(tid) ?? 0) + 1);
       ratingSum.set(tid, (ratingSum.get(tid) ?? 0) + b.rating);
     }
@@ -79,12 +84,19 @@ async function main() {
     const rating = round1(weighted);
     const ratingRaw = round1(rawAvg);
 
-    const next = { rating, ratingRaw, reviews: rRated, totalSessions: rServed };
+    // ⚠️ 2026-08-14 — totalSessions is NO LONGER written by this script.
+    //   The bookings collection is not full history anymore (~78 docs were
+    //   deleted around Aug 2026, and old sessions predate the collection),
+    //   so re-deriving totalSessions from it UNDERCOUNTS badly — a dry run
+    //   showed it would slash public counts like Barbie 79→36, Vivian 77→11,
+    //   YaYa 55→2. Those counts are also the deliberately-boosted public
+    //   social proof (displaySessionBonus model). rServed stays printed for
+    //   reference only.
+    const next = { rating, ratingRaw, reviews: rRated };
     const changed =
       (cur.rating ?? 0) !== next.rating ||
       (cur.ratingRaw ?? 0) !== next.ratingRaw ||
-      (cur.reviews ?? 0) !== next.reviews ||
-      (cur.totalSessions ?? 0) !== next.totalSessions;
+      (cur.reviews ?? 0) !== next.reviews;
 
     const fmt = (from: unknown, to: unknown) =>
       from === to ? String(to) : `${from ?? 0}→${to}`;
@@ -92,7 +104,7 @@ async function main() {
       String(cur.name ?? tid).padEnd(14),
       `${ratingRaw}→${rating}`.padEnd(12),
       fmt(cur.reviews, next.reviews).padEnd(9),
-      fmt(cur.totalSessions, next.totalSessions),
+      `${cur.totalSessions ?? 0} (kept; served=${rServed})`,
       changed ? "" : "  (no change)"
     );
 
