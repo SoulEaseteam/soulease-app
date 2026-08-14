@@ -690,5 +690,11 @@
   "bookingChat.send": "傳送",
   "bookingChat.sending": "傳送中…",
   "bookingChat.err.listen": "無法載入對話，請重新整理頁面。",
-  "bookingChat.err.send": "訊息未送出，請再試一次。"
+  "bookingChat.err.send": "訊息未送出，請再試一次。",
+  "installApp.title": "把 SunRed 放在手邊",
+  "installApp.body": "從主畫面一鍵直達——無需 App Store",
+  "installApp.cta": "安裝",
+  "installApp.iosBefore": "點按",
+  "installApp.iosAfter": "然後選擇「加入主畫面」",
+  "installApp.dismiss": "暫不"
 }

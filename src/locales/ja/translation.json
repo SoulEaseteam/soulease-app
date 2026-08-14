@@ -595,5 +595,11 @@
   "bookingChat.send": "送信",
   "bookingChat.sending": "送信中…",
   "bookingChat.err.listen": "会話を読み込めませんでした。再読み込みしてください。",
-  "bookingChat.err.send": "メッセージを送信できませんでした。もう一度お試しください。"
+  "bookingChat.err.send": "メッセージを送信できませんでした。もう一度お試しください。",
+  "installApp.title": "SunRed を手元に",
+  "installApp.body": "ホーム画面からワンタップ — App Store 不要です",
+  "installApp.cta": "追加する",
+  "installApp.iosBefore": "共有ボタン",
+  "installApp.iosAfter": "から「ホーム画面に追加」を選択",
+  "installApp.dismiss": "後で"
 }

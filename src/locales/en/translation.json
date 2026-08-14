@@ -595,5 +595,11 @@
   "bookingChat.send": "Send",
   "bookingChat.sending": "sending…",
   "bookingChat.err.listen": "Couldn't load the conversation. Please refresh.",
-  "bookingChat.err.send": "Message not sent. Please try again."
+  "bookingChat.err.send": "Message not sent. Please try again.",
+  "installApp.title": "Keep SunRed at hand",
+  "installApp.body": "One tap from your home screen — no app store needed.",
+  "installApp.cta": "Install",
+  "installApp.iosBefore": "Tap",
+  "installApp.iosAfter": "then “Add to Home Screen”",
+  "installApp.dismiss": "Not now"
 }

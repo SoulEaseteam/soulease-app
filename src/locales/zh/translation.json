@@ -690,5 +690,11 @@
   "bookingChat.send": "发送",
   "bookingChat.sending": "发送中…",
   "bookingChat.err.listen": "无法加载对话，请刷新页面。",
-  "bookingChat.err.send": "消息未发送，请重试。"
+  "bookingChat.err.send": "消息未发送，请重试。",
+  "installApp.title": "把 SunRed 放在手边",
+  "installApp.body": "从主屏幕一键直达——无需应用商店",
+  "installApp.cta": "安装",
+  "installApp.iosBefore": "点按",
+  "installApp.iosAfter": "然后选择“添加到主屏幕”",
+  "installApp.dismiss": "暂不"
 }

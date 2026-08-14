@@ -1,6 +1,7 @@
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -42,7 +43,78 @@ const __dirname = path.dirname(__filename);
  */
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // 🆕 Round 28x.192 (founder: "ทำเป็นแอปพลิเคชัน") — service worker, the
+    //   missing half of the 28x.166 PWA work. Store distribution is not an
+    //   option for this vertical, so installed-PWA IS the app strategy.
+    //
+    //   Caching posture — chosen for a site that deploys several times a
+    //   night (see the 2026-08-14 rollback incident: stale clients are a real
+    //   operational hazard here):
+    //   • registerType autoUpdate + clientsClaim/skipWaiting (plugin default
+    //     for generateSW): a new deploy takes over on the NEXT navigation, no
+    //     "refresh to update" prompt for guests to ignore.
+    //   • Precache = hashed build assets + prerendered HTML only. Photos are
+    //     runtime-cached instead (they're 227+ files — precaching them would
+    //     download the whole roster on install).
+    //   • Firestore/Auth/Functions traffic is deliberately NOT matched by any
+    //     runtimeCaching rule — Workbox passes unmatched requests straight to
+    //     the network, so live availability/booking data can never go stale.
+    VitePWA({
+      registerType: "autoUpdate",
+      // public/manifest.json (28x.166) stays the single manifest source —
+      // the plugin must not generate a competing one.
+      manifest: false,
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,woff2}"],
+        // Entry chunk is ~900 kB (see manualChunks note below) — default
+        // 2 MB cap is fine today, 3 MB keeps a future chunk from silently
+        // falling out of precache.
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
+        navigateFallback: "/index.html",
+        runtimeCaching: [
+          {
+            // Practitioner photos (Firebase Storage) — the heaviest, most
+            // static content on the site. Cache-first turns repeat visits
+            // into instant photo loads.
+            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "sr-storage-images",
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Same-origin static images (banners, icons, service tiles).
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin && url.pathname.startsWith("/images/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "sr-local-images",
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 14 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/,
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "sr-font-css" },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "sr-fonts",
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
+  ],
   // 🆕 Round 28s290 — honor a harness/env-assigned PORT (Vite doesn't read
   //   PORT on its own). Falls back to 5173 for a plain `npm run dev`.
   //   strictPort:false so it auto-increments if the chosen port is busy.

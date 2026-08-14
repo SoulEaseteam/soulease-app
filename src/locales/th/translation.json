@@ -598,5 +598,11 @@
   "bookingChat.send": "ส่ง",
   "bookingChat.sending": "กำลังส่ง…",
   "bookingChat.err.listen": "โหลดบทสนทนาไม่สำเร็จ กรุณารีเฟรชหน้าอีกครั้ง",
-  "bookingChat.err.send": "ส่งข้อความไม่สำเร็จ ลองใหม่อีกครั้ง"
+  "bookingChat.err.send": "ส่งข้อความไม่สำเร็จ ลองใหม่อีกครั้ง",
+  "installApp.title": "เก็บ SunRed ไว้ใกล้มือ",
+  "installApp.body": "แตะครั้งเดียวจากหน้าจอโฮม — ไม่ต้องผ่าน App Store",
+  "installApp.cta": "ติดตั้ง",
+  "installApp.iosBefore": "แตะ",
+  "installApp.iosAfter": "แล้วเลือก “เพิ่มลงหน้าจอโฮม”",
+  "installApp.dismiss": "ไว้ทีหลัง"
 }

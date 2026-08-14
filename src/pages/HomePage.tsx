@@ -38,6 +38,7 @@ import QuickNavRow from "@/components/home/QuickNavRow";
 // 🆕 28w.37 — 1st-anniversary banner (links to /pricing).
 import AnniversaryBanner from "@/components/home/AnniversaryBanner";
 import HomeFooterV2 from "@/components/home/HomeFooterV2";
+import InstallAppBanner from "@/components/common/InstallAppBanner";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
 //   maxWidth: 430px cage so the home widens on tablet/desktop.
 import { responsiveShell } from "@/theme/breakpoints";
@@ -245,6 +246,11 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
       {/* 🆕 28x.129 (founder selected both sections, "เอาออก") — Membership
           Benefits + Why SunRed removed. Footer remains. */}
       <HomeFooterV2 />
+
+      {/* 🆕 28x.192 — installed-PWA prompt (fixed position, renders above
+          the bottom nav; hides itself when standalone / snoozed). Home
+          only for now — the one surface every guest lands on. */}
+      <InstallAppBanner />
 
       {/* Bottom spacer keeps the footer above MainLayout's
           BottomNavGlass (which reserves 90-110px on its own, so 24

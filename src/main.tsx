@@ -159,3 +159,13 @@ const Root = () => {
 };
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<Root />);
+
+// 🆕 Round 28x.192 — service worker (vite-plugin-pwa, autoUpdate mode).
+//   Registered AFTER render so it never competes with first paint. The
+//   virtual module resolves only in `vite build`; `vite dev` serves a stub.
+//   autoUpdate = a new deploy replaces the old SW on the next navigation —
+//   no user-facing "update available" prompt to ignore, which matters on a
+//   site that ships fixes several times a night.
+import("virtual:pwa-register").then(({ registerSW }) => {
+  registerSW({ immediate: true });
+});
