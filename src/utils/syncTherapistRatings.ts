@@ -67,8 +67,35 @@ export async function syncTherapistRatings(
   );
 
   const byTherapist: Record<string, number[]> = {};
+  // 2026-08-14 — PII-free public copy of each written review (see
+  // TherapistDetailPage's effectiveReviews fallback: anonymous guests are
+  // permission-denied on the live bookings query, so the doc copy is the
+  // only review list they can see). Five fields only; capped newest-40.
+  const publicByTherapist: Record<
+    string,
+    { bookingId: string; rating: number; body: string; service: string; ts: number }[]
+  > = {};
+  const toMs = (v: unknown): number => {
+    const t = v as { toMillis?: () => number } | string | number | null | undefined;
+    if (!t) return 0;
+    if (typeof t === "number") return t;
+    if (typeof t === "string") {
+      const p = Date.parse(t);
+      return Number.isFinite(p) ? p : 0;
+    }
+    if (typeof t.toMillis === "function") return t.toMillis();
+    return 0;
+  };
   rated.forEach((d) => {
-    const b = d.data() as { therapistId?: string; rating?: number; reviewText?: string };
+    const b = d.data() as {
+      therapistId?: string;
+      rating?: number;
+      reviewText?: string;
+      serviceName?: string;
+      duration?: number;
+      createdAt?: unknown;
+      startAt?: unknown;
+    };
     if (!b.therapistId || typeof b.rating !== "number") return;
     // 2026-08-14 (founder: "รีวิว หน้าเว็บ ไม่ตรงกัน สักอัน", round 2 of this
     // complaint) — count ONLY written reviews, same filter as
@@ -76,9 +103,23 @@ export async function syncTherapistRatings(
     // could never appear in the list, so the card claimed e.g. "36 reviews"
     // over a list of 32 and no two surfaces agreed. One definition now:
     // a review is something the guest can actually read.
-    if (!(b.reviewText ?? "").trim()) return;
+    const body = (b.reviewText ?? "").trim();
+    if (!body) return;
     (byTherapist[b.therapistId] ??= []).push(b.rating);
+    (publicByTherapist[b.therapistId] ??= []).push({
+      bookingId: d.id,
+      rating: b.rating,
+      body,
+      service: [b.serviceName ?? "", typeof b.duration === "number" ? `${b.duration} min` : ""]
+        .filter(Boolean)
+        .join(" · "),
+      ts: toMs(b.createdAt) || toMs(b.startAt),
+    });
   });
+  for (const list of Object.values(publicByTherapist)) {
+    list.sort((a, b) => b.ts - a.ts);
+    list.splice(40);
+  }
 
   const therapists = await getDocs(collection(db, "therapists"));
   const batch = writeBatch(db);
@@ -86,8 +127,9 @@ export async function syncTherapistRatings(
   let updated = 0;
 
   therapists.forEach((t) => {
-    const prev = t.data() as { rating?: number; reviews?: number };
+    const prev = t.data() as { rating?: number; reviews?: number; publicReviews?: unknown[] };
     const stars = byTherapist[t.id] ?? [];
+    const pubList = publicByTherapist[t.id] ?? [];
 
     // A therapist with NO reviews gets 0/0, not the 4.5 prior. Showing an
     // unearned 4.5 to a customer is the same lie in a nicer suit — the card
@@ -97,7 +139,9 @@ export async function syncTherapistRatings(
       reviewCount > 0 ? Math.round(bayesianRating(stars.map((r) => ({ rating: r }))) * 10) / 10 : 0;
 
     const changed =
-      Math.abs((prev.rating ?? 0) - rating) > 0.001 || (prev.reviews ?? 0) !== reviewCount;
+      Math.abs((prev.rating ?? 0) - rating) > 0.001 ||
+      (prev.reviews ?? 0) !== reviewCount ||
+      JSON.stringify(prev.publicReviews ?? []) !== JSON.stringify(pubList);
 
     rows.push({
       therapistId: t.id,
@@ -110,7 +154,11 @@ export async function syncTherapistRatings(
 
     if (changed) {
       updated++;
-      batch.update(doc(db, "therapists", t.id), { rating, reviews: reviewCount });
+      batch.update(doc(db, "therapists", t.id), {
+        rating,
+        reviews: reviewCount,
+        publicReviews: pubList,
+      });
     }
   });
 

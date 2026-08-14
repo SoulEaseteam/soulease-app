@@ -45,8 +45,27 @@ async function main() {
   const served = new Map<string, number>();
   const ratedCount = new Map<string, number>();
   const ratingSum = new Map<string, number>();
+  // 2026-08-14 — PII-free public copy of each written review, denormalized
+  // onto the (publicly readable) therapist doc. Rules deliberately hide
+  // booking docs from anonymous guests (they carry address/phone), which
+  // made the detail page's live review query permission-denied for every
+  // guest — "No reviews yet." under a header claiming N reviews. Only these
+  // five fields leave the booking doc; capped newest-40 per therapist.
+  type PublicReview = { bookingId: string; rating: number; body: string; service: string; ts: number };
+  const publicReviews = new Map<string, PublicReview[]>();
+  const toMs = (v: unknown): number => {
+    const t = v as { toMillis?: () => number } | string | number | null | undefined;
+    if (!t) return 0;
+    if (typeof t === "number") return t;
+    if (typeof t === "string") { const p = Date.parse(t); return Number.isFinite(p) ? p : 0; }
+    if (typeof t.toMillis === "function") return t.toMillis();
+    return 0;
+  };
   bSnap.forEach((d) => {
-    const b = d.data() as { therapistId?: string; status?: string; rating?: number; reviewText?: string };
+    const b = d.data() as {
+      therapistId?: string; status?: string; rating?: number; reviewText?: string;
+      serviceName?: string; duration?: number; createdAt?: unknown; startAt?: unknown;
+    };
     const tid = b.therapistId;
     if (!tid) return;
     if (b.status && SERVED.has(b.status)) served.set(tid, (served.get(tid) ?? 0) + 1);
@@ -55,11 +74,22 @@ async function main() {
     // src/utils/syncTherapistRatings.ts. Star-only ratings inflated the card
     // count past what the detail list could ever show ("36 reviews" over a
     // list of 32) — one definition everywhere now.
-    if (typeof b.rating === "number" && b.rating >= 1 && (b.reviewText ?? "").trim()) {
+    const body = (b.reviewText ?? "").trim();
+    if (typeof b.rating === "number" && b.rating >= 1 && body) {
       ratedCount.set(tid, (ratedCount.get(tid) ?? 0) + 1);
       ratingSum.set(tid, (ratingSum.get(tid) ?? 0) + b.rating);
+      const svc = [b.serviceName ?? "", typeof b.duration === "number" ? `${b.duration} min` : ""]
+        .filter(Boolean).join(" · ");
+      (publicReviews.get(tid) ?? publicReviews.set(tid, []).get(tid)!).push({
+        bookingId: d.id, rating: b.rating, body, service: svc,
+        ts: toMs(b.createdAt) || toMs(b.startAt),
+      });
     }
   });
+  for (const list of publicReviews.values()) {
+    list.sort((a, b) => b.ts - a.ts);
+    list.splice(40);
+  }
 
   const tSnap = await db.collection("therapists").get();
   console.log(`\n${COMMIT ? "✍️  COMMITTING" : "🔎 DRY RUN"} — ${tSnap.size} therapist docs\n`);
@@ -92,11 +122,14 @@ async function main() {
     //   YaYa 55→2. Those counts are also the deliberately-boosted public
     //   social proof (displaySessionBonus model). rServed stays printed for
     //   reference only.
-    const next = { rating, ratingRaw, reviews: rRated };
+    const pubList = publicReviews.get(tid) ?? [];
+    const next = { rating, ratingRaw, reviews: rRated, publicReviews: pubList };
+    const curPub = (cur as { publicReviews?: unknown[] }).publicReviews;
     const changed =
       (cur.rating ?? 0) !== next.rating ||
       (cur.ratingRaw ?? 0) !== next.ratingRaw ||
-      (cur.reviews ?? 0) !== next.reviews;
+      (cur.reviews ?? 0) !== next.reviews ||
+      JSON.stringify(curPub ?? []) !== JSON.stringify(pubList);
 
     const fmt = (from: unknown, to: unknown) =>
       from === to ? String(to) : `${from ?? 0}→${to}`;

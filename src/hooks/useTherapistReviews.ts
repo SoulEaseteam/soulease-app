@@ -60,6 +60,32 @@ export interface UseTherapistReviewsResult {
   loading: boolean;
 }
 
+/** Count/avg/star-distribution for a review list — shared by the live hook
+ *  and the publicReviews doc-fallback so the two paths can never disagree
+ *  on the same list. (Extracted 2026-08-14.) */
+export function computeReviewAggregates(reviews: ReviewLite[]): {
+  reviewCount: number;
+  avgRating: number;
+  buckets: ReviewBucket[];
+} {
+  const reviewCount = reviews.length;
+  const avgRating =
+    reviewCount > 0
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviewCount
+      : 0;
+  const counts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  for (const r of reviews) {
+    const k = Math.max(1, Math.min(5, Math.round(r.rating)));
+    counts[k] += 1;
+  }
+  const buckets: ReviewBucket[] = [5, 4, 3, 2, 1].map((stars) => ({
+    stars,
+    count: counts[stars],
+    pct: reviewCount > 0 ? Math.round((counts[stars] / reviewCount) * 100) : 0,
+  }));
+  return { reviewCount, avgRating, buckets };
+}
+
 type FirestoreDateLike = Timestamp | Date | string | number | null | undefined;
 
 interface BookingReviewDoc {
@@ -85,8 +111,10 @@ function toMs(v: FirestoreDateLike): number {
 }
 
 /** Lightweight "X days ago" formatter — avoids pulling dayjs into the
- *  hook just for relativeTime. Matches how ReviewListPage labels rows. */
-function formatAgo(ms: number): string {
+ *  hook just for relativeTime. Matches how ReviewListPage labels rows.
+ *  Exported 2026-08-14 for the publicReviews doc-fallback path
+ *  (TherapistDetailPage), so both sources label rows identically. */
+export function formatAgo(ms: number): string {
   if (!ms) return "";
   const diffSec = Math.max(0, (Date.now() - ms) / 1000);
   if (diffSec < 60) return "just now";
@@ -181,22 +209,7 @@ export function useTherapistReviews(
   }, [therapistId]);
 
   // Derived aggregates — recompute on every render (reviews list is small).
-  const reviewCount = reviews.length;
-  const avgRating =
-    reviewCount > 0
-      ? reviews.reduce((s, r) => s + r.rating, 0) / reviewCount
-      : 0;
-
-  const counts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-  for (const r of reviews) {
-    const k = Math.max(1, Math.min(5, Math.round(r.rating)));
-    counts[k] += 1;
-  }
-  const buckets: ReviewBucket[] = [5, 4, 3, 2, 1].map((stars) => ({
-    stars,
-    count: counts[stars],
-    pct: reviewCount > 0 ? Math.round((counts[stars] / reviewCount) * 100) : 0,
-  }));
+  const { reviewCount, avgRating, buckets } = computeReviewAggregates(reviews);
 
   return { reviews, reviewCount, avgRating, buckets, loading };
 }

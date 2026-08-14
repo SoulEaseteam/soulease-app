@@ -114,7 +114,12 @@ import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { useTherapistLiveStatus } from "@/hooks/useTherapistLiveStatus";
 
 // 🆕 Round 28ae — live therapist reviews from bookings collection.
-import { useTherapistReviews } from "@/hooks/useTherapistReviews";
+import {
+  useTherapistReviews,
+  computeReviewAggregates,
+  formatAgo,
+  type ReviewLite,
+} from "@/hooks/useTherapistReviews";
 // Round 28s55 — loyalty stats now come from useTherapistBookingFeed
 // (shared bookings listener); the standalone useTherapistBookingStats
 // hook is no longer imported here.
@@ -778,6 +783,38 @@ const TherapistDetailPage: React.FC = () => {
     ? buildFromReal(realRow, i18n.language?.slice(0, 2))
     : null;
 
+  // 🆕 2026-08-14 — the live bookings query is PERMISSION-DENIED for
+  //   logged-out guests (rules deliberately hide reservation docs — they
+  //   carry the guest's address/phone). So every anonymous visitor saw
+  //   "No reviews yet." directly under a header claiming "N reviews".
+  //   The sync (scripts/syncTherapistRatings.ts + /admin util) now
+  //   denormalizes a PII-free copy onto the PUBLIC therapist doc as
+  //   `publicReviews`; fall back to it whenever the live query has
+  //   nothing. Admin sessions still get the fresher live list.
+  const effectiveReviews = useMemo(() => {
+    if (liveReviews.loading || liveReviews.reviewCount > 0) return liveReviews;
+    const raw = (realRow as { publicReviews?: unknown } | null)?.publicReviews;
+    if (!Array.isArray(raw)) return liveReviews;
+    const list: ReviewLite[] = raw
+      .filter(
+        (r): r is { bookingId?: string; rating?: number; body?: string; service?: string; ts?: number } =>
+          Boolean(r) && typeof (r as { body?: unknown }).body === "string" &&
+          typeof (r as { rating?: unknown }).rating === "number",
+      )
+      .map((r) => ({
+        bookingId: typeof r.bookingId === "string" ? r.bookingId : "",
+        rating: r.rating as number,
+        body: (r.body as string).trim(),
+        service: typeof r.service === "string" ? r.service : "",
+        ts: typeof r.ts === "number" ? r.ts : 0,
+        ago: formatAgo(typeof r.ts === "number" ? r.ts : 0),
+        verified: true,
+      }))
+      .filter((r) => r.body)
+      .sort((a, b) => b.ts - a.ts);
+    return { ...computeReviewAggregates(list), reviews: list, loading: false };
+  }, [liveReviews, realRow]);
+
   // Round 28s34 — Memoised overlay so the spread runs only when
   // loyalty / review payloads change, not on every parent render.
   // Returns null when the lookup didn't find a real therapist —
@@ -823,19 +860,19 @@ const TherapistDetailPage: React.FC = () => {
               : t.rebookRate,
       };
     }
-    if (liveReviews.reviewCount > 0) {
+    if (effectiveReviews.reviewCount > 0) {
       t = {
         ...t,
         // 🆕 28x.1 — headline COUNT stays the doc's (same as the cards); only the
         //   buckets and the review list come from the live query. Overriding the
         //   count here is what made the card say 7 and this page say 6.
         reviewCount: t.reviewCount,
-        reviewBuckets: liveReviews.buckets.map((b) => ({
+        reviewBuckets: effectiveReviews.buckets.map((b) => ({
           num: b.stars,
           count: b.count,
           pct: b.pct,
         })),
-        reviews: liveReviews.reviews.map((r) => ({
+        reviews: effectiveReviews.reviews.map((r) => ({
           initial: "•",
           name: `Booking #${r.bookingId.slice(0, 8).toUpperCase()}`,
           flag: "",
@@ -850,9 +887,7 @@ const TherapistDetailPage: React.FC = () => {
     loyaltyStats.totalCompleted,
     loyaltyStats.uniqueCustomers,
     loyaltyStats.repeatPct,
-    liveReviews.reviewCount,
-    liveReviews.buckets,
-    liveReviews.reviews,
+    effectiveReviews,
     // 🆕 28x.138 — the rebook override lives on the raw doc, read above.
     firestoreRow,
   ]);
@@ -1862,7 +1897,7 @@ const TherapistDetailPage: React.FC = () => {
                 Shows a loading spinner, a real empty state, or the real
                 review list with per-review star rating + service·time +
                 verified badge. No mock fallback. */}
-            {liveReviews.loading ? (
+            {effectiveReviews.loading ? (
               <Box
                 sx={{
                   display: "flex",
@@ -1872,7 +1907,7 @@ const TherapistDetailPage: React.FC = () => {
               >
                 <CircularProgress size={22} />
               </Box>
-            ) : liveReviews.reviewCount === 0 ? (
+            ) : effectiveReviews.reviewCount === 0 ? (
               <Typography
                 sx={{
                   fontFamily: SANS,
@@ -1911,7 +1946,7 @@ const TherapistDetailPage: React.FC = () => {
                       lineHeight: 1,
                     }}
                   >
-                    {formatRating(bayesianRating(liveReviews.reviews))}
+                    {formatRating(bayesianRating(effectiveReviews.reviews))}
                   </Typography>
                   <Box sx={{ display: "flex" }} aria-hidden="true">
                     {[1, 2, 3, 4, 5].map((n) => (
@@ -1920,7 +1955,7 @@ const TherapistDetailPage: React.FC = () => {
                         sx={{
                           fontSize: 17,
                           color:
-                            n <= Math.round(bayesianRating(liveReviews.reviews))
+                            n <= Math.round(bayesianRating(effectiveReviews.reviews))
                               ? "#E0A82E"
                               : "var(--sr-dim)",
                         }}
@@ -1935,13 +1970,13 @@ const TherapistDetailPage: React.FC = () => {
                     }}
                   >
                     {t("detail.reviews.count", "{{n}} reviews", {
-                      n: liveReviews.reviewCount,
+                      n: effectiveReviews.reviewCount,
                     })}
                   </Typography>
                 </Box>
 
                 {/* Real review cards */}
-                {liveReviews.reviews.map((r) => (
+                {effectiveReviews.reviews.map((r) => (
                   <Box
                     key={r.bookingId}
                     sx={{
