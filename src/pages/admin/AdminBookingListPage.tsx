@@ -186,7 +186,7 @@ interface Booking {
   needsAdminReview?: boolean;
   reviewReason?: string;
   userId?: string;
-  // 🆕 28x.162 — the per-booking capability secret. Minted at checkout
+  // 🆕 28x.165 — the per-booking capability secret. Minted at checkout
   //   (BookingFlowPage) and, since this round, at concierge create
   //   (AdminBookingAddPage). Backfilled on demand by copyReviewLink for
   //   older reservations that predate either.
@@ -718,7 +718,7 @@ const AdminBookingListPage: React.FC = () => {
     }
   };
 
-  // 🆕 28x.162 (founder: "เรื่องส่งลิ้งให้ลูกค้ารีวิว") — hand View a
+  // 🆕 28x.165 (founder: "เรื่องส่งลิ้งให้ลูกค้ารีวิว") — hand View a
   //   ready-to-paste review link for a finished job.
   //
   //   The link IS the guest's credential (submitBookingReview verifies the
@@ -1789,7 +1789,7 @@ const DetailPanel: React.FC<{
   // 🆕 28x.43 — how many OTHER bookings this phone already has under a code
   //   (the redemption memory made visible on the slip).
   countPriorCodeUses: (phone: string, code: string, excludeId: string) => number;
-  // 🆕 28x.162 — copy the guest's anonymous review link for a finished job.
+  // 🆕 28x.165 — copy the guest's anonymous review link for a finished job.
   onCopyReviewLink: () => void;
 }> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails, countPriorCodeUses, onCopyReviewLink }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
@@ -2030,6 +2030,26 @@ const DetailPanel: React.FC<{
         ...(editForm.serviceId && editForm.serviceId !== b.serviceId
           ? { serviceId: editForm.serviceId, serviceName: editSelectedService?.name ?? b.serviceName }
           : {}),
+        // 🆕 28x.161 — the split frozen at confirm-time (28w.43) is keyed on
+        //   (service, duration): move either and the stamped therapistShare is
+        //   the rate for a job that no longer exists — e.g. 70min → 120min kept
+        //   paying the 70min amount. Re-stamp from the current split table when
+        //   one of those two moved, and ONLY then: a price or promo edit must
+        //   NOT touch her rate (the shop absorbs the promo), and an unrelated
+        //   edit must not silently re-apply a split table that changed since.
+        //   shopShare is derived on read now (see shopShareFor), so it needs no
+        //   patch of its own — this rewrites it only to keep the record honest.
+        ...(
+          (editForm.serviceId && editForm.serviceId !== b.serviceId) ||
+          editForm.duration !== b.duration
+            ? stampSplit({
+                serviceId: editForm.serviceId || b.serviceId,
+                servicePrice: editServicePrice,
+                discountAmount: editDiscountAmount,
+                duration: editForm.duration,
+              })
+            : {}
+        ),
       },
       Object.keys(audit).length > 0 ? audit : undefined
     );
@@ -2743,7 +2763,7 @@ const DetailPanel: React.FC<{
             <XCircle size={22} color={adminColor.red} weight="fill" />
           </motion.button>
         )}
-        {/* 🆕 28x.162 — a finished job is the one moment a review link is
+        {/* 🆕 28x.165 — a finished job is the one moment a review link is
             worth sending, so it replaces the old dead "Session completed"
             label rather than adding chrome elsewhere. Hidden once the guest
             has actually rated: submitBookingReview allows one review per

@@ -948,14 +948,14 @@ await check("admin CANNOT write a chat summary (function-only)", () =>
   )
 );
 
-// ── reviewsPublic (28x.162) ──────────────────────────────────────────────
+// ── reviewsPublic (28x.165) ──────────────────────────────────────────────
 // The redacted public review mirror. 28w.91 closed anonymous `list` on
 // `bookings` because a booking doc carries the guest's address, phone and GPS
 // — which also made every review invisible. This collection is the fix, so the
 // tests that matter are: a logged-out guest CAN read it, and NOBODY can write
 // it from a client (it is written only by onBookingWriteSyncPublicReview via
 // the admin SDK, which bypasses rules entirely).
-console.log("\nreviewsPublic · 28x.162");
+console.log("\nreviewsPublic · 28x.165");
 
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(ctx.firestore(), "reviewsPublic", "bk-owned"), {
@@ -1014,7 +1014,7 @@ await check("nobody can delete a public review from a client", () =>
   assertFails(deleteDoc(doc(asUser(ADMIN_UID), "reviewsPublic", "bk-owned")))
 );
 
-// The retired `reviews` collection (28x.162): its only writer, ReviewPage.tsx,
+// The retired `reviews` collection (28x.165): its only writer, ReviewPage.tsx,
 // is deleted. Create is now denied so an unread collection can't be used as a
 // free write target.
 await check("the retired `reviews` collection rejects new client writes", () =>

@@ -1,12 +1,12 @@
 // scripts/backfillPublicReviews.mjs
 // ────────────────────────────────────────────────────────────────────────
-// 🆕 Round 28x.162 — one-off backfill of the `reviewsPublic` collection.
+// 🆕 Round 28x.165 — one-off backfill of the `reviewsPublic` collection.
 //
 // WHY: reviews are stored as `rating` + `reviewText` on the booking doc.
 // 28w.91 removed anonymous `allow list` on `bookings` (correctly — a booking
 // carries the guest's address, phone and GPS, and a LIST returns whole
 // documents), which silently made every existing review invisible to
-// logged-out visitors. 28x.162 introduces `reviewsPublic`, a redacted mirror
+// logged-out visitors. 28x.165 introduces `reviewsPublic`, a redacted mirror
 // carrying only rating + text + service, written by the
 // onBookingWriteSyncPublicReview trigger.
 //

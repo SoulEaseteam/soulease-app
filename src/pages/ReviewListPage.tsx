@@ -48,11 +48,11 @@ interface Review {
   rating: number;
   comment: string;
   createdAt: FirestoreDateLike;
-  /** 🆕 28x.162 — always "Booking #XXXX". Never a real person's name. */
+  /** 🆕 28x.165 — always "Booking #XXXX". Never a real person's name. */
   userName: string;
 }
 
-/** 🆕 28x.162 — a doc in `reviewsPublic` (the redacted mirror), not a booking.
+/** 🆕 28x.165 — a doc in `reviewsPublic` (the redacted mirror), not a booking.
  *  There is deliberately no name / email / avatar field to read: the mirror
  *  never copies one. */
 interface PublicReviewDoc {
@@ -128,7 +128,7 @@ const ReviewListPage: React.FC = () => {
   // =======================================================
   // LOAD REVIEWS (from `reviewsPublic` — the redacted mirror)
   // =======================================================
-  // 🆕 28x.162 — was `collection(db, "bookings")` filtered on reviewText.
+  // 🆕 28x.165 — was `collection(db, "bookings")` filtered on reviewText.
   //   Two problems, both fixed by the switch:
   //     1. 28w.91 removed anonymous `allow list` on bookings, so this query
   //        has permission-denied for every logged-out visitor since — this
@@ -441,7 +441,7 @@ const ReviewListPage: React.FC = () => {
               }}
             >
               <Stack direction="row" spacing={2} alignItems="center" mb={1}>
-                {/* 🆕 28x.162 — no `src`. There is no guest photo to show and
+                {/* 🆕 28x.165 — no `src`. There is no guest photo to show and
                     there never should be; MUI renders its neutral fallback. */}
                 <Avatar sx={{ width: 58, height: 58, border: "2px solid #fff" }} />
                 <Box>

@@ -561,7 +561,7 @@ commit for detail. What matters going forward:
   must happen BEFORE deploying new code, not after — the order is in that
   file's header.
 
-**⭐ Review links shipped — Round 28x.162 (2026-08-14) · ONE ACTION OWED**
+**⭐ Review links shipped — Round 28x.165 (2026-08-14) · ONE ACTION OWED**
 
 Founder: "เรื่องส่งลิ้งให้ลูกค้ารีวิว ทำได้ไหม". Shipped: anonymous link-based
 guest reviews (see §12 for the two durable rules). Deploy order matters:
@@ -734,7 +734,7 @@ You'll have ALL context. No re-explanation needed.
   the queried field, and don't trust a code-level default as evidence it exists.
   The two duplicate copies of that state list are now one function
   (`collectBusyTherapists`) — the old comment already admitted they "disagree".
-- **Public reviews live in `reviewsPublic`, NEVER in `bookings` (28x.162).**
+- **Public reviews live in `reviewsPublic`, NEVER in `bookings` (28x.165).**
   Reviews are authored as `rating` + `reviewText` on the booking doc, but the
   public surface reads a redacted mirror: `reviewsPublic/{bookingId}` =
   therapistId · rating · text · serviceName · duration · createdAt, written
@@ -746,13 +746,13 @@ You'll have ALL context. No re-explanation needed.
   GPS** (a LIST hands back whole documents). Right call — but its own comment
   said "see /reviewsPublic below" and that collection was never built, while
   `useTherapistReviews` kept querying `bookings`. Net effect: **reviews were
-  invisible to every logged-out visitor from 28w.91 until 28x.162**, and it
+  invisible to every logged-out visitor from 28w.91 until 28x.165**, and it
   never looked like a bug — the hook catches permission-denied and renders the
   same empty list as "no reviews yet". If reviews ever look empty again, check
   the browser console for that warning FIRST. Run
   `node scripts/backfillPublicReviews.mjs` (dry run, then `--apply`) after any
   bulk review edit made outside the app.
-- **Guest reviews are anonymous BY STRUCTURE, not by discipline (28x.162).**
+- **Guest reviews are anonymous BY STRUCTURE, not by discipline (28x.165).**
   `/review/b/:bookingId?t=<accessToken>` — the concierge copies it from the
   booking drawer ("Copy review link", shown only on completed jobs that aren't
   rated yet) and sends it privately. **The link is a bearer credential**: never
@@ -766,7 +766,7 @@ You'll have ALL context. No re-explanation needed.
   as the public byline — both were live guest-identity leaks in the middle of a
   §🔐 playbook whose whole premise is that guests stay anonymous.
 - **An admin control that writes a field nobody reads is invisible failure —
-  grep for the READER before trusting a settings UI (28x.161).** The founder
+  grep for the READER before trusting a settings UI (28x.164).** The founder
   reported "ป้าย New ไม่ขึ้น" (2026-08-14). `/admin/therapists/:id` has shipped
   a **"Badge" dropdown** (None/VIP/HOT/NEW) since 28s284 writing
   `therapists.badge` — and **nothing in the entire codebase ever read that
@@ -778,12 +778,12 @@ You'll have ALL context. No re-explanation needed.
   class. Secondary: `badgeUpdatedAt` was also never written by anything, so the
   engine's entire "admin set a badge by hand" branch was dead code, and the
   28r66 hotfix only ever fixed the *rendering* half of the same bug.
-  Fixed 28x.161 — the pin now lives in `badge` + `badgeSetAt` and **wins over**
+  Fixed 28x.164 — the pin now lives in `badge` + `badgeSetAt` and **wins over**
   the automatic badges (same founder principle as statusOverride at 28x.106b:
   "ถ้าไม่ใช่ auto ก็ทำงานตามคำสั่ง"). Lesson: when adding or auditing any admin
   settings control, grep for a READER of the exact field name it writes — a
   successful save is not evidence the setting does anything.
-- **Badges last 48h from when they were earned/set (28x.161).** Founder: "Badge
+- **Badges last 48h from when they were earned/set (28x.164).** Founder: "Badge
   อื่นๆ ต้องอยู่ 48 ชม". Before this, auto badges (HOT 2 / VIP 3 / TOP_RATED 4
   jobs — the 28x.100 thresholds, unchanged) died at the 06:00 BKK business-day
   rollover with the `todayBookings` counter: 4 jobs on a Friday night, TOP STAR
@@ -796,6 +796,24 @@ You'll have ALL context. No re-explanation needed.
   DIFFERENT fields on purpose: the Cloud Function overwrites `badgeKey` on
   every booking write, so an admin pin stored there would be wiped by her next
   job. `npm run test:badge` (tests/badge.test.ts, 22 cases) guards all of it.
+- **Never freeze a DERIVED field — freeze only the input it's derived from
+  (28x.161).** 28w.43 froze `therapistShare` + `shopShare` onto a booking at
+  confirm-time so a later split-table edit couldn't move a confirmed job.
+  Freezing `therapistShare` was right (it IS the payout — real, independent
+  data). Freezing `shopShare` was not: it's a pure residual,
+  `(servicePrice − discount) − therapistShare`. The edit drawer writes
+  `discountAmount` long after confirm and never re-stamps, so a promo keyed on
+  the slip left the residual holding the full pre-discount base — and the
+  therapist got billed for the shop's promo, exactly contradicting this file's
+  own "promo absorbed by the shop" rule. Vivian's 7–31 Aug payslip asked her
+  for ฿2,100 instead of ฿1,900; caught only by a founder screenshot. It hid
+  because the SAME page disagreed with itself — AdminReportPage's Shop Take
+  aggregate derives `base − pay` and read the right number, while the payslip
+  below it read the stamp. `shopShareFor` now always derives; the field is
+  still written for the Excel export but never trusted on read, so no
+  migration was needed. Lesson: if a stored field can be recomputed from other
+  stored fields, recompute it. A frozen copy only buys you a way to disagree
+  with yourself later.
 - **A new enum value in code isn't live until every allow-list that
   gates it is updated too (28x.99).** `analytics.ts`'s `FunnelEvent`
   type grew `therapist_view`/`bundle_view`/`bundle_reserve_click`/

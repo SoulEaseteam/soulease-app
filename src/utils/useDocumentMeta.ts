@@ -23,7 +23,7 @@ interface DocumentMetaInput {
   /** Optional JSON-LD structured data — จะ inject ใต้ <head> และ remove ตอน unmount */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   /**
-   * 🆕 28x.162 — emit `<meta name="robots" content="noindex, nofollow">` and
+   * 🆕 28x.165 — emit `<meta name="robots" content="noindex, nofollow">` and
    * SKIP the canonical / og:url tags entirely.
    *
    * Needed for capability URLs like `/review/b/:id?t=<token>`: the query
@@ -87,7 +87,7 @@ export function useDocumentMeta(meta: DocumentMetaInput) {
   useEffect(() => {
     if (typeof document === "undefined") return;
 
-    // 🆕 28x.162 — on a noIndex page the URL may carry a secret, so it must
+    // 🆕 28x.165 — on a noIndex page the URL may carry a secret, so it must
     //   never be echoed into canonical/og:url below.
     const finalUrl = noIndex
       ? undefined
@@ -143,7 +143,7 @@ export function useDocumentMeta(meta: DocumentMetaInput) {
 
     upsertMeta('meta[property="og:type"]', "property", "og:type", type);
 
-    // 🆕 28x.162 — robots. Written on EVERY render, not only when noIndex is
+    // 🆕 28x.165 — robots. Written on EVERY render, not only when noIndex is
     //   true: this is a single-page app, so a stale "noindex" left behind by
     //   the previous route would otherwise follow the guest onto a page we do
     //   want indexed.

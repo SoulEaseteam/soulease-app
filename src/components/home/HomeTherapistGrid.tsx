@@ -260,7 +260,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
         todayBookings: t.todayBookings ?? 0,
         todayBookingsDate: (t as { todayBookingsDate?: string | null }).todayBookingsDate ?? null,
         createdAt: (t as { createdAt?: unknown }).createdAt,
-        // 🆕 28x.161 — the admin "Badge" dropdown's manual pin. This pair was
+        // 🆕 28x.164 — the admin "Badge" dropdown's manual pin. This pair was
         //   missing here, which is why picking "NEW" in /admin never showed up
         //   on the card: the field was written but never handed to the engine.
         badge: (t as { badge?: string | null }).badge,

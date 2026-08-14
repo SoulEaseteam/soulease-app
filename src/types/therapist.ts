@@ -131,7 +131,7 @@ export interface Therapist {
 
   /** badge system — see src/utils/getTherapistBadge.ts for precedence.
    *
-   *  ⚠️ TWO separate stores, on purpose (28x.161):
+   *  ⚠️ TWO separate stores, on purpose (28x.164):
    *    • `badge` + `badgeSetAt` — the MANUAL pin from the admin page's
    *      "Badge" dropdown. Wins over the automatic badges, lives 48h.
    *    • `badgeKey` + `badgeUpdatedAt` — the AUTO badge, stamped server-side

@@ -120,7 +120,7 @@ export function useTherapistReviews(
       return;
     }
 
-    // 🆕 28x.162 — reads `reviewsPublic`, NOT `bookings`.
+    // 🆕 28x.165 — reads `reviewsPublic`, NOT `bookings`.
     //
     // This listener queried `bookings` with `where("rating", ">=", 1)` until
     // now. 28w.91 removed anonymous `allow list` on that collection — a

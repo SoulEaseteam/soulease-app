@@ -69,7 +69,7 @@ const STATUS_COLOR: Record<Avail, string> = {
   holiday: adminColor.red,
 };
 
-// 🆕 28x.161 — TOP_RATED added. It was missing because the badge used to be a
+// 🆕 28x.164 — TOP_RATED added. It was missing because the badge used to be a
 //   single-winner-per-night award computed across the roster; 28x.100 made it
 //   an absolute threshold (4+ jobs) that several practitioners can hold, so
 //   there's no longer a reason the admin can't pin it by hand.
@@ -287,7 +287,7 @@ const AdminTherapistDetailPage: React.FC = () => {
     }
   };
   const originalRef = useRef<FormState>(EMPTY_FORM);
-  // 🆕 28x.161 — the badge's 48h clock. Kept in a ref rather than FormState
+  // 🆕 28x.164 — the badge's 48h clock. Kept in a ref rather than FormState
   //   because it isn't an editable field: it's stamped on save so an unrelated
   //   edit (changing her area, say) doesn't silently restart the countdown.
   const badgeSetAtRef = useRef<number | null>(null);
@@ -373,7 +373,7 @@ const AdminTherapistDetailPage: React.FC = () => {
           setRawDoc({ id: snap.id, ...data });
           const next = toFormState(data);
           originalRef.current = next;
-          // 🆕 28x.161 — carry the badge's existing 48h start time forward.
+          // 🆕 28x.164 — carry the badge's existing 48h start time forward.
           badgeSetAtRef.current =
             typeof data.badgeSetAt === "number" ? data.badgeSetAt : null;
           // Always populate on the first successful load, even if we
@@ -638,12 +638,12 @@ const AdminTherapistDetailPage: React.FC = () => {
       startTime: formData.startTime,
       endTime: formData.endTime,
       badge: formData.badge,
-      // 🆕 28x.161 — start (or preserve) the badge's 48h clock.
+      // 🆕 28x.164 — start (or preserve) the badge's 48h clock.
       //   • cleared to "None"  → null, chip disappears immediately
       //   • changed value      → stamp now, full 48h from this save
       //   • untouched          → keep the existing stamp, so saving an
       //     unrelated field doesn't secretly extend the badge
-      //   • had no stamp (pin saved before 28x.161) → stamp now, which
+      //   • had no stamp (pin saved before 28x.164) → stamp now, which
       //     converts a grandfathered forever-badge into a normal 48h one
       badgeSetAt: formData.badge
         ? formData.badge !== originalRef.current.badge ||
@@ -733,7 +733,7 @@ const AdminTherapistDetailPage: React.FC = () => {
 
   const ringColor = computedStatus === "resting" ? adminColor.line2 : STATUS_COLOR[computedStatus];
 
-  // 🆕 28x.161 — tell the admin what the badge will actually do. Three states:
+  // 🆕 28x.164 — tell the admin what the badge will actually do. Three states:
   //   dirty (not saved yet) · running (48h counting down) · legacy (pinned
   //   before this round shipped, so it has no clock until the next save).
   const badgeHelperText = (() => {
@@ -1140,7 +1140,7 @@ const AdminTherapistDetailPage: React.FC = () => {
                   onChange={(e) => setFormData((f) => ({ ...f, badge: e.target.value }))}
                   InputLabelProps={{ shrink: true }}
                   SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}
-                  // 🆕 28x.161 — the 48h life is invisible otherwise, and this
+                  // 🆕 28x.164 — the 48h life is invisible otherwise, and this
                   //   dropdown has already burned the founder once by looking
                   //   like it worked while writing to a field nobody read.
                   helperText={badgeHelperText}

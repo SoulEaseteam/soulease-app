@@ -378,7 +378,7 @@ const AdminBookingAddPage: React.FC = () => {
       const mapUrl    = loc.mapUrl ?? buildMapUrl(loc.placeName || loc.address, loc.lat, loc.lng);
 
       const ref = await addDoc(collection(db, "bookings"), {
-        // 🆕 28x.162 — mint the capability token here too. BookingFlowPage has
+        // 🆕 28x.165 — mint the capability token here too. BookingFlowPage has
         //   done this since 28x.107, but concierge-created reservations (the
         //   majority of real volume) had none, so there was no link that could
         //   authenticate the guest for the review page.

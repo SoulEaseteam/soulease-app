@@ -547,7 +547,7 @@ service cloud.firestore {
     }
 
     // ── reviewsPublic ────────────────────────────────────────────────
-    // 🆕 28x.162 — the redacted public review mirror that 28w.91's comment
+    // 🆕 28x.165 — the redacted public review mirror that 28w.91's comment
     //   promised ("see /reviewsPublic below") but never actually created.
     //
     //   Between 28w.91 and this round there was NO public review surface at
@@ -568,7 +568,7 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ⚠️ 28x.162 — this `reviews` collection is now WRITE-DEAD. Its only
+    // ⚠️ 28x.165 — this `reviews` collection is now WRITE-DEAD. Its only
     //   writer was ReviewPage.tsx, deleted this round (its route param never
     //   matched, it demanded a login SunRed guests don't have, and it stamped
     //   the guest's email as a public byline). Nothing reads it either — the

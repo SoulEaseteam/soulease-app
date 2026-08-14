@@ -489,7 +489,7 @@ interface OpenAIModerationResponse {
 }
 
 /**
- * 🆕 28x.162 — the OpenAI moderation call, extracted so more than one
+ * 🆕 28x.165 — the OpenAI moderation call, extracted so more than one
  * endpoint can use it. `moderateText` (the callable the client wraps in
  * src/utils/moderate.ts) and `submitBookingReview` now share this exactly,
  * which means a guest's review is screened by the same rules as a booking
@@ -561,7 +561,7 @@ async function moderateTextCore(
   }
 }
 
-/** 🆕 28x.162 — boolean convenience wrapper for server-side callers. */
+/** 🆕 28x.165 — boolean convenience wrapper for server-side callers. */
 async function isTextFlagged(text: string): Promise<boolean> {
   const t = text.trim();
   if (t.length < 3) return false;
@@ -774,7 +774,7 @@ const AUDIT_IGNORE_KEYS = new Set([
   // auto-maintained by the booking flow, not a human action
   "activeBooking",
   "busyUntil",
-  // 🆕 28x.161 — written by syncTherapistDailyCount on EVERY booking write.
+  // 🆕 28x.164 — written by syncTherapistDailyCount on EVERY booking write.
   //   todayBookings/todayBookingsDate have been machine-written since 28x.100
   //   and were never ignored, so each booking already spawned an audit row for
   //   a number nobody decided; badgeKey joins them this round. Derived, not a
@@ -4745,7 +4745,7 @@ export const claimBookingChat = onCall(
 );
 
 // ─────────────────────────────────────────────────────────────
-// 🆕 Round 28x.162 — anonymous guest review, submitted from a link.
+// 🆕 Round 28x.165 — anonymous guest review, submitted from a link.
 //
 // Founder (2026-08-14): "เรื่องส่งลิ้งให้ลูกค้ารีวิว ทำได้ไหม".
 //
@@ -5608,7 +5608,7 @@ async function recomputeTherapistSessionStats(therapistId: string): Promise<void
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🆕 Round 28x.162 — mirror a booking's review into the PUBLIC `reviewsPublic`
+// 🆕 Round 28x.165 — mirror a booking's review into the PUBLIC `reviewsPublic`
 //   collection.
 //
 // WHY THIS EXISTS — reviews have been invisible to logged-out guests since
@@ -5947,7 +5947,7 @@ export const syncTherapistDailyCount = onDocumentWritten(
           if (!ms) return;
           if (businessDayBKKServer(ms) === dayKey) n++;
         });
-        // 🆕 28x.161 (founder 2026-08-14: "Badge อื่นๆ ต้องอยู่ 48 ชม") — stamp
+        // 🆕 28x.164 (founder 2026-08-14: "Badge อื่นๆ ต้องอยู่ 48 ชม") — stamp
         //   the earned badge alongside the count. The client engine reads the
         //   day counter for TODAY only, so before this an auto badge died at
         //   the 06:00 business-day rollover: 4 jobs on a Friday night, TOP

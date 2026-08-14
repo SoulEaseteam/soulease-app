@@ -1,6 +1,6 @@
 // src/utils/bookingAccessToken.ts
 //
-// 🆕 Round 28x.162 — the per-booking capability secret, in ONE place.
+// 🆕 Round 28x.165 — the per-booking capability secret, in ONE place.
 //
 // Background: BookingFlowPage has minted an `accessToken` at checkout since
 // 28x.107 so a signed-out guest can read her own reservation
@@ -10,7 +10,7 @@
 // View keys the reservation in herself, `userId: null`).
 //
 // That gap didn't matter while the token only unlocked the success page a
-// guest reached by redirect. It matters now: the review link (28x.162) is a
+// guest reached by redirect. It matters now: the review link (28x.165) is a
 // capability URL the concierge SENDS, so a booking with no token simply
 // cannot be reviewed — which would have excluded the majority of real jobs.
 //

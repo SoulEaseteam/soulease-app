@@ -101,11 +101,16 @@ export function therapistFixedFor(
 }
 
 /**
- * Statuses that must NOT earn payroll — cancelled/refunded/no-show/etc.
- * Includes both British and American spellings of "cancel(l)ed". A booking
- * outside this set is a real, payable job.
+ * Statuses for an order that is definitively DEAD — it will never be served.
+ * Includes both British and American spellings of "cancel(l)ed".
+ *
+ * 🆕 28x.162 — note what is NOT here: "pending". A pending order is dead for
+ * PAYROLL (see below) but still live for a promo code, because View confirms
+ * it by hand and it usually becomes a real job. The two questions genuinely
+ * differ, so they get two predicates instead of one shared list that would
+ * have to be wrong for one of them.
  */
-export const PAYROLL_EXCLUDED_STATUSES = new Set([
+const NEVER_HAPPENED_STATUSES = new Set([
   "cancelled",
   "canceled",
   "refunded",
@@ -114,8 +119,35 @@ export const PAYROLL_EXCLUDED_STATUSES = new Set([
   "no_show",
 ]);
 
+/**
+ * Statuses that must NOT earn payroll. A booking outside this set is a real,
+ * payable job.
+ *
+ * 🆕 28x.162 (founder call) — "pending" added. A guest who reaches checkout
+ * gets a booking written at status "pending" with a 10-minute hold; if they
+ * never confirm, `releaseExpiredHolds` stamps holdState "expired" and leaves
+ * the STATUS at "pending" forever. Nothing else ever moved it, and pending
+ * was absent from this set, so `bookingSettlement` classified every abandoned
+ * checkout as "real service work" and paid the practitioner her full rate on
+ * a job nobody drove to. CLAUDE.md's own status model already listed pending
+ * as excluded — the code was the half that disagreed.
+ */
+export const PAYROLL_EXCLUDED_STATUSES = new Set([
+  ...NEVER_HAPPENED_STATUSES,
+  "pending",
+]);
+
 export const isPayrollExcluded = (status: string | null | undefined): boolean =>
   !!status && PAYROLL_EXCLUDED_STATUSES.has(status);
+
+/**
+ * "This order will never be served" — for the non-payroll callers. Used by the
+ * promo redemption gate: a cancelled or refunded order must not burn a code's
+ * `maxRedemptions`, but a pending one still counts against it, since it is
+ * one confirm tap away from being real.
+ */
+export const didNotHappen = (status: string | null | undefined): boolean =>
+  !!status && NEVER_HAPPENED_STATUSES.has(status);
 
 /**
  * 🆕 28x.99u (audit) — was defined byte-for-byte identically in both
@@ -195,8 +227,24 @@ export function therapistPayoutFor(b: {
 }
 
 /** The shop's cut of ONE booking's service revenue (taxi excluded) =
- *  (servicePrice − discount) − therapist payout, floored at 0. Prefers the
- *  frozen shopShare; otherwise reconciles with therapistPayoutFor. */
+ *  (servicePrice − discount) − therapist payout, floored at 0.
+ *
+ *  🆕 28x.161 — this used to prefer the FROZEN `shopShare` stamped on the
+ *  booking, and that was wrong. Unlike `therapistShare` (a real payout, frozen
+ *  on purpose by 28w.43 so a later split-table edit can't move a confirmed
+ *  job), the shop's cut is a pure RESIDUAL of the booking's own numbers. The
+ *  moment any of those numbers is edited after confirm — and a promo keyed on
+ *  the slip is exactly that, see AdminBookingListPage's edit drawer, which
+ *  writes `discountAmount` and never re-stamps — the frozen residual is stale,
+ *  and every baht of the promo lands on the therapist's settlement instead of
+ *  the shop's. That contradicts the promo rule stated in this very file
+ *  ("promo absorbed by the shop, therapist keeps her full rate").
+ *
+ *  Deriving it always is also what AdminEarningsPage and SplitTableEditor
+ *  already did on their own — Reports was the one surface still trusting the
+ *  stamp, so the two payroll screens silently disagreed on discounted jobs.
+ *  The field is still WRITTEN (it's in the Excel export and the booking
+ *  record); it is simply never trusted over the arithmetic on read. */
 export function shopShareFor(b: {
   serviceId?: string | null;
   servicePrice?: number | null;
@@ -205,7 +253,6 @@ export function shopShareFor(b: {
   therapistShare?: number | null;
   shopShare?: number | null;
 }): number {
-  if (typeof b.shopShare === "number" && b.shopShare >= 0) return Math.round(b.shopShare);
   return Math.max(0, commissionBaseFor(b) - therapistPayoutFor(b));
 }
 

@@ -17,14 +17,14 @@ export interface BadgeConfig {
   shouldUpdateFirestore?: boolean;
 }
 
-// ⚠️ DAY_MS and BADGE_TTL are deliberately SEPARATE constants (28x.161).
+// ⚠️ DAY_MS and BADGE_TTL are deliberately SEPARATE constants (28x.164).
 //   The NEW window used to be written as `21 * BADGE_TTL`, so bumping the
 //   TTL from 24h → 48h would have silently doubled "new practitioner" from
 //   21 days to 42. Anything measured in days uses DAY_MS; only badge
 //   lifetime uses BADGE_TTL.
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// 🆕 28x.161 (founder 2026-08-14: "Badge อื่นๆ ต้องอยู่ 48 ชม") — a badge
+// 🆕 28x.164 (founder 2026-08-14: "Badge อื่นๆ ต้องอยู่ 48 ชม") — a badge
 //   now lives 48 hours from the moment it was earned/set, instead of 24h
 //   (manual) or "until the 06:00 business-day rollover" (auto). See the
 //   precedence comment in getBadgeForTherapist for how each kind expires.
@@ -57,7 +57,7 @@ function pack(key: BadgeKey | null, opts: { stored?: boolean } = {}): BadgeConfi
 // 🆕 28s349 — coerce Firestore createdAt (Timestamp / Date / ISO string /
 //   epoch ms / {seconds}) to epoch ms; 0 when absent/unparseable.
 /**
- * 🆕 28x.161 — coerce whatever the admin dropdown / Firestore holds into a
+ * 🆕 28x.164 — coerce whatever the admin dropdown / Firestore holds into a
  * real BadgeKey. Accepts the stored spellings we've used over time
  * ("TOP_RATED", "TOP RATED", "top rated") and returns null for "" / junk,
  * so an unknown value can never render as a mystery chip.
@@ -102,7 +102,7 @@ export function businessDayBKK(nowMs: number = Date.now()): string {
 }
 
 /**
- * Precedence (28x.161) — first match wins:
+ * Precedence (28x.164) — first match wins:
  *
  *   1. MANUAL PIN — `badge` + `badgeSetAt`, written by the "Badge" dropdown
  *      on /admin/therapists/:id. Beats the auto badges, per the founder rule
@@ -130,7 +130,7 @@ export function getBadgeForTherapist(t: {
   /** 🆕 28s349 — Firestore createdAt (Timestamp/Date/string/number). Drives
    *  the NEW badge by roster age instead of booking count. */
   createdAt?: unknown;
-  /** 🆕 28x.161 — the admin "Badge" dropdown's manual pin. */
+  /** 🆕 28x.164 — the admin "Badge" dropdown's manual pin. */
   badge?: string | null;
   badgeSetAt?: number | null;
   /** auto badge stamped by syncTherapistDailyCount (NOT admin-set). */
@@ -139,7 +139,7 @@ export function getBadgeForTherapist(t: {
 }): BadgeConfig {
   const now = Date.now();
 
-  // 1) 🚨 28x.161 — MANUAL PIN. This branch is the actual fix for the founder's
+  // 1) 🚨 28x.164 — MANUAL PIN. This branch is the actual fix for the founder's
   //    "ป้าย New ไม่ขึ้น" (2026-08-14). The admin page has shipped a "Badge"
   //    dropdown (None/VIP/HOT/NEW) since 28s284 writing `therapists.badge` —
   //    but NOTHING in the codebase ever read that field. The engine and the
@@ -150,7 +150,7 @@ export function getBadgeForTherapist(t: {
   const pinned = normalizeBadgeKey(t.badge);
   if (pinned) {
     const setAt = t.badgeSetAt ?? null;
-    // No stamp = a pin saved before 28x.161 existed. Honour it indefinitely
+    // No stamp = a pin saved before 28x.164 existed. Honour it indefinitely
     // rather than hiding it — hiding is exactly the bug being fixed. The next
     // admin save stamps it and the normal 48h clock takes over from there.
     if (setAt == null) {
@@ -178,7 +178,7 @@ export function getBadgeForTherapist(t: {
   if (today >= 3) return pack("VIP");
   if (today >= 2) return pack("HOT");
 
-  // 3) 🆕 28x.161 — carry an earned badge for 48h past the day it was earned.
+  // 3) 🆕 28x.164 — carry an earned badge for 48h past the day it was earned.
   //    Before this, an auto badge died at the 06:00 rollover with the day
   //    counter: a practitioner who worked 4 jobs on a Friday night lost
   //    TOP_RATED at 6am Saturday. TOP_RATED is no longer excluded here — that

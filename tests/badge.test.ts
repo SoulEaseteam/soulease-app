@@ -1,6 +1,6 @@
 // tests/badge.test.ts — run: npm run test:badge
 //
-// 🆕 28x.161. The badge engine broke silently and stayed broken: the admin
+// 🆕 28x.164. The badge engine broke silently and stayed broken: the admin
 // "Badge" dropdown wrote therapists.badge while the engine and card read
 // badgeKey, so picking NEW did nothing and nobody noticed until a founder
 // screenshot. These cases pin the precedence, the 48h lifetime, and the

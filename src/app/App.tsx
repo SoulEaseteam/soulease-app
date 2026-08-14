@@ -116,7 +116,7 @@ const BookingHistoryPage = React.lazy(
   () => import("@/pages/BookingHistoryPage")
 );
 
-// 🆕 28x.162 — anonymous link-based guest review. Replaces the login-gated
+// 🆕 28x.165 — anonymous link-based guest review. Replaces the login-gated
 //   ReviewPage (deleted this round; see the route comment below).
 const BookingReviewPage = React.lazy(() => import("@/pages/BookingReviewPage"));
 const ReviewListPage = React.lazy(() => import("@/pages/ReviewListPage"));
@@ -410,14 +410,14 @@ export default function App() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/booking/history" element={<BookingHistoryPage />} />
 
-          {/* 🆕 28x.162 — the anonymous, link-based guest review page. The
+          {/* 🆕 28x.165 — the anonymous, link-based guest review page. The
               concierge sends /review/b/:id?t=<accessToken> after a completed
               job; no login, no name stored. See BookingReviewPage.tsx.
 
               ⚠️ Must be declared BEFORE "/review/:id" or that param route
               swallows "/review/b/…" and matches id="b". */}
           <Route path="/review/b/:id" element={<BookingReviewPage />} />
-          {/* 🗑️ 28x.162 — "/review/:id" (ReviewPage) removed. It was dead
+          {/* 🗑️ 28x.165 — "/review/:id" (ReviewPage) removed. It was dead
               code: the route param was `id` while the component read
               `useParams().therapistId`, so it was permanently undefined and
               every submit failed with "Invalid therapist." It also required a
