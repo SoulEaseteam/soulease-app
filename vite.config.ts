@@ -67,7 +67,22 @@ export default defineConfig({
       // the plugin must not generate a competing one.
       manifest: false,
       workbox: {
-        globPatterns: ["**/*.{js,css,html,woff2}"],
+        // ⚠️ Precache = FIRST-PAINT SHELL ONLY. The first config globbed
+        //   every chunk ("**/*.js") — 224 files, several MB, including the
+        //   admin-only exceljs/html2canvas bundles — so every guest paid the
+        //   whole admin app in mobile data at first visit and the install
+        //   crawled. Lazy route chunks are hashed (immutable), so the
+        //   runtime CacheFirst rule below caches them the first time they're
+        //   actually loaded instead.
+        globPatterns: [
+          "*.html",
+          "assets/index-*.{js,css}",
+          "assets/vendor-firebase-*.js",
+          "assets/translation-*.js",
+          "assets/workbox-window*.js",
+          "assets/virtual_pwa-register-*.js",
+          "assets/*.woff2",
+        ],
         // Entry chunk is ~900 kB (see manualChunks note below) — default
         // 2 MB cap is fine today, 3 MB keeps a future chunk from silently
         // falling out of precache.
@@ -75,6 +90,18 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
         runtimeCaching: [
+          {
+            // Lazy route chunks (hashed filenames = immutable) — cached on
+            // first real use instead of bloating the install (see the
+            // globPatterns note above).
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin && url.pathname.startsWith("/assets/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "sr-lazy-assets",
+              expiration: { maxEntries: 250, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
           {
             // Practitioner photos (Firebase Storage) — the heaviest, most
             // static content on the site. Cache-first turns repeat visits
