@@ -469,6 +469,19 @@ What 28x.156 changed so it can't blank the site again:
   heavier). Deliberate — a slow photo beats no photo on a site whose product
   IS the photo.
 
+**🅿️ Brand rename — PARKED, not dropped (View, 2026-08-14).** She asked for a
+completely new name with no link back to SunRed (English, easy to say, quiet
+luxury, real Chinese name alongside, must not read gray-area), then decided
+"เดี๋ยวค่อยเปลี่ยน ตอนนี้ใช้อันนี้ก่อน". **SunRed stays the live brand — nothing
+to do in code.** The work is not wasted: `docs/brand-rename-candidates.md`
+holds the filter rules, 6 vetted candidates with purpose-built Chinese names
+(ORIA and NIRAVA recommended), and the cost analysis. If she raises it again,
+start from that file — do NOT generate a fresh name list, and do NOT re-ask
+"replace or run in parallel", which was already asked and answered with "not
+now". The §4 recommendation (run the new name as a parallel brand rather than
+replacing SunRed) still stands while the "sunred massage" query keeps earning
+at avg position 1.2.
+
 **⏳ OWED — verify the 28x.161-163 money fixes in a real browser (deployed
 2026-08-14, run #77, never opened by a human).**
 
