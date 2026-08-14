@@ -69,7 +69,23 @@ const STATUS_COLOR: Record<Avail, string> = {
   holiday: adminColor.red,
 };
 
-const badgeOptions = ["", "VIP", "HOT", "NEW"] as const;
+// 🆕 28x.164 — TOP_RATED added. It was missing because the badge used to be a
+//   single-winner-per-night award computed across the roster; 28x.100 made it
+//   an absolute threshold (4+ jobs) that several practitioners can hold, so
+//   there's no longer a reason the admin can't pin it by hand.
+const badgeOptions = ["", "TOP_RATED", "VIP", "HOT", "NEW"] as const;
+
+const BADGE_LABEL: Record<string, string> = {
+  "": "None · ไม่มีป้าย",
+  TOP_RATED: "TOP STAR",
+  VIP: "VIP",
+  HOT: "HOT",
+  NEW: "NEW",
+};
+
+// Must match BADGE_TTL in src/utils/getTherapistBadge.ts (founder 2026-08-14:
+// "Badge อื่นๆ ต้องอยู่ 48 ชม").
+const BADGE_TTL_MS = 48 * 60 * 60 * 1000;
 
 interface FormState {
   name: string;
@@ -271,6 +287,10 @@ const AdminTherapistDetailPage: React.FC = () => {
     }
   };
   const originalRef = useRef<FormState>(EMPTY_FORM);
+  // 🆕 28x.164 — the badge's 48h clock. Kept in a ref rather than FormState
+  //   because it isn't an editable field: it's stamped on save so an unrelated
+  //   edit (changing her area, say) doesn't silently restart the countdown.
+  const badgeSetAtRef = useRef<number | null>(null);
   // 🆕 Round 28s314 — bank details live in the ADMIN-ONLY `payoutAccounts`
   //   collection, NOT on the therapist doc (which is `allow read: if true`,
   //   i.e. world-readable — bank numbers must never land there). Loaded +
@@ -353,6 +373,9 @@ const AdminTherapistDetailPage: React.FC = () => {
           setRawDoc({ id: snap.id, ...data });
           const next = toFormState(data);
           originalRef.current = next;
+          // 🆕 28x.164 — carry the badge's existing 48h start time forward.
+          badgeSetAtRef.current =
+            typeof data.badgeSetAt === "number" ? data.badgeSetAt : null;
           // Always populate on the first successful load, even if we
           // opened straight into edit mode (?edit=1). After that, don't
           // stomp in-progress edits with a live update mid-typing.
@@ -615,6 +638,19 @@ const AdminTherapistDetailPage: React.FC = () => {
       startTime: formData.startTime,
       endTime: formData.endTime,
       badge: formData.badge,
+      // 🆕 28x.164 — start (or preserve) the badge's 48h clock.
+      //   • cleared to "None"  → null, chip disappears immediately
+      //   • changed value      → stamp now, full 48h from this save
+      //   • untouched          → keep the existing stamp, so saving an
+      //     unrelated field doesn't secretly extend the badge
+      //   • had no stamp (pin saved before 28x.164) → stamp now, which
+      //     converts a grandfathered forever-badge into a normal 48h one
+      badgeSetAt: formData.badge
+        ? formData.badge !== originalRef.current.badge ||
+          badgeSetAtRef.current == null
+          ? Date.now()
+          : badgeSetAtRef.current
+        : null,
       statusOverride: formData.statusOverride,
       // 🆕 Round 28s267's rule, applied here too — a manual override now
       //   expires at end of BKK day instead of sticking forever.
@@ -696,6 +732,22 @@ const AdminTherapistDetailPage: React.FC = () => {
     );
 
   const ringColor = computedStatus === "resting" ? adminColor.line2 : STATUS_COLOR[computedStatus];
+
+  // 🆕 28x.164 — tell the admin what the badge will actually do. Three states:
+  //   dirty (not saved yet) · running (48h counting down) · legacy (pinned
+  //   before this round shipped, so it has no clock until the next save).
+  const badgeHelperText = (() => {
+    if (!formData.badge) return "ไม่มีป้ายบนการ์ด";
+    if (formData.badge !== originalRef.current.badge)
+      return "กด Save แล้วป้ายจะขึ้นบนการ์ด · อยู่ 48 ชม.";
+    if (badgeSetAtRef.current == null)
+      return "ป้ายขึ้นอยู่ (ตั้งไว้ก่อนระบบนับเวลา) · กด Save เพื่อเริ่มนับ 48 ชม.";
+    const leftMs = badgeSetAtRef.current + BADGE_TTL_MS - Date.now();
+    if (leftMs <= 0) return "ป้ายหมดอายุแล้ว · เลือกใหม่แล้ว Save เพื่อต่ออีก 48 ชม.";
+    const h = Math.floor(leftMs / 3_600_000);
+    const m = Math.floor((leftMs % 3_600_000) / 60_000);
+    return `เหลืออีก ${h} ชม. ${m} นาที แล้วป้ายจะหายเอง`;
+  })();
 
   // 🆕 Round 28s277 — rich real fields, read straight off the live doc.
   // These are display-only here; handleSave's patch never touches them,
@@ -963,7 +1015,7 @@ const AdminTherapistDetailPage: React.FC = () => {
                 <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <ReadRow icon={<Clock size={14} />} label="Working Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
                   <ReadRow icon={<MapPin size={14} />} label="Location" value={formData.currentLocation || "—"} />
-                  <ReadRow icon={<Medal size={14} />} label="Badge" value={formData.badge || "None"} />
+                  <ReadRow icon={<Medal size={14} />} label="Badge" value={BADGE_LABEL[formData.badge] ?? formData.badge ?? "None"} />
                   {rebookRate != null && <ReadRow icon={<ChartBar size={14} />} label="Rebook Rate" value={`${rebookRate}%`} />}
                   {totalSessions != null && <ReadRow icon={<Star size={14} />} label="Sessions (lifetime)" value={String(totalSessions)} />}
                 </Box>
@@ -1088,9 +1140,13 @@ const AdminTherapistDetailPage: React.FC = () => {
                   onChange={(e) => setFormData((f) => ({ ...f, badge: e.target.value }))}
                   InputLabelProps={{ shrink: true }}
                   SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}
+                  // 🆕 28x.164 — the 48h life is invisible otherwise, and this
+                  //   dropdown has already burned the founder once by looking
+                  //   like it worked while writing to a field nobody read.
+                  helperText={badgeHelperText}
                 >
                   {badgeOptions.map((b) => (
-                    <MenuItem key={b} value={b}>{b || "None"}</MenuItem>
+                    <MenuItem key={b} value={b}>{BADGE_LABEL[b] ?? b}</MenuItem>
                   ))}
                 </TextField>
               </Box>

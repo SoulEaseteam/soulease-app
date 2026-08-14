@@ -129,8 +129,17 @@ export interface Therapist {
   }>;
   bioGeneratedAt?: FirestoreDateLike;
 
-  /** badge system — TOP_RATED is the daily bestseller, assigned across the
-   *  roster in HomeTherapistGrid; VIP/HOT/NEW are per-therapist thresholds. */
+  /** badge system — see src/utils/getTherapistBadge.ts for precedence.
+   *
+   *  ⚠️ TWO separate stores, on purpose (28x.164):
+   *    • `badge` + `badgeSetAt` — the MANUAL pin from the admin page's
+   *      "Badge" dropdown. Wins over the automatic badges, lives 48h.
+   *    • `badgeKey` + `badgeUpdatedAt` — the AUTO badge, stamped server-side
+   *      by syncTherapistDailyCount when a daily-count threshold is crossed.
+   *      Overwritten on every booking write, so an admin pin must never be
+   *      stored here or the next job would wipe it. */
+  badge?: string | null;
+  badgeSetAt?: number | null;
   badgeKey?: "TOP_RATED" | "VIP" | "HOT" | "NEW" | null;
   badgeUpdatedAt?: number | null;
 

@@ -116,7 +116,9 @@ const BookingHistoryPage = React.lazy(
   () => import("@/pages/BookingHistoryPage")
 );
 
-const ReviewPage = React.lazy(() => import("@/pages/ReviewPage"));
+// 🆕 28x.165 — anonymous link-based guest review. Replaces the login-gated
+//   ReviewPage (deleted this round; see the route comment below).
+const BookingReviewPage = React.lazy(() => import("@/pages/BookingReviewPage"));
 const ReviewListPage = React.lazy(() => import("@/pages/ReviewListPage"));
 
 // 🆕 28w.89 — "My discount codes" (rewards · held code · referral code).
@@ -408,7 +410,21 @@ export default function App() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/booking/history" element={<BookingHistoryPage />} />
 
-          <Route path="/review/:id" element={<ReviewPage />} />
+          {/* 🆕 28x.165 — the anonymous, link-based guest review page. The
+              concierge sends /review/b/:id?t=<accessToken> after a completed
+              job; no login, no name stored. See BookingReviewPage.tsx.
+
+              ⚠️ Must be declared BEFORE "/review/:id" or that param route
+              swallows "/review/b/…" and matches id="b". */}
+          <Route path="/review/b/:id" element={<BookingReviewPage />} />
+          {/* 🗑️ 28x.165 — "/review/:id" (ReviewPage) removed. It was dead
+              code: the route param was `id` while the component read
+              `useParams().therapistId`, so it was permanently undefined and
+              every submit failed with "Invalid therapist." It also required a
+              login SunRed guests never have, checked eligibility against a
+              `userId` that is null on concierge-created bookings, and wrote
+              the guest's email as a public byline (CLAUDE.md §🔐 forbids
+              publishing guest identity). Nothing linked to it. */}
           <Route path="/review/all/:id" element={<ReviewListPage />} />
 
           <Route path="/saved" element={<SavedTherapistsPage />} />

@@ -22,6 +22,17 @@ interface DocumentMetaInput {
   locale?: string;
   /** Optional JSON-LD structured data — จะ inject ใต้ <head> และ remove ตอน unmount */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  /**
+   * 🆕 28x.165 — emit `<meta name="robots" content="noindex, nofollow">` and
+   * SKIP the canonical / og:url tags entirely.
+   *
+   * Needed for capability URLs like `/review/b/:id?t=<token>`: the query
+   * string IS a bearer secret, and this hook's default behaviour would
+   * otherwise copy the full href — token included — straight into a
+   * `<link rel="canonical">` and an `og:url`, i.e. publish it. Set this on
+   * ANY page whose URL carries a token.
+   */
+  noIndex?: boolean;
 }
 
 /** ตัวช่วย — set/upsert <meta> by name หรือ property */
@@ -70,14 +81,18 @@ export function useDocumentMeta(meta: DocumentMetaInput) {
     type = "website",
     locale,
     jsonLd,
+    noIndex = false,
   } = meta;
 
   useEffect(() => {
     if (typeof document === "undefined") return;
 
-    const finalUrl =
-      url ??
-      (typeof window !== "undefined" ? window.location.href : undefined);
+    // 🆕 28x.165 — on a noIndex page the URL may carry a secret, so it must
+    //   never be echoed into canonical/og:url below.
+    const finalUrl = noIndex
+      ? undefined
+      : (url ??
+        (typeof window !== "undefined" ? window.location.href : undefined));
 
     if (title) {
       document.title = title;
@@ -128,6 +143,17 @@ export function useDocumentMeta(meta: DocumentMetaInput) {
 
     upsertMeta('meta[property="og:type"]', "property", "og:type", type);
 
+    // 🆕 28x.165 — robots. Written on EVERY render, not only when noIndex is
+    //   true: this is a single-page app, so a stale "noindex" left behind by
+    //   the previous route would otherwise follow the guest onto a page we do
+    //   want indexed.
+    upsertMeta(
+      'meta[name="robots"]',
+      "name",
+      "robots",
+      noIndex ? "noindex, nofollow" : "index, follow"
+    );
+
     if (locale) {
       upsertMeta(
         'meta[property="og:locale"]',
@@ -153,7 +179,7 @@ export function useDocumentMeta(meta: DocumentMetaInput) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, description, image, url, type, locale, JSON.stringify(jsonLd)]);
+  }, [title, description, image, url, type, locale, noIndex, JSON.stringify(jsonLd)]);
 }
 
 /** Helper: map i18n short code → og:locale */

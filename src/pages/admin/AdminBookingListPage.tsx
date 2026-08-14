@@ -146,6 +146,7 @@ import {
   Crown,
   ChatCircleDots,
 } from "phosphor-react";
+import { mintAccessToken, buildReviewLink } from "@/utils/bookingAccessToken";
 
 // 🆕 Round 28x.140 — the concierge's side of the booking chat.
 import BookingChatThread from "@/components/chat/BookingChatThread";
@@ -185,6 +186,16 @@ interface Booking {
   needsAdminReview?: boolean;
   reviewReason?: string;
   userId?: string;
+  // 🆕 28x.165 — the per-booking capability secret. Minted at checkout
+  //   (BookingFlowPage) and, since this round, at concierge create
+  //   (AdminBookingAddPage). Backfilled on demand by copyReviewLink for
+  //   older reservations that predate either.
+  accessToken?: string;
+  // Set by submitBookingReview when the guest rates from her link. Present
+  // here so the drawer can say "already reviewed" instead of offering a link
+  // that would be rejected server-side.
+  rating?: number;
+  reviewText?: string;
   therapistId?: string;
   therapistName: string;
   serviceId?: string;
@@ -707,6 +718,36 @@ const AdminBookingListPage: React.FC = () => {
     }
   };
 
+  // 🆕 28x.165 (founder: "เรื่องส่งลิ้งให้ลูกค้ารีวิว") — hand View a
+  //   ready-to-paste review link for a finished job.
+  //
+  //   The link IS the guest's credential (submitBookingReview verifies the
+  //   booking's accessToken server-side), so it must go to exactly one guest
+  //   over a private channel — never a channel post. Backfills a token for
+  //   reservations created before either minting site existed, so old jobs
+  //   are reviewable too.
+  const copyReviewLink = async (b: Booking) => {
+    try {
+      let token = (b.accessToken ?? "").trim();
+      if (!token) {
+        token = mintAccessToken();
+        await updateDoc(doc(db, "bookings", b.id), { accessToken: token });
+      }
+      const link = buildReviewLink(b.id, token);
+      try {
+        await navigator.clipboard.writeText(link);
+        setToast({ msg: "Review link copied · คัดลอกลิงก์รีวิวแล้ว", ok: true });
+      } catch {
+        // clipboard API needs a secure context + permission; on a phone
+        // browser that refuses, show the link so she can copy it by hand
+        // rather than leaving her with a silent failure.
+        window.prompt("คัดลอกลิงก์นี้ส่งให้ลูกค้า", link);
+      }
+    } catch {
+      setToast({ msg: "Couldn't create link · สร้างลิงก์ไม่สำเร็จ", ok: false });
+    }
+  };
+
   const saveNote = async (id: string, note: string) => {
     try {
       await updateDoc(doc(db, "bookings", id), { adminNote: note });
@@ -1181,6 +1222,7 @@ const AdminBookingListPage: React.FC = () => {
             onSaveNote={(note) => { void saveNote(detailBooking.id, note); }}
             onChangeStatus={(status) => changeStatus(detailBooking.id, status)}
             onSaveDetails={(patch, auditDetail) => { void saveDetails(detailBooking.id, patch, auditDetail); }}
+            onCopyReviewLink={() => { void copyReviewLink(detailBooking); }}
             countPriorCodeUses={countPriorCodeUses}
           />
         )}
@@ -1747,7 +1789,9 @@ const DetailPanel: React.FC<{
   // 🆕 28x.43 — how many OTHER bookings this phone already has under a code
   //   (the redemption memory made visible on the slip).
   countPriorCodeUses: (phone: string, code: string, excludeId: string) => number;
-}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails, countPriorCodeUses }) => {
+  // 🆕 28x.165 — copy the guest's anonymous review link for a finished job.
+  onCopyReviewLink: () => void;
+}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails, countPriorCodeUses, onCopyReviewLink }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
   const cfg        = cfgFor(b.status);
   const isCancelled = b.status === "cancelled";
@@ -2719,13 +2763,39 @@ const DetailPanel: React.FC<{
             <XCircle size={22} color={adminColor.red} weight="fill" />
           </motion.button>
         )}
-        {(b.status === "completed" || b.status === "cancelled") && (
+        {/* 🆕 28x.165 — a finished job is the one moment a review link is
+            worth sending, so it replaces the old dead "Session completed"
+            label rather than adding chrome elsewhere. Hidden once the guest
+            has actually rated: submitBookingReview allows one review per
+            booking, so a second link would only produce an error for her. */}
+        {(b.status === "completed" || b.status === "done") &&
+          !(typeof b.rating === "number" && b.rating >= 1) && (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={onCopyReviewLink}
+            style={{
+              flex: 1, height: 48, borderRadius: 999,
+              background: `${adminColor.accent}1A`,
+              border: `1px solid ${adminColor.accent}55`,
+              color: adminColor.accent, fontFamily: SANS, fontSize: 14, fontWeight: 700,
+              cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            <Star size={18} weight="fill" /> Copy review link · ลิงก์รีวิว
+          </motion.button>
+        )}
+        {((b.status === "completed" || b.status === "done") &&
+          typeof b.rating === "number" && b.rating >= 1) ||
+        b.status === "cancelled" ? (
           <Box sx={{ flex: 1, height: 48, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim, fontWeight: 600 }}>
-              {b.status === "completed" ? "Session completed · จบงานแล้ว" : "Booking cancelled · ยกเลิกแล้ว"}
+              {b.status === "cancelled"
+                ? "Booking cancelled · ยกเลิกแล้ว"
+                : `Reviewed ${b.rating}★ · รีวิวแล้ว`}
             </Typography>
           </Box>
-        )}
+        ) : null}
       </Box>
     </Box>
   );

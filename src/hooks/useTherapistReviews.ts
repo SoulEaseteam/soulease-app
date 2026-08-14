@@ -62,12 +62,13 @@ export interface UseTherapistReviewsResult {
 
 type FirestoreDateLike = Timestamp | Date | string | number | null | undefined;
 
-interface BookingReviewDoc {
+/** A doc in `reviewsPublic` — the redacted mirror, never a booking. */
+interface PublicReviewDoc {
+  bookingId?: string;
   rating?: number;
-  reviewText?: string;
+  text?: string;
   serviceName?: string;
-  duration?: number;
-  startAt?: FirestoreDateLike;
+  duration?: number | null;
   createdAt?: FirestoreDateLike;
 }
 
@@ -119,16 +120,23 @@ export function useTherapistReviews(
       return;
     }
 
-    // Round 28s6 — Firestore rules (28s1 + 28s6) require every doc in
-    // a public list query to carry a rating. Filter server-side so the
-    // listener only subscribes to rated bookings; un-rated reservations
-    // (which still hold PII) stay invisible to anonymous viewers.
-    // Uses the new composite index (therapistId asc, rating asc) added
-    // in firestore.indexes.json this same round.
+    // 🆕 28x.165 — reads `reviewsPublic`, NOT `bookings`.
+    //
+    // This listener queried `bookings` with `where("rating", ">=", 1)` until
+    // now. 28w.91 removed anonymous `allow list` on that collection — a
+    // booking doc carries the guest's address, phone and GPS, and a LIST
+    // hands back whole documents — so from that round on this query has
+    // permission-denied for every logged-out visitor, i.e. for essentially
+    // all real traffic. It failed quietly: the error handler below logs and
+    // renders an empty list, which is indistinguishable from "no reviews yet".
+    //
+    // `reviewsPublic` is the redacted mirror 28w.91's own comment specified
+    // but never got built (written by onBookingWriteSyncPublicReview): rating
+    // + text + service only, world-readable by design, no PII to leak. One
+    // equality filter, so no composite index is needed.
     const q = query(
-      collection(db, "bookings"),
-      where("therapistId", "==", therapistId),
-      where("rating", ">=", 1)
+      collection(db, "reviewsPublic"),
+      where("therapistId", "==", therapistId)
     );
 
     const unsub = onSnapshot(
@@ -136,15 +144,17 @@ export function useTherapistReviews(
       (snap) => {
         const list: ReviewLite[] = [];
         snap.forEach((d) => {
-          const b = d.data() as BookingReviewDoc;
-          const text = (b.reviewText ?? "").trim();
-          if (!text) return; // skip bookings without a written review
-          const ts = toMs(b.createdAt ?? b.startAt ?? null);
+          const b = d.data() as PublicReviewDoc;
+          const text = (b.text ?? "").trim();
+          if (!text) return; // defensive — the mirror never writes an empty one
+          const ts = toMs(b.createdAt ?? null);
           const svc = b.serviceName ?? "";
           const dur = typeof b.duration === "number" ? `${b.duration} min` : "";
           const service = [svc, dur].filter(Boolean).join(" · ");
           list.push({
-            bookingId: d.id,
+            // Doc id IS the booking id (the mirror keys on it), so the
+            // "Booking #XXXX" label is unchanged.
+            bookingId: b.bookingId ?? d.id,
             rating: typeof b.rating === "number" ? b.rating : 5,
             body: text,
             service,
