@@ -458,6 +458,39 @@ trusting "it's deployed":**
   Firestore rejects nested arrays, so every write of the [km,thb][] shape
   (admin Save included) failed since 28x.99u. Now stored as {km,thb} maps
   with a serialize/deserialize codec in taxiFare.ts.
+
+**⭐ Review-consistency overhaul, same night (28x.188-191) — founder:
+"รีวิว หน้าเว็บ ไม่ตรงกัน สักอัน" (2nd time filing this; 28x.1 was round 1).
+FOUR stacked causes, all fixed + verified live as an anonymous guest:**
+1. Card showed the doc's Bayesian rating, review section showed the raw
+   mean of visible reviews — mismatched on every low-review practitioner.
+   One formula everywhere now (bayesianRating over written reviews).
+2. Card counted star-only ratings; the visible list only holds WRITTEN
+   ones. One definition now: review = rating + non-empty reviewText.
+3. The live review query is permission-denied for logged-out guests
+   (booking docs carry guest PII — deliberate). Every guest saw "No
+   reviews yet." under a header claiming N reviews. Sync now denormalizes
+   a PII-free newest-40 copy onto the public therapist doc
+   (`publicReviews`); TherapistDetailPage falls back to it
+   (effectiveReviews) when the live query has nothing.
+4. The Bayesian prior existed in 4 places with 2 values (rating.ts +
+   2 inline copies = 4.5/10 vs sync script = 4.6/3). rating.ts (4.6/3,
+   the 28s388 tuning) is now the only owner; everything imports it.
+- ⚠️ scripts/syncTherapistRatings.ts NO LONGER writes totalSessions —
+  bookings is not full history (~78 docs deleted Aug 2026), so re-deriving
+  would slash public counts (dry run showed Barbie 79→36, Vivian 77→11,
+  YaYa 55→2). Public session counts stay as-is (boosted-display model).
+- ⚠️ STILL MANUAL: the sync (node script or /admin recompute) must be run
+  for NEW reviews to reach cards + guest-visible lists. A Cloud Function
+  trigger on booking review writes is the proper fix — proposed, not built.
+
+**🎉 Anniversary campaign ENDED by founder 2026-08-14 ("ปล่อยจบ ลบออก"):**
+`anniversary.enabled=false` in adminSettings/publicRules
+(scripts/endAnniversaryCampaign.mjs). Do NOT delete the field — absent
+config falls back to code DEFAULTS which are enabled:true. 28x.189 fixed
+the deeper bug: NOTHING ever gated the banner (it would have outlived its
+own endISO forever) — AnniversaryBanner + PromotionsPage now gate on
+anniversaryIsLive() with a live subscription (useAnniversaryConfigVersion).
 - Google Search Console — ✅ VERIFIED (discovered 2026-07-23: the
   owner-only "Search performance for this query" card renders on
   Google SERPs while logged in as sunredbkk@gmail.com — brand query
