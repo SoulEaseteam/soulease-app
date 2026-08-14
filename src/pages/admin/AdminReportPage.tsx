@@ -41,7 +41,7 @@ import {
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import {
   isPayrollExcluded, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
-  isNoShow, noShowCompFor, settlementTotals,
+  isNoShow, noShowCompFor, settlementTotals, didNotHappen,
 } from "@/utils/commission";
 // 🆕 28w.39 — admin split-table editor (therapist/shop per service × duration).
 import SplitTableEditor from "./SplitTableEditor";
@@ -176,7 +176,10 @@ const AdminReportPage: React.FC = () => {
       //   (max ฿200 / actual fare); the SHOP bears it (−comp) so the books
       //   reconcile. Other cancels pay ฿0. Counts as cancelled, not a job.
       if (isPayrollExcluded(b.status)) {
-        r.cancelled++;
+        // 🆕 28x.162 — pending is excluded from PAY but is not a cancellation:
+        //   it's a checkout the guest never confirmed. Counting it here would
+        //   report abandoned carts to View as jobs her practitioner cancelled.
+        if (didNotHappen(b.status)) r.cancelled++;
         const comp = noShowCompFor(b);
         r.worker += comp;
         r.shop   -= comp;
@@ -972,7 +975,12 @@ const AdminReportPage: React.FC = () => {
                                 <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim }}>No-show · ค่าโดยสาร</Typography>
                               </>
                             ) : (
-                              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>Cancelled</Typography>
+                              // 🆕 28x.162 — pending is unpaid but NOT cancelled;
+                              //   say which, so an abandoned checkout doesn't read
+                              //   as a job the practitioner dropped.
+                              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>
+                                {didNotHappen(b.status) ? "Cancelled" : "Not confirmed · ยังไม่ยืนยัน"}
+                              </Typography>
                             )
                           ) : (
                             <>

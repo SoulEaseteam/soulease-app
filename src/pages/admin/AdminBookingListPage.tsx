@@ -1986,6 +1986,26 @@ const DetailPanel: React.FC<{
         ...(editForm.serviceId && editForm.serviceId !== b.serviceId
           ? { serviceId: editForm.serviceId, serviceName: editSelectedService?.name ?? b.serviceName }
           : {}),
+        // 🆕 28x.161 — the split frozen at confirm-time (28w.43) is keyed on
+        //   (service, duration): move either and the stamped therapistShare is
+        //   the rate for a job that no longer exists — e.g. 70min → 120min kept
+        //   paying the 70min amount. Re-stamp from the current split table when
+        //   one of those two moved, and ONLY then: a price or promo edit must
+        //   NOT touch her rate (the shop absorbs the promo), and an unrelated
+        //   edit must not silently re-apply a split table that changed since.
+        //   shopShare is derived on read now (see shopShareFor), so it needs no
+        //   patch of its own — this rewrites it only to keep the record honest.
+        ...(
+          (editForm.serviceId && editForm.serviceId !== b.serviceId) ||
+          editForm.duration !== b.duration
+            ? stampSplit({
+                serviceId: editForm.serviceId || b.serviceId,
+                servicePrice: editServicePrice,
+                discountAmount: editDiscountAmount,
+                duration: editForm.duration,
+              })
+            : {}
+        ),
       },
       Object.keys(audit).length > 0 ? audit : undefined
     );

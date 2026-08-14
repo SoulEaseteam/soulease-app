@@ -65,7 +65,7 @@ import {
   priceForDuration, durationsFor, DEFAULT_DURATIONS, PRICE_MODEL,
   type LiveServiceOverride, type CustomServiceInput,
 } from "@/utils/servicePricing";
-import { therapistPctFor } from "@/utils/commission";
+import { therapistPctFor, didNotHappen } from "@/utils/commission";
 import {
   anniversaryConfig,
   applyLiveAnniversaryConfig,
@@ -627,6 +627,13 @@ const AdminPromotionsPage: React.FC = () => {
           const data = d.data();
           const code = String(data.discountCode ?? "").toUpperCase();
           if (!code) return;
+          // 🆕 28x.162 — skip orders that never happened, so this count means
+          //   the same thing as the redemption gate in BookingFlowPage. It
+          //   didn't before: the "used N ครั้ง" shown next to "จำกัด N ครั้ง"
+          //   included cancelled and refunded orders, so a code could read as
+          //   exhausted here while still being live for guests (and vice
+          //   versa once the gate was fixed).
+          if (didNotHappen(String(data.status ?? ""))) return;
           const amt = typeof data.discountAmount === "number" ? data.discountAmount : 0;
           const cur = stats[code] ?? { count: 0, totalDiscount: 0 };
           cur.count += 1;

@@ -714,6 +714,24 @@ You'll have ALL context. No re-explanation needed.
   the queried field, and don't trust a code-level default as evidence it exists.
   The two duplicate copies of that state list are now one function
   (`collectBusyTherapists`) — the old comment already admitted they "disagree".
+- **Never freeze a DERIVED field — freeze only the input it's derived from
+  (28x.161).** 28w.43 froze `therapistShare` + `shopShare` onto a booking at
+  confirm-time so a later split-table edit couldn't move a confirmed job.
+  Freezing `therapistShare` was right (it IS the payout — real, independent
+  data). Freezing `shopShare` was not: it's a pure residual,
+  `(servicePrice − discount) − therapistShare`. The edit drawer writes
+  `discountAmount` long after confirm and never re-stamps, so a promo keyed on
+  the slip left the residual holding the full pre-discount base — and the
+  therapist got billed for the shop's promo, exactly contradicting this file's
+  own "promo absorbed by the shop" rule. Vivian's 7–31 Aug payslip asked her
+  for ฿2,100 instead of ฿1,900; caught only by a founder screenshot. It hid
+  because the SAME page disagreed with itself — AdminReportPage's Shop Take
+  aggregate derives `base − pay` and read the right number, while the payslip
+  below it read the stamp. `shopShareFor` now always derives; the field is
+  still written for the Excel export but never trusted on read, so no
+  migration was needed. Lesson: if a stored field can be recomputed from other
+  stored fields, recompute it. A frozen copy only buys you a way to disagree
+  with yourself later.
 - **A new enum value in code isn't live until every allow-list that
   gates it is updated too (28x.99).** `analytics.ts`'s `FunnelEvent`
   type grew `therapist_view`/`bundle_view`/`bundle_reserve_click`/
