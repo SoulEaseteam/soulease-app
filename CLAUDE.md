@@ -469,6 +469,28 @@ What 28x.156 changed so it can't blank the site again:
   heavier). Deliberate — a slow photo beats no photo on a site whose product
   IS the photo.
 
+**⏳ OWED — verify the 28x.161-163 money fixes in a real browser (deployed
+2026-08-14, run #77, never opened by a human).**
+
+Three payroll fixes shipped straight to production on a founder screenshot.
+All three were verified by bundling the real `commission.ts` with esbuild and
+replaying live bookings through it — arithmetic only. **Nobody has opened the
+actual payslip dialog since.** Two minutes of checking, in this order:
+
+1. `/admin/reports` → Vivian, 7–31 Aug → **Payment must read ฿1,900**, not
+   ฿2,100. That is 28x.161 (the shop's promo no longer billed to her). If it
+   still says 2,100 the derive isn't taking — check `shopShareFor`.
+2. Same page, this month's totals → **"จ่ายนวด" will DROP** if abandoned
+   `pending` checkouts existed. That fall is 28x.163 working, not a
+   regression — every one of those was a job nobody drove to. Worth eyeballing
+   how big the drop is: it's the size of what was being over-paid.
+3. Any job list on the payslip → an unconfirmed booking should now read
+   **"Not confirmed · ยังไม่ยืนยัน"**, never "Cancelled".
+
+Also unverified: a promo code with a `maxRedemptions` cap should no longer
+count cancelled orders against it (28x.162). Only checkable with a real capped
+code — cheap to confirm next time one is running.
+
 **Open / not done:**
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
   `createCustomToken` signs via IAM, so the functions' runtime service account
