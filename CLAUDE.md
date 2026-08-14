@@ -497,9 +497,24 @@ admin exceljs bundle and made every guest download the admin app on mobile
 data; don't widen the globs). Practitioner photos runtime-cache CacheFirst.
 Firestore/Auth/Functions are deliberately unmatched by any cache rule.
 Verified live: SW activated + controlling, all 5 caches populating.
-NEXT STEPS when View wants them: web push notifications (FCM — the real
-"app" win, guest promos or admin new-booking alerts), then optional
+NEXT STEPS when View wants them: guest-side push (promos), then optional
 Android APK wrap (TWA) distributed via Telegram.
+
+**🔔 Admin push alerts shipped 28x.193 (2026-08-15) — ⚠️ TWO SETUP STEPS
+STILL OWED (View's actions, in order):**
+1. Run `node scripts/setWebPushKeys.mjs` once (generates + stores the
+   VAPID pair in adminSettings/webPush — the permission classifier blocks
+   Claude from handling key material, so this one is hers).
+2. On her phone: open sunred.vip/admin (installed PWA on iPhone —
+   Add to Home Screen first, iOS only exposes push to installed PWAs),
+   tap the crossed-bell in the admin AppBar, allow notifications.
+Then every guest-side booking pings every enabled device.
+Architecture: raw Web Push (NOT the FCM SDK — no console certificate);
+notifyAdminPushOnBooking (deployed, asia-southeast1) reads
+adminSettings/webPush + webPushSubs (both behind isAdmin()), skips
+admin-hand-entered bookings, prunes dead subscriptions. Push handlers in
+public/push-sw.js ride the main Workbox SW via importScripts. Until step
+1 runs, the function logs "no VAPID keys yet" and exits — harmless.
 
 **🎉 Anniversary campaign ENDED by founder 2026-08-14 ("ปล่อยจบ ลบออก"):**
 `anniversary.enabled=false` in adminSettings/publicRules
