@@ -89,6 +89,9 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
+        // 🆕 28x.193 — admin web-push handlers ride inside this SW (one
+        //   scope, one worker). Plain file from public/, not bundled.
+        importScripts: ["push-sw.js"],
         runtimeCaching: [
           {
             // Lazy route chunks (hashed filenames = immutable) — cached on

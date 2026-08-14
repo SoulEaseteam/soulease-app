@@ -34,8 +34,11 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.onBookingChatMessage = exports.claimBookingReview = exports.claimBookingChat = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.notifyAdminPushOnBooking = exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.onBookingChatMessage = exports.claimBookingReview = exports.claimBookingChat = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -43,6 +46,9 @@ const firestore_1 = require("firebase-functions/v2/firestore");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const v2_1 = require("firebase-functions/v2");
 const params_1 = require("firebase-functions/params");
+// 🆕 28x.193 — raw Web Push (admin new-booking alerts). Not the FCM SDK:
+//   self-generated VAPID keys, no console-issued certificate needed.
+const web_push_1 = __importDefault(require("web-push"));
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const app_1 = require("firebase-admin/app");
 const auth_1 = require("firebase-admin/auth");
@@ -4737,5 +4743,80 @@ exports.syncTherapistDailyCount = (0, firestore_1.onDocumentWritten)({
             v2_1.logger.warn("[syncTherapistDailyCount] failed", { tid, err });
         }
     }
+});
+// ─────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.193 (founder: "push notifications ฝั่งฉันก่อน") —
+// web-push "new booking" alert to the admin's own devices.
+//
+// Deliberately a SEPARATE function from onBookingCreate (the Telegram
+// path): dispatch to the practitioner is operationally critical and must
+// never share a failure domain with a nice-to-have admin ping.
+//
+// Key material + subscriptions live in adminSettings/webPush(+Subs) —
+// admin-only by rules, written by scripts/setWebPushKeys.mjs and the
+// AdminPushToggle in the admin AppBar. Payload contract is documented in
+// public/push-sw.js. Dead subscriptions (404/410 from the push service —
+// device wiped, permission revoked) are pruned in the same pass.
+// ─────────────────────────────────────────────────────────────────────
+exports.notifyAdminPushOnBooking = (0, firestore_1.onDocumentCreated)({
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+}, async (event) => {
+    const bookingId = event.params.bookingId;
+    const d = event.data?.data();
+    if (!d)
+        return;
+    // The admin's own hand-entered bookings (AdminBookingAddPage writes
+    // createdBy:"admin" with userId hardcoded null — the one reliable
+    // discriminator, see the 28x.182 attribution audit) — no point pinging
+    // View about a booking she just typed herself.
+    if (d.createdBy === "admin" && !d.userId)
+        return;
+    const db = (0, firestore_2.getFirestore)();
+    const [keysSnap, subsSnap] = await Promise.all([
+        db.doc("adminSettings/webPush").get(),
+        db.doc("adminSettings/webPushSubs").get(),
+    ]);
+    const keys = keysSnap.data();
+    const subs = subsSnap.data()?.subs ?? {};
+    const entries = Object.entries(subs);
+    if (!keys?.vapidPublicKey || !keys.vapidPrivateKey) {
+        v2_1.logger.info("[notifyAdminPushOnBooking] no VAPID keys yet — skipping");
+        return;
+    }
+    if (entries.length === 0)
+        return;
+    web_push_1.default.setVapidDetails(keys.subject ?? "mailto:sunredbkk@gmail.com", keys.vapidPublicKey, keys.vapidPrivateKey);
+    const when = [d.date, d.time].filter(Boolean).join(" ");
+    const where = d.locationName || d.address || "";
+    const payload = JSON.stringify({
+        title: `การจองใหม่ · ${d.serviceName ?? "SunRed"}`,
+        body: [d.contactName, when, where].filter(Boolean).join(" · "),
+        url: "/admin/bookings",
+        tag: `booking-${bookingId}`,
+    });
+    const dead = [];
+    await Promise.all(entries.map(async ([id, row]) => {
+        try {
+            await web_push_1.default.sendNotification(row.subscription, payload, { TTL: 3600 });
+        }
+        catch (err) {
+            const code = err.statusCode;
+            if (code === 404 || code === 410)
+                dead.push(id);
+            else
+                v2_1.logger.warn("[notifyAdminPushOnBooking] send failed", { id, code });
+        }
+    }));
+    if (dead.length > 0) {
+        await db.doc("adminSettings/webPushSubs").set({
+            subs: Object.fromEntries(dead.map((id) => [id, firestore_2.FieldValue.delete()])),
+        }, { merge: true });
+        v2_1.logger.info("[notifyAdminPushOnBooking] pruned dead subscriptions", { dead });
+    }
+    v2_1.logger.info("[notifyAdminPushOnBooking] sent", {
+        bookingId,
+        devices: entries.length - dead.length,
+    });
 });
 //# sourceMappingURL=index.js.map

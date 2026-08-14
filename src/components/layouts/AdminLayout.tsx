@@ -77,6 +77,7 @@ import useAdminPresenceHeartbeat from "@/hooks/useAdminPresenceHeartbeat";
 import { adminColor, adminFont } from "@/theme/adminTheme";
 import NightsStayIcon from "@mui/icons-material/NightsStay";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AdminPushToggle from "@/components/admin/AdminPushToggle";
 
 const DRAWER_FULL      = 240;
 const DRAWER_COLLAPSED = 60;
@@ -415,6 +416,9 @@ const AdminLayout: React.FC = () => {
           </Box>
 
           <Box display="flex" alignItems="center" gap={1}>
+            {/* 🆕 28x.193 — per-device web-push switch for new-booking
+                alerts (see AdminPushToggle). */}
+            <AdminPushToggle />
             <Tooltip title="Notifications">
               <IconButton size="small" sx={{ color: adminColor.text }}>
                 <Badge badgeContent={notifications} sx={{ "& .MuiBadge-badge": { background: adminColor.accent, color: "#fff" } }}>

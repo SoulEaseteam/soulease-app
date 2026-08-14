@@ -13,6 +13,9 @@ import {
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions/v2";
 import { defineSecret } from "firebase-functions/params";
+// 🆕 28x.193 — raw Web Push (admin new-booking alerts). Not the FCM SDK:
+//   self-generated VAPID keys, no console-issued certificate needed.
+import webPush from "web-push";
 import * as functionsV1 from "firebase-functions/v1";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
@@ -5771,4 +5774,99 @@ export const syncTherapistDailyCount = onDocumentWritten(
       }
     }
   }
+);
+
+// ─────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.193 (founder: "push notifications ฝั่งฉันก่อน") —
+// web-push "new booking" alert to the admin's own devices.
+//
+// Deliberately a SEPARATE function from onBookingCreate (the Telegram
+// path): dispatch to the practitioner is operationally critical and must
+// never share a failure domain with a nice-to-have admin ping.
+//
+// Key material + subscriptions live in adminSettings/webPush(+Subs) —
+// admin-only by rules, written by scripts/setWebPushKeys.mjs and the
+// AdminPushToggle in the admin AppBar. Payload contract is documented in
+// public/push-sw.js. Dead subscriptions (404/410 from the push service —
+// device wiped, permission revoked) are pruned in the same pass.
+// ─────────────────────────────────────────────────────────────────────
+export const notifyAdminPushOnBooking = onDocumentCreated(
+  {
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const bookingId = event.params.bookingId;
+    const d = event.data?.data() as
+      | (BookingDocLite & { createdBy?: string; userId?: string | null })
+      | undefined;
+    if (!d) return;
+
+    // The admin's own hand-entered bookings (AdminBookingAddPage writes
+    // createdBy:"admin" with userId hardcoded null — the one reliable
+    // discriminator, see the 28x.182 attribution audit) — no point pinging
+    // View about a booking she just typed herself.
+    if (d.createdBy === "admin" && !d.userId) return;
+
+    const db = getFirestore();
+    const [keysSnap, subsSnap] = await Promise.all([
+      db.doc("adminSettings/webPush").get(),
+      db.doc("adminSettings/webPushSubs").get(),
+    ]);
+    const keys = keysSnap.data() as
+      | { vapidPublicKey?: string; vapidPrivateKey?: string; subject?: string }
+      | undefined;
+    const subs =
+      (subsSnap.data()?.subs as
+        | Record<string, { subscription: webPush.PushSubscription }>
+        | undefined) ?? {};
+    const entries = Object.entries(subs);
+    if (!keys?.vapidPublicKey || !keys.vapidPrivateKey) {
+      logger.info("[notifyAdminPushOnBooking] no VAPID keys yet — skipping");
+      return;
+    }
+    if (entries.length === 0) return;
+
+    webPush.setVapidDetails(
+      keys.subject ?? "mailto:sunredbkk@gmail.com",
+      keys.vapidPublicKey,
+      keys.vapidPrivateKey,
+    );
+
+    const when = [d.date, d.time].filter(Boolean).join(" ");
+    const where = d.locationName || d.address || "";
+    const payload = JSON.stringify({
+      title: `การจองใหม่ · ${d.serviceName ?? "SunRed"}`,
+      body: [d.contactName, when, where].filter(Boolean).join(" · "),
+      url: "/admin/bookings",
+      tag: `booking-${bookingId}`,
+    });
+
+    const dead: string[] = [];
+    await Promise.all(
+      entries.map(async ([id, row]) => {
+        try {
+          await webPush.sendNotification(row.subscription, payload, { TTL: 3600 });
+        } catch (err) {
+          const code = (err as { statusCode?: number }).statusCode;
+          if (code === 404 || code === 410) dead.push(id);
+          else logger.warn("[notifyAdminPushOnBooking] send failed", { id, code });
+        }
+      }),
+    );
+
+    if (dead.length > 0) {
+      await db.doc("adminSettings/webPushSubs").set(
+        {
+          subs: Object.fromEntries(dead.map((id) => [id, FieldValue.delete()])),
+        },
+        { merge: true },
+      );
+      logger.info("[notifyAdminPushOnBooking] pruned dead subscriptions", { dead });
+    }
+    logger.info("[notifyAdminPushOnBooking] sent", {
+      bookingId,
+      devices: entries.length - dead.length,
+    });
+  },
 );
