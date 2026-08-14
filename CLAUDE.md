@@ -431,9 +431,33 @@ Still owed / View's call:
 - Booking chat was NOT visually confirmed in a live browser — typecheck, build
   and the rules suite all pass, but nobody has watched a real message go
   guest → Telegram → reply → guest yet.
-- GitHub PR #12 (`claude/bot-copy-and-staff-self-service`) is a few
-  commits behind local `main` — not required (she deploys direct via
-  vercel/firebase), just not fully synced if anyone goes looking there.
+- ~~GitHub PR #12 a few commits behind local `main` — "not required"~~
+  **That claim nearly cost us: see the 2026-08-14 rollback incident below.**
+  GitHub main IS a live production deploy trigger (Vercel auto-builds every
+  push to main). Local and origin must never be allowed to drift again —
+  push after every committed round.
+
+**🔥 2026-08-14 rollback incident (RESOLVED same night) — read before
+trusting "it's deployed":**
+- 16:57 a "Merge PR #20: admin money audit" landed on GitHub main (payslip
+  promo absorption, abandoned-checkout payroll, promo capacity — genuinely
+  good money fixes, authored in a parallel session against an OLD base) and
+  Vercel auto-deployed it. GitHub main did not contain the 36 local-only
+  commits (28x.156-HOTFIX → 28x.187), so prod silently rolled back ~2 weeks:
+  the ฿450/10km fare curve, the ghost chat panel, the broken welcome-code
+  autofill and the 1.78MB banner all came BACK during prime time. Rules +
+  functions were untouched (they deploy via firebase, not Vercel) — the
+  28x.165 security fix stayed live throughout.
+- Same night: merged origin/main into local (clean; overlap only in
+  CLAUDE.md, AdminBookingListPage, BookingFlowPage — commission.ts was
+  origin-only and consistent with our promo-absorption rule), verified
+  typecheck/build, pushed, verified the live bundle. Both workstreams
+  survive; nothing was dropped.
+- 28x.187 bonus find: the "emergency" Firestore fare override we reached for
+  first (adminSettings/publicRules.motoFareCheckpoints) had NEVER worked —
+  Firestore rejects nested arrays, so every write of the [km,thb][] shape
+  (admin Save included) failed since 28x.99u. Now stored as {km,thb} maps
+  with a serialize/deserialize codec in taxiFare.ts.
 - Google Search Console — ✅ VERIFIED (discovered 2026-07-23: the
   owner-only "Search performance for this query" card renders on
   Google SERPs while logged in as sunredbkk@gmail.com — brand query
@@ -635,6 +659,18 @@ You'll have ALL context. No re-explanation needed.
   status enums, etc.), grep the rules file for that list and update it
   in the SAME round — don't trust "it'll show empty until data arrives"
   as proof nothing's wrong.
+- **A local-only commit is one GitHub merge away from being erased from
+  prod (2026-08-14 incident, §9).** Vercel production builds from GitHub
+  main on every push; any session that merges a PR there deploys whatever
+  main holds AT THAT MOMENT. If local rounds weren't pushed, that deploy
+  silently rolls prod back — and it looks like "the site is buggy", not
+  like a rollback (it resurrects bugs that were already fixed, verified
+  and documented as fixed). Discipline: `git push` right after the
+  round's commit (same breath), and any session that starts by auditing
+  prod must FIRST diff local main vs origin/main before trusting either.
+  Also: two sessions numbering rounds independently collided (both minted
+  28x.161-163 with different content) — check `git log --all` before
+  taking the next round number.
 
 ### 🚫 Google Business Profile — DO NOT verify
 
