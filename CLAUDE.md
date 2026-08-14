@@ -484,6 +484,23 @@ FOUR stacked causes, all fixed + verified live as an anonymous guest:**
   for NEW reviews to reach cards + guest-visible lists. A Cloud Function
   trigger on booking review writes is the proper fix — proposed, not built.
 
+**📱 SunRed is now an installable app (28x.192, 2026-08-15) — PWA strategy,
+by decision:** app stores don't accept this vertical (rejection + dev-account
+ban risk under real identity), so installed-PWA IS the app. 28x.166 shipped
+manifest+icons; 28x.192 shipped the service worker (vite-plugin-pwa,
+autoUpdate + skipWaiting so a deploy takes over on the guest's next
+navigation — no stale clients) and the InstallAppBanner on home (Android:
+real install button via beforeinstallprompt; iOS: Share→Add-to-Home-Screen
+hint; 6 locales; 14-day snooze on dismiss). Precache = first-paint shell
+ONLY (20 files/1.6 MB — the first attempt globbed all 224 chunks incl. the
+admin exceljs bundle and made every guest download the admin app on mobile
+data; don't widen the globs). Practitioner photos runtime-cache CacheFirst.
+Firestore/Auth/Functions are deliberately unmatched by any cache rule.
+Verified live: SW activated + controlling, all 5 caches populating.
+NEXT STEPS when View wants them: web push notifications (FCM — the real
+"app" win, guest promos or admin new-booking alerts), then optional
+Android APK wrap (TWA) distributed via Telegram.
+
 **🎉 Anniversary campaign ENDED by founder 2026-08-14 ("ปล่อยจบ ลบออก"):**
 `anniversary.enabled=false` in adminSettings/publicRules
 (scripts/endAnniversaryCampaign.mjs). Do NOT delete the field — absent
