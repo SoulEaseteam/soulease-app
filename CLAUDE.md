@@ -714,6 +714,37 @@ You'll have ALL context. No re-explanation needed.
   the queried field, and don't trust a code-level default as evidence it exists.
   The two duplicate copies of that state list are now one function
   (`collectBusyTherapists`) — the old comment already admitted they "disagree".
+- **An admin control that writes a field nobody reads is invisible failure —
+  grep for the READER before trusting a settings UI (28x.161).** The founder
+  reported "ป้าย New ไม่ขึ้น" (2026-08-14). `/admin/therapists/:id` has shipped
+  a **"Badge" dropdown** (None/VIP/HOT/NEW) since 28s284 writing
+  `therapists.badge` — and **nothing in the entire codebase ever read that
+  field**. The engine (`getTherapistBadge.ts`) and the card
+  (`TherapistMinimalCard`) both read `badgeKey`. So every time she picked NEW,
+  the save succeeded, the toast said saved, and the chip never appeared. Same
+  family as the 28x.160 `dispatchState` bug (a field nobody wrote) and 28s275's
+  `customId` note ("looks settable, does nothing") — the third instance of this
+  class. Secondary: `badgeUpdatedAt` was also never written by anything, so the
+  engine's entire "admin set a badge by hand" branch was dead code, and the
+  28r66 hotfix only ever fixed the *rendering* half of the same bug.
+  Fixed 28x.161 — the pin now lives in `badge` + `badgeSetAt` and **wins over**
+  the automatic badges (same founder principle as statusOverride at 28x.106b:
+  "ถ้าไม่ใช่ auto ก็ทำงานตามคำสั่ง"). Lesson: when adding or auditing any admin
+  settings control, grep for a READER of the exact field name it writes — a
+  successful save is not evidence the setting does anything.
+- **Badges last 48h from when they were earned/set (28x.161).** Founder: "Badge
+  อื่นๆ ต้องอยู่ 48 ชม". Before this, auto badges (HOT 2 / VIP 3 / TOP_RATED 4
+  jobs — the 28x.100 thresholds, unchanged) died at the 06:00 BKK business-day
+  rollover with the `todayBookings` counter: 4 jobs on a Friday night, TOP STAR
+  gone by 6am Saturday. `syncTherapistDailyCount` now also stamps
+  `badgeKey`/`badgeUpdatedAt` so the engine carries an earned badge the full
+  48h. ⚠️ Two traps if you touch this: (1) `NEW_WINDOW_MS` used to be
+  `21 * BADGE_TTL`, so bumping the TTL 24h→48h would have silently changed "new
+  practitioner" from 21 days to 42 — `DAY_MS` and `BADGE_TTL` are now separate
+  constants, keep them that way. (2) The manual pin and the auto badge live in
+  DIFFERENT fields on purpose: the Cloud Function overwrites `badgeKey` on
+  every booking write, so an admin pin stored there would be wiped by her next
+  job. `npm run test:badge` (tests/badge.test.ts, 22 cases) guards all of it.
 - **A new enum value in code isn't live until every allow-list that
   gates it is updated too (28x.99).** `analytics.ts`'s `FunnelEvent`
   type grew `therapist_view`/`bundle_view`/`bundle_reserve_click`/

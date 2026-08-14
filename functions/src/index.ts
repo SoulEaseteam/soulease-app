@@ -745,6 +745,16 @@ const AUDIT_IGNORE_KEYS = new Set([
   // auto-maintained by the booking flow, not a human action
   "activeBooking",
   "busyUntil",
+  // 🆕 28x.161 — written by syncTherapistDailyCount on EVERY booking write.
+  //   todayBookings/todayBookingsDate have been machine-written since 28x.100
+  //   and were never ignored, so each booking already spawned an audit row for
+  //   a number nobody decided; badgeKey joins them this round. Derived, not a
+  //   human edit. The admin's manual pin lives in `badge` (deliberately NOT
+  //   listed here) — that one IS a decision and should keep logging.
+  "todayBookings",
+  "todayBookingsDate",
+  "badgeKey",
+  "badgeSetAt",
   // derived aggregates — recomputed, never "decided"
   "rating",
   "reviewCount",
@@ -5674,11 +5684,29 @@ export const syncTherapistDailyCount = onDocumentWritten(
           if (!ms) return;
           if (businessDayBKKServer(ms) === dayKey) n++;
         });
-        await db
-          .collection("therapists")
-          .doc(tid)
-          .set({ todayBookings: n, todayBookingsDate: dayKey }, { merge: true });
-        logger.info("[syncTherapistDailyCount] updated", { tid, n, dayKey });
+        // 🆕 28x.161 (founder 2026-08-14: "Badge อื่นๆ ต้องอยู่ 48 ชม") — stamp
+        //   the earned badge alongside the count. The client engine reads the
+        //   day counter for TODAY only, so before this an auto badge died at
+        //   the 06:00 business-day rollover: 4 jobs on a Friday night, TOP
+        //   STAR gone by 6am Saturday. Stamping badgeKey/badgeUpdatedAt lets
+        //   getBadgeForTherapist carry it the full 48h from the last
+        //   qualifying job.
+        //
+        //   Only ever WRITES a badge, never clears one — expiry is the
+        //   client's 48h TTL. Clearing here would cut a badge short the moment
+        //   the day counter rolled, which is the exact bug being fixed.
+        const earned =
+          n >= 4 ? "TOP_RATED" : n >= 3 ? "VIP" : n >= 2 ? "HOT" : null;
+        const update: Record<string, unknown> = {
+          todayBookings: n,
+          todayBookingsDate: dayKey,
+        };
+        if (earned) {
+          update.badgeKey = earned;
+          update.badgeUpdatedAt = Date.now();
+        }
+        await db.collection("therapists").doc(tid).set(update, { merge: true });
+        logger.info("[syncTherapistDailyCount] updated", { tid, n, dayKey, earned });
       } catch (err) {
         logger.warn("[syncTherapistDailyCount] failed", { tid, err });
       }
