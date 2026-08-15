@@ -89,6 +89,14 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
+        // 🆕 28x.193c — /admin and /staff navigations ALWAYS hit the
+        //   network. The cached-shell fallback is a guest optimisation; on
+        //   the admin side it served View a bundle from BEFORE the feature
+        //   she was trying to use (the push toggle "disappeared" in a fresh
+        //   tab), and on a site that deploys several times a night the
+        //   operator must never be one shell-version behind. Offline admin
+        //   is not a real scenario; offline guest browsing still is.
+        navigateFallbackDenylist: [/^\/admin/, /^\/staff/],
         // 🆕 28x.193 — admin web-push handlers ride inside this SW (one
         //   scope, one worker). Plain file from public/, not bundled.
         importScripts: ["push-sw.js"],

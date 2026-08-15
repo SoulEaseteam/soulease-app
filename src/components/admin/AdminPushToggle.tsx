@@ -29,9 +29,16 @@ const AdminPushToggle: React.FC = () => {
 
   useEffect(() => {
     let alive = true;
-    void adminPushStatus().then((s) => {
-      if (alive) setStatus(s);
-    });
+    adminPushStatus()
+      .then((s) => {
+        if (alive) setStatus(s);
+      })
+      // 28x.193c — a rejection used to strand the button in the "loading"
+      // spinner forever (no catch). Fall back to "off": the click itself
+      // re-runs the full flow and will surface the real error.
+      .catch(() => {
+        if (alive) setStatus("off");
+      });
     return () => {
       alive = false;
     };
