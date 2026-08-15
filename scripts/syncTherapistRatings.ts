@@ -13,6 +13,11 @@
 // Nothing is fabricated — a therapist with 0 real ratings stays at rating:0
 // (card hides the chip). Milo/Pare (0 sessions) correctly stay clean/NEW.
 //
+// 2026-08-15 (28x.194) — freshness is now AUTOMATIC: onBookingWriteSyncReviews
+// (functions/src/index.ts) recomputes the affected therapist on every review
+// write, same definitions as below. This script remains as the audit/backfill
+// tool (full-roster dry run + commit).
+//
 // Usage:
 //   cd ~/sunred-vite/scripts
 //   npx tsx syncTherapistRatings.ts            # DRY RUN — prints planned writes

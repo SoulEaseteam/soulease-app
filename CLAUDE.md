@@ -480,9 +480,15 @@ FOUR stacked causes, all fixed + verified live as an anonymous guest:**
   bookings is not full history (~78 docs deleted Aug 2026), so re-deriving
   would slash public counts (dry run showed Barbie 79→36, Vivian 77→11,
   YaYa 55→2). Public session counts stay as-is (boosted-display model).
-- ⚠️ STILL MANUAL: the sync (node script or /admin recompute) must be run
-  for NEW reviews to reach cards + guest-visible lists. A Cloud Function
-  trigger on booking review writes is the proper fix — proposed, not built.
+- ✅ NO LONGER MANUAL (28x.194, 2026-08-15): `onBookingWriteSyncReviews`
+  (functions/src/index.ts, deployed asia-southeast1) recomputes the affected
+  therapist's rating/ratingRaw/reviews/publicReviews on any booking write
+  that can move her review aggregate — same definitions as the script, and
+  it NEVER writes totalSessions. Verified live: a review-text edit reached
+  the therapist doc in ~3s, and the doc's Bayesian rating matched a local
+  recompute. The node script + /admin recompute stay as audit/backfill
+  tools. The Bayesian prior is MIRRORED there (functions can't import
+  src/) — retune rating.ts and the function's constants together.
 
 **📱 SunRed is now an installable app (28x.192, 2026-08-15) — PWA strategy,
 by decision:** app stores don't accept this vertical (rejection + dev-account

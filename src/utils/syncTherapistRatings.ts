@@ -26,6 +26,11 @@
 //
 // Rating uses bayesianRating(), the formula the app already documents to guests
 // (/faq) — NOT a raw mean, which would let one 5★ review outrank a veteran.
+//
+// 2026-08-15 (28x.194) — day-to-day freshness is now automatic: the
+// onBookingWriteSyncReviews Cloud Function recomputes the affected therapist on
+// every review write, with the SAME definitions. This admin recompute stays as
+// the full-roster audit tool (dry-run diff before a mass write).
 
 import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
