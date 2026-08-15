@@ -38,7 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notifyAdminPushOnBooking = exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.onBookingChatMessage = exports.claimBookingReview = exports.claimBookingChat = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.ensureWebPushKeys = exports.notifyAdminPushOnBooking = exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncReviews = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.onBookingChatMessage = exports.claimBookingReview = exports.claimBookingChat = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -630,6 +630,10 @@ const AUDIT_IGNORE_KEYS = new Set([
     "reviews",
     "totalSessions",
     "sessions",
+    // 🆕 28x.194 — written by recomputeTherapistReviewStats on every review
+    //   write; without these, every guest review would spawn an audit row.
+    "ratingRaw",
+    "publicReviews",
     // 🆕 28x.133 — written by recomputeTherapistSessionStats on every booking
     //   write; derived, not a human edit, so they must not spawn audit rows or
     //   staff-activity notices.
@@ -4552,6 +4556,146 @@ exports.onBookingWriteSyncStats = (0, firestore_1.onDocumentWritten)({
     }
 });
 // ─────────────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.194 — new guest reviews reach the public therapist doc
+//   AUTOMATICALLY. 28x.188-191 unified the review definitions and denormalized
+//   a PII-free publicReviews copy onto the therapist doc, but the sync stayed
+//   MANUAL (scripts/syncTherapistRatings.ts or the /admin recompute) — a new
+//   review was invisible on cards and to logged-out guests until someone
+//   remembered to run it. This trigger recomputes the ONE affected therapist on
+//   any booking write that can move her review aggregate, using the SAME
+//   definitions as the script:
+//     • review = rating >= 1 AND non-empty reviewText (something a guest can read)
+//     • rating = Bayesian over written reviews; 0 when none, never the bare prior
+//     • publicReviews = newest-40 {bookingId, rating, body, service, ts} — no PII
+//   NEVER totalSessions: bookings is not full history (~78 docs deleted Aug
+//   2026; the 28x.188 dry run showed re-deriving slashes real public counts).
+//   Session counts are owned by recomputeTherapistSessionStats above.
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ Mirrored from src/utils/rating.ts PRIOR_MEAN / PRIOR_WEIGHT (the 28s388
+//   founder-approved tuning). Functions can't import app code (tsconfig
+//   rootDir "src") — same reason recomputeTherapistSessionStats mirrors
+//   isTestLocationBooking. 28x.191 existed because two priors diverged; if
+//   rating.ts ever retunes, change BOTH in the same round.
+const REVIEW_PRIOR_MEAN = 4.6;
+const REVIEW_PRIOR_WEIGHT = 3;
+// Booking dates arrive as Firestore Timestamp, ISO string or epoch depending
+// on the era the doc was written in (same tolerant reader as the sync script).
+function reviewTs(v) {
+    const t = v;
+    if (!t)
+        return 0;
+    if (typeof t === "number")
+        return t;
+    if (typeof t === "string") {
+        const p = Date.parse(t);
+        return Number.isFinite(p) ? p : 0;
+    }
+    if (typeof t.toMillis === "function")
+        return t.toMillis();
+    return 0;
+}
+/** The PII-free public copy of a written review, or null when the booking
+ *  holds none. Star-only ratings return null — they don't count as reviews
+ *  anywhere since 28x.188 ("a review is something the guest can read"). */
+function writtenReviewOf(bookingId, b) {
+    if (!b || typeof b.rating !== "number" || b.rating < 1)
+        return null;
+    const body = (b.reviewText ?? "").trim();
+    if (!body)
+        return null;
+    return {
+        bookingId,
+        rating: b.rating,
+        body,
+        service: [b.serviceName ?? "", typeof b.duration === "number" ? `${b.duration} min` : ""]
+            .filter(Boolean)
+            .join(" · "),
+        ts: reviewTs(b.createdAt) || reviewTs(b.startAt),
+    };
+}
+async function recomputeTherapistReviewStats(therapistId) {
+    const db = (0, firestore_2.getFirestore)();
+    const tRef = db.collection("therapists").doc(therapistId);
+    const [snap, tSnap] = await Promise.all([
+        db.collection("bookings").where("therapistId", "==", therapistId).get(),
+        tRef.get(),
+    ]);
+    // A stale therapistId on a booking must not conjure a phantom therapist doc.
+    if (!tSnap.exists)
+        return;
+    const pubList = [];
+    let sum = 0;
+    snap.forEach((d) => {
+        const r = writtenReviewOf(d.id, d.data());
+        if (!r)
+            return;
+        sum += r.rating;
+        pubList.push(r);
+    });
+    // Count/sum cover ALL written reviews; only the public list is capped at 40.
+    const reviews = pubList.length;
+    pubList.sort((a, b) => b.ts - a.ts);
+    pubList.splice(40);
+    // Same double rounding as the script (2 dp inside bayesianRatingFromAggregate,
+    // then 1 dp for display) so a trigger run and a manual run can never disagree.
+    const bayes2 = reviews
+        ? Math.round(((REVIEW_PRIOR_MEAN * REVIEW_PRIOR_WEIGHT + sum) / (REVIEW_PRIOR_WEIGHT + reviews)) * 100) / 100
+        : 0;
+    const rating = Math.round(bayes2 * 10) / 10;
+    const ratingRaw = reviews ? Math.round((sum / reviews) * 10) / 10 : 0;
+    // Field-order-proof comparison — Firestore may hand map keys back in a
+    // different order than we build them, so raw JSON.stringify of the objects
+    // would read "changed" forever.
+    const normPub = (list) => JSON.stringify(list.map((r) => {
+        const p = r;
+        return [p.bookingId, p.rating, p.body, p.service, p.ts];
+    }));
+    const cur = tSnap.data();
+    const changed = (cur.rating ?? 0) !== rating ||
+        (cur.ratingRaw ?? 0) !== ratingRaw ||
+        (cur.reviews ?? 0) !== reviews ||
+        normPub(cur.publicReviews ?? []) !== normPub(pubList);
+    if (!changed)
+        return;
+    // NEVER add totalSessions to this write — see the block comment above.
+    await tRef.update({ rating, ratingRaw, reviews, publicReviews: pubList });
+    v2_1.logger.info("[recomputeTherapistReviewStats] synced", { therapistId, rating, reviews });
+}
+exports.onBookingWriteSyncReviews = (0, firestore_1.onDocumentWritten)({
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+}, async (event) => {
+    const bookingId = event.params.bookingId;
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    // Cheap guard BEFORE any read — bookings churn constantly (status, dispatch,
+    // fare, chat stamps) and almost none of it can move a review aggregate.
+    // Project each side down to exactly what the aggregate can see; fire only
+    // when the projections differ. therapistId is included so reassigning a
+    // reviewed booking recomputes BOTH practitioners; serviceName/duration
+    // because they feed the public review's service label.
+    const proj = (b) => {
+        const r = writtenReviewOf(bookingId, b);
+        return r ? JSON.stringify({ ...r, tid: b?.therapistId ?? null }) : null;
+    };
+    if (proj(before) === proj(after))
+        return;
+    const targets = new Set();
+    if (before?.therapistId)
+        targets.add(before.therapistId);
+    if (after?.therapistId)
+        targets.add(after.therapistId);
+    for (const tid of targets) {
+        try {
+            await recomputeTherapistReviewStats(tid);
+        }
+        catch (err) {
+            // One missing/broken therapist doc must not fail the other target.
+            v2_1.logger.warn("[onBookingWriteSyncReviews] recompute failed", { therapistId: tid, err });
+        }
+    }
+});
+// ─────────────────────────────────────────────────────────────────────────────
 // 🆕 Round 28x.132 (founder: "ถ้ายกเลิก แล้วแอดมินกดยกเลิกออเดอร์ บอทจะลบ
 //   ออเดอร์ที่ส่งมาด้วยได้ไหม ในเทเลแกรม บุค" — chose strike-through, not delete)
 //
@@ -4818,5 +4962,45 @@ exports.notifyAdminPushOnBooking = (0, firestore_1.onDocumentCreated)({
         bookingId,
         devices: entries.length - dead.length,
     });
+});
+// ─────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.193b — self-provisioning VAPID keys.
+//
+// The setup script (scripts/setWebPushKeys.mjs) turned out to be the
+// weak link: it needs a human at a terminal, and the founder's first
+// two attempts silently never reached prod. Keys are now generated
+// INSIDE the function runtime on first demand — no terminal step, and
+// no human (or Claude) ever handles the private key at all. Admin-only;
+// returns only the PUBLIC key, which the browser needs to subscribe.
+// Idempotent: once the doc exists it is returned, never regenerated
+// (regeneration would orphan every existing device subscription).
+// ─────────────────────────────────────────────────────────────────────
+exports.ensureWebPushKeys = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const adminDoc = await db.collection("admins").doc(request.auth.uid).get();
+    if (!adminDoc.exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const ref = db.doc("adminSettings/webPush");
+    const snap = await ref.get();
+    const existing = snap.data();
+    if (existing?.vapidPublicKey && existing.vapidPrivateKey) {
+        return { publicKey: existing.vapidPublicKey, created: false };
+    }
+    const keys = web_push_1.default.generateVAPIDKeys();
+    await ref.set({
+        vapidPublicKey: keys.publicKey,
+        vapidPrivateKey: keys.privateKey,
+        subject: "mailto:sunredbkk@gmail.com",
+        createdAt: firestore_2.FieldValue.serverTimestamp(),
+        createdBy: "ensureWebPushKeys",
+    }, { merge: true });
+    v2_1.logger.info("[ensureWebPushKeys] generated new VAPID pair", {
+        by: request.auth.uid,
+    });
+    return { publicKey: keys.publicKey, created: true };
 });
 //# sourceMappingURL=index.js.map

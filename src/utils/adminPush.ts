@@ -15,7 +15,8 @@
 //   come from a user gesture — which the admin toggle click provides.
 
 import { doc, getDoc, setDoc, deleteField, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { db, app } from "@/lib/firebase";
 
 const KEYS_DOC = "adminSettings/webPush";
 const SUBS_DOC = "adminSettings/webPushSubs";
@@ -69,11 +70,18 @@ export async function enableAdminPush(): Promise<AdminPushStatus> {
   if (!pushSupported()) return "unsupported";
 
   const keysSnap = await getDoc(doc(db, KEYS_DOC));
-  const publicKey = keysSnap.data()?.vapidPublicKey as string | undefined;
+  let publicKey = keysSnap.data()?.vapidPublicKey as string | undefined;
   if (!publicKey) {
-    // Setup script not run yet — see scripts/setWebPushKeys.mjs.
-    throw new Error("webpush-keys-missing");
+    // 🆕 28x.193b — first enable anywhere: ask the backend to generate the
+    //   pair inside the function runtime (see ensureWebPushKeys). Replaces
+    //   the manual setWebPushKeys.mjs terminal step, which proved fragile.
+    const ensure = httpsCallable<Record<string, never>, { publicKey: string }>(
+      getFunctions(app, "asia-southeast1"),
+      "ensureWebPushKeys",
+    );
+    publicKey = (await ensure({})).data.publicKey;
   }
+  if (!publicKey) throw new Error("webpush-keys-missing");
 
   const permission = await Notification.requestPermission();
   if (permission === "denied") return "blocked";
