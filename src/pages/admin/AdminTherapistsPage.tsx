@@ -19,7 +19,7 @@ import {
 // 🆕 Round 28s268 (founder: "ทำให้สวยขึ้น") — switched from MUI icons/emoji
 //   to phosphor-react, matching every other Ocean-Study-migrated admin page
 //   (AdminUsersPage, AdminBookingListPage, AdminEarningsPage, etc.).
-import { Eye, PencilSimple, Trash, Umbrella, Warning, Check, Clock, MagnifyingGlass, ArrowLeft, UserPlus } from "phosphor-react";
+import { Eye, PencilSimple, Trash, Umbrella, Warning, Check, Clock, MagnifyingGlass, ArrowLeft, UserPlus, Key } from "phosphor-react";
 
 import {
   collection,
@@ -79,6 +79,11 @@ type RawTherapistDoc = {
   overrideUntil?: unknown;
   /** 🆕 28x.122 — staff-app presence heartbeat (StaffLayout). */
   lastSeenAt?: unknown;
+  /** 🆕 P1 — staff-app onboarding state, surfaced on the roster card so the
+   *  rollout gap (who still has no login / isn't activated) is visible at a
+   *  glance instead of needing a Firestore audit to find out. */
+  uid?: string;
+  staffActive?: boolean;
   [key: string]: any;
 };
 
@@ -108,6 +113,17 @@ function presenceLabel(ms: number | null, nowMs: number): { text: string; online
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return { text: `${hrs} ชม.ที่แล้ว`, online: false };
   return { text: `${Math.floor(hrs / 24)} วันที่แล้ว`, online: false };
+}
+
+// 🆕 P1 (staff-app rollout visibility) — a practitioner's staff-login state,
+//   independent of her availability or app presence:
+//     none     — no Auth account yet (uid absent) → the actionable gap
+//     inactive — account exists but admin hasn't flipped staffActive on
+//     ready    — has a login AND is activated
+type OnboardState = "none" | "inactive" | "ready";
+function onboardState(raw: { uid?: string; staffActive?: boolean }): OnboardState {
+  if (!raw.uid) return "none";
+  return raw.staffActive ? "ready" : "inactive";
 }
 
 type TherapistRow = RawTherapistDoc & {
@@ -202,6 +218,7 @@ const TherapistCard: React.FC<{
   // already re-renders on every therapists-collection snapshot, which is
   // often enough for a presence label measured in minutes.
   const presence = presenceLabel(lastSeenMs(row), Date.now());
+  const onboard = onboardState(row);
 
   return (
     <Box sx={{ background: `linear-gradient(155deg, ${CARD_FRAME_BG}, #D6E5EA)`, borderRadius: "24px", p: "8px" }}>
@@ -265,6 +282,26 @@ const TherapistCard: React.FC<{
                   }}
                 />
                 {presence.online ? "ออนไลน์ในแอป" : `เข้าแอปล่าสุด ${presence.text}`}
+              </Box>
+            )}
+            {/* 🆕 P1 — staff-app onboarding gap, shown ONLY when there's an
+                action to take (no login yet, or created-but-not-activated).
+                A fully-onboarded practitioner shows nothing here — the green
+                ring + presence line already say she's set up. Tapping the card
+                opens her detail page, where Create account / the Active toggle
+                live. Phosphor icons, no emoji (founder UI rule). */}
+            {onboard !== "ready" && (
+              <Box
+                sx={{
+                  display: "inline-flex", alignItems: "center", gap: "4px", mt: "4px",
+                  fontSize: 10.5, fontWeight: 700, borderRadius: "7px", padding: "3px 8px",
+                  border: `1px solid ${onboard === "none" ? "rgba(220,38,38,0.25)" : "rgba(217,119,6,0.28)"}`,
+                  background: onboard === "none" ? "rgba(220,38,38,0.08)" : "rgba(217,119,6,0.10)",
+                  color: onboard === "none" ? adminColor.red : adminColor.amber,
+                }}
+              >
+                {onboard === "none" ? <UserPlus size={11} weight="bold" /> : <Key size={11} weight="bold" />}
+                {onboard === "none" ? "ยังไม่มีบัญชีแอป · แตะเพื่อสร้าง" : "มีบัญชี · ยังไม่เปิดใช้งาน"}
               </Box>
             )}
           </Box>
@@ -585,11 +622,13 @@ const AdminTherapistsPage: React.FC = () => {
   // 🆕 Round 28s230 (FIX C) — live roster summary + one-tap relight, so View
   //   can fix "everyone shows offline at night" from her phone in one action.
   const summary = useMemo(() => {
-    const s = { available: 0, bookable: 0, resting: 0, holiday: 0, override: 0 };
+    const s = { available: 0, bookable: 0, resting: 0, holiday: 0, override: 0, noLogin: 0 };
     for (const t of therapists) {
       const cs = String(t.computedStatus);
       if (cs in s) (s as Record<string, number>)[cs]++;
       if (t.overrideActive) s.override++;
+      // 🆕 P1 — count practitioners with no staff-app login yet (rollout gap).
+      if (!t.uid) s.noLogin++;
     }
     return s;
   }, [therapists]);
@@ -774,6 +813,22 @@ const AdminTherapistsPage: React.FC = () => {
               <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.red, lineHeight: 1.05 }}>{summary.override}</Typography>
               <Typography sx={{ fontSize: 10, color: adminColor.red, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 800, mt: "1px" }}>Override</Typography>
               <Typography sx={{ fontSize: 9.5, color: adminColor.dim, mt: "-1px" }}>ค้าง</Typography>
+            </Box>
+          </Box>
+        )}
+        {/* 🆕 P1 — staff-app rollout gap: how many practitioners still have no
+            login. Only shows when the gap exists (same pattern as Override), so
+            it disappears once everyone is onboarded. Amber = needs action, not
+            an error. */}
+        {summary.noLogin > 0 && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: "12px", background: `linear-gradient(180deg,${adminColor.panel},#FFFBEB)`, border: "1px solid rgba(217,119,6,0.24)", borderRadius: "18px", p: "9px 18px 9px 9px", boxShadow: "0 2px 10px rgba(217,119,6,0.06)" }}>
+            <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #F59E0B, ${adminColor.amber})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 3px rgba(217,119,6,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <UserPlus size={20} color="#fff" weight="fill" />
+            </Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.amber, lineHeight: 1.05 }}>{summary.noLogin}</Typography>
+              <Typography sx={{ fontSize: 10, color: adminColor.text, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 800, mt: "1px" }}>No Login</Typography>
+              <Typography sx={{ fontSize: 9.5, color: adminColor.dim, mt: "-1px" }}>ยังไม่มีบัญชี</Typography>
             </Box>
           </Box>
         )}
