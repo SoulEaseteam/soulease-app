@@ -56,6 +56,8 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 // 🆕 28x.96 (founder: "เพิ่มหน้า คำขอพนักงาน ในหน้าแอดมิน") — review queue
 //   for therapist self-service gallery photo uploads.
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
+// 🆕 P2 — practitioner-application review queue.
+import HowToRegIcon from "@mui/icons-material/HowToReg";
 // 🆕 Round 28w.80 — Members (sign-up) and Membership (rules) shared ONE icon,
 //   so the two rows were visually identical. Give the rules page its own.
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
@@ -126,6 +128,8 @@ const NAV_GROUPS: NavGroup[] = [
       // 🆕 28x.96 — photo uploads a therapist files from /therapist/gallery
       //   wait here for approval before they touch the live public gallery.
       { label: "Staff Requests", th: "คำขอพนักงาน", path: "/admin/staff-requests", icon: <PendingActionsIcon /> },
+      // 🆕 P2 — public practitioner applications (from /apply) land here for review.
+      { label: "Applications", th: "ใบสมัครหมอ", path: "/admin/applications", icon: <HowToRegIcon /> },
       { label: "Users",      th: "ผู้ใช้งาน",       path: "/admin/users",      icon: <UserIcon /> },
       { label: "Members",    th: "สมัครสมาชิก",     path: "/admin/members",    icon: <CardMembershipIcon /> },
       { label: "Membership", th: "กติกาสมาชิก & โบนัส", path: "/admin/membership", icon: <WorkspacePremiumIcon /> },

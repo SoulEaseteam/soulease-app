@@ -116,6 +116,22 @@ service cloud.firestore {
       return !(k in d) || d[k] == null
              || (d[k] is string && d[k].size() <= max);
     }
+    // 🆕 P2 (marketplace on-ramp) — sanity cap on public practitioner
+    //   applications, same posture as isSaneBookingPayload: the door is open
+    //   (an applicant isn't signed in), so bound the doc size + every field.
+    //   Kept in lock-step with src/pages/ApplyPage.tsx's addDoc payload (9
+    //   keys) — the 28x.107 lesson: measure the real write, don't guess.
+    function isSaneApplicationPayload(d) {
+      return d.keys().size() <= 20
+             && d.status == 'pending'
+             && d.name is string && d.name.size() >= 1 && d.name.size() <= 120
+             && d.contact is string && d.contact.size() >= 1 && d.contact.size() <= 160
+             && strOk(d, 'contactMethod', 40)
+             && strOk(d, 'area', 200)
+             && strOk(d, 'age', 40)
+             && strOk(d, 'experience', 2000)
+             && strOk(d, 'source', 120);
+    }
     function isSaneBookingPayload(d) {
       // 🚨 Round 28x.116 HOTFIX — the 28x.107 comment above claimed 60 was
       //   "~10x the largest real booking observed," but the real customer
@@ -987,6 +1003,18 @@ service cloud.firestore {
       && strOk(request.resource.data, 'utmSource', 200)
       && strOk(request.resource.data, 'lang', 20);
       allow update, delete: if false;
+    }
+
+    // 🆕 P2 (marketplace on-ramp) — public "become a practitioner" applications
+    //   submitted at /apply. Open CREATE (a prospective practitioner isn't
+    //   signed in), same posture as bookings/analytics above: keep the door
+    //   open but bound what fits through it (isSaneApplicationPayload). Admin-
+    //   only read/update/delete — these carry personal contact details and are
+    //   a moderated queue, never public. status is forced to 'pending' on
+    //   create; the admin review page moves it to approved/rejected.
+    match /providerApplications/{appId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isSaneApplicationPayload(request.resource.data);
     }
 
     // ── default deny ───────────────────────────────────────────────

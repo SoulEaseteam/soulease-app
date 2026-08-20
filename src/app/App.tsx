@@ -62,6 +62,10 @@ const AdminAccountPage = React.lazy(() => import("@/pages/admin/AdminAccountPage
 // 🆕 Round 28b29 (perf) — WeChatScanPage is only hit by Chinese
 //   visitors scanning a QR. Lazy.
 const WeChatScanPage = React.lazy(() => import("@/pages/WeChatScanPage"));
+// 🆕 P2 (marketplace on-ramp) — public "become a practitioner" application
+//   page + its admin review queue.
+const ApplyPage = React.lazy(() => import("@/pages/ApplyPage"));
+const AdminApplicationsPage = React.lazy(() => import("@/pages/admin/AdminApplicationsPage"));
 
 // =====================
 // Lazy-loaded pages
@@ -344,6 +348,10 @@ export default function App() {
             which page exists. /work is an alias so it's easy to say out loud. */}
         <Route path="/staff" element={<LoginPage staff />} />
         <Route path="/work" element={<Navigate to="/staff" replace />} />
+        {/* 🆕 P2 — public application door (vetted; concierge follows up).
+            /join is a friendlier alias for sharing out loud. */}
+        <Route path="/apply" element={<ApplyPage />} />
+        <Route path="/join" element={<Navigate to="/apply" replace />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/wechat-scan" element={<WeChatScanPage />} />
         {/* ================= MAIN LAYOUT ================= */}
@@ -495,6 +503,8 @@ export default function App() {
           <Route path="pay-therapists" element={<AdminTherapistPayoutsPage />} />
           <Route path="telegram" element={<AdminTelegramPanelPage />} />
           <Route path="staff-requests" element={<AdminStaffRequestsPage />} />
+          {/* 🆕 P2 — practitioner application review queue (from /apply). */}
+          <Route path="applications" element={<AdminApplicationsPage />} />
           {/* 🆕 28x.88 — SunRed Bot group: LINE OA / WhatsApp placeholders. */}
           <Route path="bot/line" element={<AdminBotComingSoonPage platform="LINE OA" />} />
           <Route path="bot/whatsapp" element={<AdminBotComingSoonPage platform="WhatsApp" />} />
