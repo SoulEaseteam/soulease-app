@@ -30,6 +30,7 @@ interface Application {
   experience?: string;
   status?: string;
   source?: string;
+  agreedTerms?: boolean;
   createdAt?: { toDate?: () => Date } | null;
 }
 
@@ -135,6 +136,11 @@ const AdminApplicationsPage: React.FC = () => {
             </Box>
           )}
           {a.age && <Box>อายุ {a.age}</Box>}
+          {a.agreedTerms && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: "4px", color: adminColor.green, fontWeight: 700 }}>
+              <Check size={13} weight="bold" /> ยอมรับข้อตกลง
+            </Box>
+          )}
           <Box sx={{ display: "flex", alignItems: "center", gap: "5px", ml: "auto" }}>
             <Clock size={13} color={adminColor.dim} /> {fmt(a.createdAt)}
           </Box>

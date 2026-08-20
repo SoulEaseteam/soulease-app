@@ -65,6 +65,7 @@ const WeChatScanPage = React.lazy(() => import("@/pages/WeChatScanPage"));
 // 🆕 P2 (marketplace on-ramp) — public "become a practitioner" application
 //   page + its admin review queue.
 const ApplyPage = React.lazy(() => import("@/pages/ApplyPage"));
+const ProviderTermsPage = React.lazy(() => import("@/pages/ProviderTermsPage"));
 const AdminApplicationsPage = React.lazy(() => import("@/pages/admin/AdminApplicationsPage"));
 
 // =====================
@@ -352,6 +353,8 @@ export default function App() {
             /join is a friendlier alias for sharing out loud. */}
         <Route path="/apply" element={<ApplyPage />} />
         <Route path="/join" element={<Navigate to="/apply" replace />} />
+        {/* 🆕 P3 — provider agreement (linked from the /apply consent box). */}
+        <Route path="/provider-terms" element={<ProviderTermsPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/wechat-scan" element={<WeChatScanPage />} />
         {/* ================= MAIN LAYOUT ================= */}

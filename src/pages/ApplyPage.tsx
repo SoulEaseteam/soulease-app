@@ -41,6 +41,7 @@ const ApplyPage: React.FC = () => {
   const [area, setArea] = useState("");
   const [age, setAge] = useState("");
   const [experience, setExperience] = useState("");
+  const [agreed, setAgreed] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -49,6 +50,10 @@ const ApplyPage: React.FC = () => {
   const submit = async () => {
     if (!name.trim() || !contact.trim()) {
       setError("กรอกชื่อและช่องทางติดต่อก่อนนะคะ");
+      return;
+    }
+    if (!agreed) {
+      setError("กรุณายอมรับข้อตกลงผู้ให้บริการก่อนส่งใบสมัคร");
       return;
     }
     setSubmitting(true);
@@ -65,6 +70,11 @@ const ApplyPage: React.FC = () => {
         experience: experience.trim().slice(0, 2000),
         status: "pending",
         source: "web-apply",
+        // 🆕 P3 — consent record for the provider agreement (independent
+        //   contractor / neutral platform). Enforced client-side by the
+        //   required checkbox below; stored so the admin queue can show it.
+        agreedTerms: true,
+        agreedTermsAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       });
       setDone(true);
@@ -151,6 +161,36 @@ const ApplyPage: React.FC = () => {
               <TextField label="โซนที่สะดวกทำงาน (เช่น สุขุมวิท · อโศก)" fullWidth size="small" sx={fieldSx} value={area} onChange={(e) => setArea(e.target.value)} />
               <TextField label="อายุ" fullWidth size="small" sx={fieldSx} value={age} onChange={(e) => setAge(e.target.value)} inputProps={{ inputMode: "numeric" }} />
               <TextField label="ประสบการณ์ / ร้านที่เคยทำ (ไม่บังคับ)" fullWidth size="small" multiline minRows={2} sx={fieldSx} value={experience} onChange={(e) => setExperience(e.target.value)} />
+
+              {/* 🆕 P3 — consent to the provider agreement. Required to submit;
+                  the accepted flag is stored on the application. */}
+              <Box
+                onClick={() => setAgreed((v) => !v)}
+                sx={{ display: "flex", alignItems: "flex-start", gap: 1, cursor: "pointer", mt: 0.5 }}
+              >
+                <Box
+                  sx={{
+                    mt: "1px", width: 20, height: 20, flexShrink: 0, borderRadius: "6px",
+                    border: `2px solid ${agreed ? ROSE : "#C9CDD3"}`,
+                    background: agreed ? ROSE : "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#fff", fontSize: 13, fontWeight: 900, lineHeight: 1,
+                  }}
+                >
+                  {agreed ? "✓" : ""}
+                </Box>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "#4A5568", lineHeight: 1.6 }}>
+                  ฉันได้อ่านและยอมรับ{" "}
+                  <Box
+                    component="a" href="/provider-terms" target="_blank" rel="noopener noreferrer"
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    sx={{ color: ROSE, fontWeight: 700, textDecoration: "underline" }}
+                  >
+                    ข้อตกลงผู้ให้บริการ
+                  </Box>{" "}
+                  (เป็นผู้ประกอบอาชีพอิสระ · SunRed เป็นแพลตฟอร์มตัวกลาง)
+                </Typography>
+              </Box>
 
               {error && (
                 <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "#DC2626", fontWeight: 600 }}>{error}</Typography>
