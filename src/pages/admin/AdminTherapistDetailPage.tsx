@@ -1355,6 +1355,8 @@ const AdminTherapistDetailPage: React.FC = () => {
                       ส่งข้อมูลนี้ให้พนักงาน · แสดงครั้งเดียว จดไว้ให้ดี
                     </Typography>
                     <Typography sx={{ fontFamily: adminFont.sans, fontSize: 13.5, fontWeight: 700, color: adminColor.text }}>
+                      เข้าที่: sunred.vip/work
+                      <br />
                       Username: {accountCreds.username}
                       <br />
                       Password: {accountCreds.password}
@@ -1362,14 +1364,26 @@ const AdminTherapistDetailPage: React.FC = () => {
                     <Button
                       size="small"
                       onClick={() => {
+                        // 🆕 P1 ② — a complete, ready-to-send invite. Points at
+                        //   sunred.vip/work (the staff-login alias, App.tsx) —
+                        //   NOT bare sunred.vip, which lands the practitioner on
+                        //   the CUSTOMER home with no way in. Includes the how-to
+                        //   so she isn't left holding a username/password and no
+                        //   path. Prod URL hardcoded on purpose: it's where she
+                        //   logs in regardless of where admin views this.
                         void navigator.clipboard.writeText(
-                          `ล็อกอินเข้าแอป SunRed ได้ที่ sunred.vip ค่ะ\nUsername: ${accountCreds.username}\nPassword: ${accountCreds.password}`
+                          `สวัสดีค่ะ นี่คือบัญชีเข้าแอปพนักงาน SunRed ของคุณ\n\n` +
+                            `เปิดลิงก์: https://sunred.vip/work\n` +
+                            `ยูสเซอร์: ${accountCreds.username}\n` +
+                            `รหัสผ่าน: ${accountCreds.password}\n\n` +
+                            `เปิดลิงก์แล้วใส่ยูสเซอร์กับรหัสผ่าน กดเข้าสู่ระบบได้เลยค่ะ\n` +
+                            `(เก็บข้อความนี้ไว้ก่อนนะคะ · ถ้าลืมรหัส แจ้งแอดมินออกรหัสใหม่ให้ได้)`
                         );
-                        toast.success("คัดลอกแล้ว");
+                        toast.success("คัดลอกข้อความเชิญแล้ว");
                       }}
                       sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.green, mt: 0.5, px: 0 }}
                     >
-                      คัดลอกข้อความ
+                      คัดลอกข้อความเชิญ · ส่งให้หมอ
                     </Button>
                   </Box>
                 )}
