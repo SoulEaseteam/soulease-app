@@ -31,6 +31,8 @@ interface Application {
   status?: string;
   source?: string;
   agreedTerms?: boolean;
+  photoUrls?: string[];
+  tallyFields?: Record<string, string>;
   createdAt?: { toDate?: () => Date } | null;
 }
 
@@ -150,6 +152,26 @@ const AdminApplicationsPage: React.FC = () => {
           <Typography sx={{ fontFamily: adminFont.sans, fontSize: 12.5, color: adminColor.dim, lineHeight: 1.6, whiteSpace: "pre-wrap", background: adminColor.panel2, borderRadius: "10px", p: "8px 10px" }}>
             {a.experience}
           </Typography>
+        )}
+
+        {/* 🆕 Tally submissions carry the full field set + uploaded photos. */}
+        {a.tallyFields && Object.keys(a.tallyFields).length > 0 && (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: "3px 14px", fontFamily: adminFont.sans, fontSize: 12, background: adminColor.panel2, borderRadius: "10px", p: "8px 10px" }}>
+            {Object.entries(a.tallyFields).slice(0, 20).map(([k, v]) => (
+              <Box key={k} sx={{ color: adminColor.text }}>
+                <Box component="span" sx={{ color: adminColor.dim }}>{k}:</Box> {v}
+              </Box>
+            ))}
+          </Box>
+        )}
+        {a.photoUrls && a.photoUrls.length > 0 && (
+          <Box sx={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {a.photoUrls.map((u, i) => (
+              <Box key={i} component="a" href={u} target="_blank" rel="noopener noreferrer" sx={{ display: "block", lineHeight: 0 }}>
+                <Box component="img" src={u} alt="" loading="lazy" sx={{ width: 64, height: 64, objectFit: "cover", borderRadius: "8px", border: `1px solid ${adminColor.line}` }} />
+              </Box>
+            ))}
+          </Box>
         )}
 
         {/* Actions */}

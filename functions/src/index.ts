@@ -527,6 +527,86 @@ export const onProviderApplicationCreate = onDocumentCreated(
 );
 
 // ═════════════════════════════════════════════════════════════
+// 🆕 tallyApplicationWebhook — HTTP endpoint for the Tally apply form
+//      Founder chose a Tally form (like CBODY's) so she can edit the fields
+//      herself + get native file uploads. This bridges it back into OUR system:
+//      Tally POSTs each submission here → we write a `providerApplications` doc
+//      (source:"tally") → the onProviderApplicationCreate trigger above fires →
+//      Telegram alert + it shows in /admin/applications, same as the built-in
+//      /apply form. Label-tolerant: maps by keyword and keeps every field in
+//      `tallyFields` so a renamed question never loses data.
+//
+//      Security note: validates the Tally payload SHAPE + caps every field, and
+//      writes only a MODERATED pending doc (same low-risk posture as the already-
+//      open /apply). No secret yet — if spam appears, add Tally signature
+//      verification (the signing secret Tally shows in its webhook settings).
+// ═════════════════════════════════════════════════════════════
+export const tallyApplicationWebhook = onRequest(
+  { region: "asia-southeast1" },
+  async (req, res) => {
+    if (req.method !== "POST") { res.status(405).send("POST only"); return; }
+    const body = (req.body ?? {}) as { eventType?: string; data?: { fields?: unknown } };
+    if (body.eventType !== "FORM_RESPONSE" || !body.data || !Array.isArray(body.data.fields)) {
+      res.status(400).send("not a Tally submission");
+      return;
+    }
+    const fields = body.data.fields as Array<{ label?: string; type?: string; value?: unknown }>;
+
+    const asText = (v: unknown): string => {
+      if (v == null) return "";
+      if (Array.isArray(v)) return v.map(asText).filter(Boolean).join(", ");
+      if (typeof v === "object") {
+        const o = v as { text?: unknown; label?: unknown; value?: unknown };
+        return String(o.text ?? o.label ?? o.value ?? "");
+      }
+      return String(v);
+    };
+    const kw = (L: string, ...words: string[]) => words.some((w) => L.includes(w));
+
+    let name = "", contact = "", area = "", experience = "";
+    const photoUrls: string[] = [];
+    const tallyFields: Record<string, string> = {};
+
+    for (const f of fields) {
+      const label = (typeof f.label === "string" ? f.label : "?").slice(0, 80);
+      if ((f.type === "FILE_UPLOAD" || f.type === "SIGNATURE") && Array.isArray(f.value)) {
+        for (const file of f.value as Array<{ url?: unknown }>) {
+          if (file?.url && photoUrls.length < 5) photoUrls.push(String(file.url).slice(0, 700));
+        }
+        continue;
+      }
+      const val = asText(f.value).slice(0, 500);
+      if (!val) continue;
+      if (Object.keys(tallyFields).length < 25) tallyFields[label] = val;
+      const L = label.toLowerCase();
+      if (!name && kw(L, "ชื่อ", "name", "เล่น")) name = val.slice(0, 120);
+      else if (!contact && kw(L, "เบอร์", "โทร", "phone", "line", "ไลน์", "ติดต่อ", "telegram", "เทเล")) contact = val.slice(0, 160);
+      else if (!area && kw(L, "โซน", "พื้นที่", "area", "ที่ทำงาน", "ที่สะดวก")) area = val.slice(0, 200);
+      else if (kw(L, "อธิบาย", "แนะนำ", "ประสบการณ์", "description", "about", "เพิ่มเติม")) experience = (experience ? experience + "\n" : "") + val;
+    }
+    if (!contact) contact = tallyFields[Object.keys(tallyFields)[1] ?? ""] ?? "(ดูรายละเอียด)";
+
+    try {
+      await getFirestore().collection("providerApplications").add({
+        name: name || "(ไม่ระบุชื่อ)",
+        contact,
+        area,
+        experience: experience.slice(0, 2000),
+        photoUrls,
+        tallyFields,
+        status: "pending",
+        source: "tally",
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      res.status(200).send("ok");
+    } catch (err) {
+      logger.error("[tallyApplicationWebhook] write failed", err);
+      res.status(500).send("error");
+    }
+  }
+);
+
+// ═════════════════════════════════════════════════════════════
 // 3️⃣  moderateText — callable, OpenAI Moderation
 //      เรียกก่อน addDoc booking note / review comment
 //      → ป้องกัน spam, harassment, sexual content
