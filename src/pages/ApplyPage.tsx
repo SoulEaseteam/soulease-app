@@ -27,7 +27,7 @@ const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
 const ROSE = "#E6197E";
 
-const CONTACT_METHODS = ["LINE", "Telegram", "WhatsApp", "เบอร์โทร"] as const;
+const CONTACT_METHODS = ["Telegram", "LINE", "WhatsApp", "เบอร์โทร"] as const;
 
 const fieldSx = {
   "& .MuiOutlinedInput-root": { borderRadius: "12px", background: "#fff" },
@@ -36,7 +36,7 @@ const fieldSx = {
 
 const ApplyPage: React.FC = () => {
   const [name, setName] = useState("");
-  const [contactMethod, setContactMethod] = useState<string>("LINE");
+  const [contactMethod, setContactMethod] = useState<string>("Telegram");
   const [contact, setContact] = useState("");
   const [area, setArea] = useState("");
   const [age, setAge] = useState("");
@@ -148,15 +148,16 @@ const ApplyPage: React.FC = () => {
             >
               <TextField label="ชื่อ / ชื่อเล่น" required fullWidth size="small" sx={fieldSx} value={name} onChange={(e) => setName(e.target.value)} />
 
-              <Box sx={{ display: "flex", gap: 1.5 }}>
-                <TextField
-                  select label="ช่องทางติดต่อ" size="small" sx={{ ...fieldSx, minWidth: 130 }}
-                  value={contactMethod} onChange={(e) => setContactMethod(e.target.value)}
-                >
-                  {CONTACT_METHODS.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-                </TextField>
-                <TextField label="LINE ID / เบอร์ / ยูสเซอร์" required fullWidth size="small" sx={fieldSx} value={contact} onChange={(e) => setContact(e.target.value)} />
-              </Box>
+              {/* ช่องทางติดต่อ — full-width so the dropdown caret is unmistakable
+                  on mobile; caret tinted rose so it reads clearly as a dropdown. */}
+              <TextField
+                select label="ช่องทางติดต่อ" fullWidth size="small"
+                sx={{ ...fieldSx, "& .MuiSelect-icon": { color: ROSE, fontSize: 26 } }}
+                value={contactMethod} onChange={(e) => setContactMethod(e.target.value)}
+              >
+                {CONTACT_METHODS.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </TextField>
+              <TextField label="ไอดี / ยูสเซอร์ / เบอร์" required fullWidth size="small" sx={fieldSx} value={contact} onChange={(e) => setContact(e.target.value)} />
 
               <TextField label="โซนที่สะดวกทำงาน (เช่น สุขุมวิท · อโศก)" fullWidth size="small" sx={fieldSx} value={area} onChange={(e) => setArea(e.target.value)} />
               <TextField label="อายุ" fullWidth size="small" sx={fieldSx} value={age} onChange={(e) => setAge(e.target.value)} inputProps={{ inputMode: "numeric" }} />
