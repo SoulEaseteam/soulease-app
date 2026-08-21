@@ -478,6 +478,55 @@ export const onReviewCreate = onDocumentCreated(
 );
 
 // ═════════════════════════════════════════════════════════════
+// 🆕 P2/P3 — onProviderApplicationCreate — Firestore trigger
+//      A prospective practitioner submits at /apply (anonymous, no login),
+//      so nothing calls a function — the doc just lands in
+//      providerApplications. Without this, an application sits silently in
+//      /admin/applications until View happens to open the page. This pings
+//      the SAME Telegram ops chat that new bookings land in, so a new
+//      applicant reaches her where she's already looking.
+// ═════════════════════════════════════════════════════════════
+export const onProviderApplicationCreate = onDocumentCreated(
+  {
+    document: "providerApplications/{appId}",
+    secrets: [TELEGRAM_BOT_TOKEN],
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const app = event.data?.data() as
+      | { name?: string; contactMethod?: string; contact?: string; area?: string; age?: string; experience?: string; agreedTerms?: boolean }
+      | undefined;
+    if (!app) return;
+
+    const token = TELEGRAM_BOT_TOKEN.value().trim();
+    if (!token) {
+      logger.error("[onProviderApplicationCreate] bot token missing");
+      return;
+    }
+    const appId = event.params.appId;
+
+    const lines = [
+      "🆕 ใบสมัครหมอใหม่",
+      "",
+      `👤 ${app.name ?? "—"}`,
+      `📱 ${app.contactMethod ? app.contactMethod + " · " : ""}${app.contact ?? "—"}`,
+    ];
+    if (app.area) lines.push(`📍 ${app.area}`);
+    if (app.age) lines.push(`🎂 อายุ ${app.age}`);
+    if (app.agreedTerms) lines.push("✅ ยอมรับข้อตกลงแล้ว");
+    if (app.experience) lines.push("", `💬 ${app.experience.slice(0, 400)}`);
+    lines.push("", "👉 จัดการ: sunred.vip/admin/applications");
+
+    const { ok, body } = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, lines.join("\n"));
+    if (!ok) {
+      logger.error("[onProviderApplicationCreate] Telegram error", { body: body.slice(0, 500) });
+    } else {
+      logger.info("[onProviderApplicationCreate] alert sent", { appId });
+    }
+  }
+);
+
+// ═════════════════════════════════════════════════════════════
 // 3️⃣  moderateText — callable, OpenAI Moderation
 //      เรียกก่อน addDoc booking note / review comment
 //      → ป้องกัน spam, harassment, sexual content
