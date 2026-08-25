@@ -53,11 +53,14 @@ export interface LanguageSwitcherProps {
   size?: "sm" | "md";
   /** Override aria-label for screen readers. */
   ariaLabel?: string;
+  /** Flag only (drop the 2-letter code) — a smaller, tidier pill. */
+  flagOnly?: boolean;
 }
 
 const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   size = "md",
   ariaLabel,
+  flagOnly = false,
 }) => {
   const { i18n, t } = useTranslation();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -134,9 +137,9 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: "4px",
+          gap: flagOnly ? 0 : "4px",
           height: dim,
-          padding: size === "sm" ? "0 11px" : "0 14px",
+          padding: flagOnly ? "0 9px" : size === "sm" ? "0 11px" : "0 14px",
           borderRadius: "99px",
           background: "rgba(255, 255, 255, 0.55)",
           backdropFilter: "blur(20px) saturate(180%)",
@@ -160,7 +163,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         <Box component="span" sx={{ fontSize: `${flagSize}px` }}>
           {cur.flag}
         </Box>
-        {cur.short}
+        {!flagOnly && cur.short}
       </Box>
 
       <Menu

@@ -50,14 +50,14 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
   void counts;
 
   return (
-    <Box sx={{ margin: "0 14px 14px" }}>
+    <Box sx={{ margin: "0 14px 8px" }}>
       {/* ── Location / standby line ─────────────────────────────── */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           gap: "8px",
-          padding: "2px 2px 10px",
+          padding: "2px 2px 4px",
         }}
       >
         <MapPin size={16} weight="fill" color={MAGENTA} />

@@ -93,7 +93,7 @@ const QuickNavRow: React.FC = () => {
         gridTemplateColumns: "repeat(4, 1fr)",
         alignItems: "center",
         gap: "8px",
-        padding: { xs: "18px 10px", md: "22px 18px" },
+        padding: { xs: "11px 8px", md: "14px 16px" },
         // 🆕 28u.2 — ลด overlap ลง (เดิม -46px) เพื่อไม่บังข้อความในรูป banner
         //   แต่ยังลอยเหนือขอบล่างรูปอยู่.
         margin: { xs: "-28px 16px 10px", md: "-36px 20px 14px" },
@@ -126,9 +126,9 @@ const QuickNavRow: React.FC = () => {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
-            gap: "8px",
+            gap: "5px",
             padding: "4px",
-            minHeight: 66, // ≥ 44px combined tap target with label
+            minHeight: 50, // ≥ 44px combined tap target with label
             textAlign: "center",
             transition: "transform 0.18s ease",
             // 🆕 28s334 — thin vertical divider between columns
@@ -142,7 +142,7 @@ const QuickNavRow: React.FC = () => {
               right: "-4px",
               transform: "translateY(-50%)",
               width: "1px",
-              height: 34,
+              height: 24,
               background: "var(--sr-line)", // subtle divider on dark
             },
             "&:hover .qn-icon": {
@@ -164,8 +164,8 @@ const QuickNavRow: React.FC = () => {
             <Box
               className="qn-icon"
               sx={{
-                width: 44,
-                height: 44,
+                width: 38,
+                height: 38,
                 borderRadius: "50%",
                 // 🆕 28w.38 — highlighted (Pricing) tile gets a soft rose halo
                 //   at rest so the eye lands on it.
@@ -180,7 +180,7 @@ const QuickNavRow: React.FC = () => {
                 transition: "background 0.18s ease, color 0.18s ease",
               }}
             >
-              <Icon size={22} weight={highlight ? "fill" : "regular"} />
+              <Icon size={20} weight={highlight ? "fill" : "regular"} />
             </Box>
 
             {/* 🎉 28w.38 (founder "ให้ตรงนี้ มีอนิเมชั่น หรือ ป้ายไอคอนเล็กๆ") —
@@ -217,7 +217,7 @@ const QuickNavRow: React.FC = () => {
               fontFamily: fonts.body,
               // 🆕 Round 28r75 — bumped weight 500 → 600 per founder
               //   direction "ปรับตัวหนังสือหนา นิดหน่อย".
-              fontSize: 11.5,
+              fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.01em",
               color: "var(--sr-body)", // CREAM label text (light on dark)

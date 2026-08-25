@@ -464,7 +464,7 @@ const TopNav: React.FC = () => {
             "Auto (device)" so auto-detect is one tap away. */}
         {isHome && (
           <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", flexShrink: 0, mr: 0.5 }}>
-            <LanguageSwitcher size="sm" />
+            <LanguageSwitcher size="sm" flagOnly />
           </Box>
         )}
 
