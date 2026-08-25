@@ -451,9 +451,20 @@ const TopNav: React.FC = () => {
             <TherapistSearchBar
               value={searchQ}
               onChange={setSearchQ}
-              m="0 18px 0 16px"
+              m="0 10px 0 16px"
               compact
             />
+          </Box>
+        )}
+
+        {/* 🆕 Founder: "เพิ่มปุ่มแปลภาษาข้างช่องค้นหา" — the manual language
+            switcher (removed 28s168 for device auto-detect) returns here, right
+            next to the practitioner search on the mobile home bar. Reuses the
+            shared LanguageSwitcher (already imported); its menu still carries
+            "Auto (device)" so auto-detect is one tap away. */}
+        {isHome && (
+          <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", flexShrink: 0, mr: 0.5 }}>
+            <LanguageSwitcher size="sm" />
           </Box>
         )}
 
