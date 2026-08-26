@@ -38,7 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ensureWebPushKeys = exports.notifyAdminPushOnBooking = exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncReviews = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.onBookingChatMessage = exports.claimBookingReview = exports.claimBookingChat = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.ensureWebPushKeys = exports.notifyAdminPushOnBooking = exports.syncTherapistDailyCount = exports.onTherapistBonusChange = exports.onBookingCancelledStrikeTelegram = exports.onBookingWriteSyncReviews = exports.onBookingWriteSyncStats = exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.onBookingChatMessage = exports.claimBookingReview = exports.claimBookingChat = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.getJobGuestTier = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.notifyGalleryRequest = exports.onTherapistUpdate = exports.syncAdminClaim = exports.setRoleOnSignup = exports.moderateText = exports.tallyApplicationWebhook = exports.onProviderApplicationCreate = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -399,6 +399,138 @@ exports.onReviewCreate = (0, firestore_1.onDocumentCreated)({
     }
     else {
         v2_1.logger.info("[onReviewCreate] alert sent", { rating, reviewId });
+    }
+});
+// ═════════════════════════════════════════════════════════════
+// 🆕 P2/P3 — onProviderApplicationCreate — Firestore trigger
+//      A prospective practitioner submits at /apply (anonymous, no login),
+//      so nothing calls a function — the doc just lands in
+//      providerApplications. Without this, an application sits silently in
+//      /admin/applications until View happens to open the page. This pings
+//      the SAME Telegram ops chat that new bookings land in, so a new
+//      applicant reaches her where she's already looking.
+// ═════════════════════════════════════════════════════════════
+exports.onProviderApplicationCreate = (0, firestore_1.onDocumentCreated)({
+    document: "providerApplications/{appId}",
+    secrets: [TELEGRAM_BOT_TOKEN],
+    region: "asia-southeast1",
+}, async (event) => {
+    const app = event.data?.data();
+    if (!app)
+        return;
+    const token = TELEGRAM_BOT_TOKEN.value().trim();
+    if (!token) {
+        v2_1.logger.error("[onProviderApplicationCreate] bot token missing");
+        return;
+    }
+    const appId = event.params.appId;
+    const lines = [
+        "🆕 ใบสมัครหมอใหม่",
+        "",
+        `👤 ${app.name ?? "—"}`,
+        `📱 ${app.contactMethod ? app.contactMethod + " · " : ""}${app.contact ?? "—"}`,
+    ];
+    if (app.area)
+        lines.push(`📍 ${app.area}`);
+    if (app.age)
+        lines.push(`🎂 อายุ ${app.age}`);
+    if (app.agreedTerms)
+        lines.push("✅ ยอมรับข้อตกลงแล้ว");
+    if (app.experience)
+        lines.push("", `💬 ${app.experience.slice(0, 400)}`);
+    lines.push("", "👉 จัดการ: sunred.vip/admin/applications");
+    const { ok, body } = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, lines.join("\n"));
+    if (!ok) {
+        v2_1.logger.error("[onProviderApplicationCreate] Telegram error", { body: body.slice(0, 500) });
+    }
+    else {
+        v2_1.logger.info("[onProviderApplicationCreate] alert sent", { appId });
+    }
+});
+// ═════════════════════════════════════════════════════════════
+// 🆕 tallyApplicationWebhook — HTTP endpoint for the Tally apply form
+//      Founder chose a Tally form (like CBODY's) so she can edit the fields
+//      herself + get native file uploads. This bridges it back into OUR system:
+//      Tally POSTs each submission here → we write a `providerApplications` doc
+//      (source:"tally") → the onProviderApplicationCreate trigger above fires →
+//      Telegram alert + it shows in /admin/applications, same as the built-in
+//      /apply form. Label-tolerant: maps by keyword and keeps every field in
+//      `tallyFields` so a renamed question never loses data.
+//
+//      Security note: validates the Tally payload SHAPE + caps every field, and
+//      writes only a MODERATED pending doc (same low-risk posture as the already-
+//      open /apply). No secret yet — if spam appears, add Tally signature
+//      verification (the signing secret Tally shows in its webhook settings).
+// ═════════════════════════════════════════════════════════════
+exports.tallyApplicationWebhook = (0, https_1.onRequest)({ region: "asia-southeast1" }, async (req, res) => {
+    if (req.method !== "POST") {
+        res.status(405).send("POST only");
+        return;
+    }
+    const body = (req.body ?? {});
+    if (body.eventType !== "FORM_RESPONSE" || !body.data || !Array.isArray(body.data.fields)) {
+        res.status(400).send("not a Tally submission");
+        return;
+    }
+    const fields = body.data.fields;
+    const asText = (v) => {
+        if (v == null)
+            return "";
+        if (Array.isArray(v))
+            return v.map(asText).filter(Boolean).join(", ");
+        if (typeof v === "object") {
+            const o = v;
+            return String(o.text ?? o.label ?? o.value ?? "");
+        }
+        return String(v);
+    };
+    const kw = (L, ...words) => words.some((w) => L.includes(w));
+    let name = "", contact = "", area = "", experience = "";
+    const photoUrls = [];
+    const tallyFields = {};
+    for (const f of fields) {
+        const label = (typeof f.label === "string" ? f.label : "?").slice(0, 80);
+        if ((f.type === "FILE_UPLOAD" || f.type === "SIGNATURE") && Array.isArray(f.value)) {
+            for (const file of f.value) {
+                if (file?.url && photoUrls.length < 5)
+                    photoUrls.push(String(file.url).slice(0, 700));
+            }
+            continue;
+        }
+        const val = asText(f.value).slice(0, 500);
+        if (!val)
+            continue;
+        if (Object.keys(tallyFields).length < 25)
+            tallyFields[label] = val;
+        const L = label.toLowerCase();
+        if (!name && kw(L, "ชื่อ", "name", "เล่น"))
+            name = val.slice(0, 120);
+        else if (!contact && kw(L, "เบอร์", "โทร", "phone", "line", "ไลน์", "ติดต่อ", "telegram", "เทเล"))
+            contact = val.slice(0, 160);
+        else if (!area && kw(L, "โซน", "พื้นที่", "area", "ที่ทำงาน", "ที่สะดวก"))
+            area = val.slice(0, 200);
+        else if (kw(L, "อธิบาย", "แนะนำ", "ประสบการณ์", "description", "about", "เพิ่มเติม"))
+            experience = (experience ? experience + "\n" : "") + val;
+    }
+    if (!contact)
+        contact = tallyFields[Object.keys(tallyFields)[1] ?? ""] ?? "(ดูรายละเอียด)";
+    try {
+        await (0, firestore_2.getFirestore)().collection("providerApplications").add({
+            name: name || "(ไม่ระบุชื่อ)",
+            contact,
+            area,
+            experience: experience.slice(0, 2000),
+            photoUrls,
+            tallyFields,
+            status: "pending",
+            source: "tally",
+            createdAt: firestore_2.FieldValue.serverTimestamp(),
+        });
+        res.status(200).send("ok");
+    }
+    catch (err) {
+        v2_1.logger.error("[tallyApplicationWebhook] write failed", err);
+        res.status(500).send("error");
     }
 });
 exports.moderateText = (0, https_1.onCall)({
