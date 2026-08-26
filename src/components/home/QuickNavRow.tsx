@@ -233,6 +233,32 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
                   boxShadow: "0 2px 7px rgba(201,111,137,0.55)",
                   // 🆕 28x.133 (founder: "สีของ ปุ่ม วิ่งไปมา") — the pulsing
                   // scale animation read as the badge's color moving. Static now.
+                  // 🆕 (founder selected the badge: "ลูกเล่น") — glossy shimmer
+                  // sweep, the same "แวววาว" treatment she approved on the
+                  // anniversary banner (28x.18). The badge itself stays still —
+                  // only a light glint passes over it, so it can't read as the
+                  // color jumping around like the removed pulse did.
+                  overflow: "hidden",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    width: "55%",
+                    left: "-80%",
+                    transform: "skewX(-18deg)",
+                    background:
+                      "linear-gradient(100deg, transparent, rgba(255,255,255,0.75), transparent)",
+                    animation: "qnNewShine 3s ease-in-out infinite",
+                  },
+                  "@keyframes qnNewShine": {
+                    "0%": { left: "-80%" },
+                    "45%": { left: "120%" },
+                    "100%": { left: "120%" },
+                  },
+                  "@media (prefers-reduced-motion: reduce)": {
+                    "&::after": { animation: "none" },
+                  },
                 }}
               >
                 NEW
