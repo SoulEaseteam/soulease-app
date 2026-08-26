@@ -236,14 +236,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
         // 🕯️ 28t — panel + gold "embroidery" hairline (flips day/night).
         background: "var(--sr-panel)",
         border: "1px solid var(--sr-hairline)",
-        borderRadius: "18px",
+        borderRadius: "20px",
         // 🆕 28x.119 (founder reference screenshot: "ลองเปลี่ยนการ์ดสไตล์นี้
         //   แต่สีเดิม") — photo is now INSET (padded frame) instead of
         //   edge-to-edge, so overflow can no longer be hidden at the
         //   outer card level — the photo container below owns its own
         //   clip + radius instead.
         padding: "10px 10px 0",
-        boxShadow: "var(--sr-card-shadow)",
+        // 🆕 softer, layered premium shadow — the theme var (day/night aware)
+        //   plus a gentle extra soft layer for more lift without a hard edge.
+        boxShadow: "var(--sr-card-shadow), 0 2px 10px rgba(0,0,0,0.04)",
         // 🆕 Round 28r53 — margin dropped: parent grid supplies gap.
         // marginBottom left at 0 (was 14px for the flex-column list).
         cursor: "pointer",
@@ -326,6 +328,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
           overflow: "hidden",
           position: "relative",
           background: "var(--sr-panel-deep)",
+          // 🆕 subtle photo frame for a more finished, premium look.
+          border: "1px solid var(--sr-hairline)",
           flexShrink: 0,
         }}
       >
@@ -359,6 +363,19 @@ const TherapistMinimalCard: React.FC<Props> = ({
             }}
           />
         )}
+        {/* 🆕 premium bottom scrim — a soft darken so the status chip pops and
+            the photo reads with more depth (listing-app treatment). */}
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "14px",
+            pointerEvents: "none",
+            background:
+              "linear-gradient(to top, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.08) 24%, transparent 46%)",
+          }}
+        />
         {isOnHoliday && (
           <Box
             sx={{
@@ -519,16 +536,21 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 sx={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "3px",
+                  gap: "2px",
                   flexShrink: 0,
+                  // 🆕 blush rating chip (Moko) — reads as a finished pill
+                  //   instead of floating text. Rose tint works on day + night.
+                  background: "rgba(255,153,153,0.16)",
+                  padding: "2px 8px 2px 6px",
+                  borderRadius: "999px",
                 }}
               >
-                <StarRoundedIcon sx={{ fontSize: 16, color: "#ffc31e" }} />
+                <StarRoundedIcon sx={{ fontSize: 14, color: "#ffc31e" }} />
                 <Typography
                   sx={{
                     fontFamily: fonts.body,
-                    fontSize: "14px",
-                    fontWeight: 700,
+                    fontSize: "13px",
+                    fontWeight: 800,
                     color: "var(--sr-ink)",
                     lineHeight: 1,
                   }}
@@ -609,6 +631,22 @@ const TherapistMinimalCard: React.FC<Props> = ({
             //   distance now sits in the SAME box as price, stacked
             //   just below it, instead of floating on the photo.
             <Box sx={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
+              {/* 🆕 tiny "from" eyebrow above the price — reads as an intentional
+                  starting-price, not a flat number. */}
+              <Typography
+                sx={{
+                  fontFamily: fonts.body,
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "var(--sr-muted)",
+                  lineHeight: 1,
+                  marginBottom: "1px",
+                }}
+              >
+                {t("therapistCard.from", "From")}
+              </Typography>
               <Typography
                 sx={{
                   fontFamily: fonts.heading,
