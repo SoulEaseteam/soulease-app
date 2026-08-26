@@ -147,25 +147,33 @@ const StatusPill: React.FC<Props> = ({
     const hi = now.add(arriveUpperBoundMin, "minute").format("HH:mm");
     // 🆕 Round 28b39 — wrap with prettyHHMM so "00:34–00:54" shows
     //   "00:34 AM–00:54 AM" — eliminates after-midnight confusion.
-    subtitle = `Estimated arrival: ${prettyHHMM(lo)}–${prettyHHMM(hi)}.`;
+    // 🆕 (founder /doctor หน้า therapists) — the whole subtitle family was
+    //   hardcoded English; every sentence now goes through t() with the time
+    //   interpolated, so the pill follows the chosen language.
+    subtitle = t("detail.status.arrival", "Estimated arrival: {{lo}}–{{hi}}.", {
+      lo: prettyHHMM(lo),
+      hi: prettyHHMM(hi),
+    });
     if (nextBookingAt) {
       const bookHint = relativeUntilHHMM(nextBookingAt);
-      subtitle += ` Next booked at ${prettyHHMM(nextBookingAt)}${
-        bookHint ? ` · ${bookHint}` : ""
-      }.`;
+      subtitle += ` ${t("detail.status.nextBooked", "Next booked at {{time}}", {
+        time: prettyHHMM(nextBookingAt),
+      })}${bookHint ? ` · ${bookHint}` : ""}.`;
     } else {
-      subtitle += " Can depart right away!";
+      subtitle += ` ${t("detail.status.canDepart", "Can depart right away!")}`;
     }
   } else if (status === "busy") {
     subtitle = nextAvailable
-      ? `Available from ${prettyHHMM(nextAvailable)}${
-          relHint ? ` · ${relHint}` : ""
-        }. Wait or switch?`
-      : "On a session right now. Wait or switch?";
+      ? `${t("detail.status.availableFrom", "Available from {{time}}", {
+          time: prettyHHMM(nextAvailable),
+        })}${relHint ? ` · ${relHint}` : ""}. ${t("detail.status.waitOrSwitch", "Wait or switch?")}`
+      : `${t("detail.status.onSession", "On a session right now.")} ${t("detail.status.waitOrSwitch", "Wait or switch?")}`;
   } else {
     subtitle = nextAvailable
-      ? `Returns at ${prettyHHMM(nextAvailable)}${relHint ? ` · ${relHint}` : ""}`
-      : "Returns next shift.";
+      ? `${t("detail.status.returnsAt", "Returns at {{time}}", {
+          time: prettyHHMM(nextAvailable),
+        })}${relHint ? ` · ${relHint}` : ""}`
+      : t("detail.status.returnsNext", "Returns next shift.");
   }
 
   // 🆕 28t.9 — compact, tappable pill with a gentle bounce affordance.

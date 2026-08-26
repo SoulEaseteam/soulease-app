@@ -1464,9 +1464,9 @@ const TherapistDetailPage: React.FC = () => {
             const style = looksMeasurement ? bt : bust || bt;
             // 🆕 Round 28s366 — 3 cols only; language moved below trust badges
             const bioCells = [
-              { value: sex, label: "sex" },
-              { value: heightWeight, label: "height / weight" },
-              { value: style, label: "style" },
+              { value: sex, label: t("detail.bio.sex", "sex") },
+              { value: heightWeight, label: t("detail.bio.heightWeight", "height / weight") },
+              { value: style, label: t("detail.bio.style", "style") },
             ].filter((c) => c.value);
 
             if (bioCells.length === 0) return null;
@@ -2227,7 +2227,9 @@ const TherapistDetailPage: React.FC = () => {
               being duplicated under every image. */}
           {(realRecord?.viewCount ?? 0) > 0 && (
             <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", whiteSpace: "nowrap" }}>
-              เปิดดูโปรไฟล์ทั้งหมด {formatViews(realRecord?.viewCount ?? 0)} ครั้ง
+              {t("detail.viewCount", "Profile viewed {{n}} times", {
+                n: formatViews(realRecord?.viewCount ?? 0),
+              })}
             </Typography>
           )}
         </Box>

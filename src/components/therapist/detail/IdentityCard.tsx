@@ -25,6 +25,9 @@
 //   instead of three.
 
 import React from "react";
+// 🆕 (founder /doctor หน้า therapists) — this card's chrome (location hints +
+//   sessions/rebook/reviews chips) was hardcoded English; now through t().
+import { useTranslation } from "react-i18next";
 import { Box, Typography } from "@mui/material";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
@@ -60,6 +63,7 @@ const IdentityCard: React.FC<Props> = ({
   rebookRate,
   children,
 }) => {
+  const { t } = useTranslation();
   const hasLocation = distanceLabel?.trim() && distanceLabel !== "—";
 
   return (
@@ -145,12 +149,12 @@ const IdentityCard: React.FC<Props> = ({
             <>
               <NearMeRoundedIcon sx={{ fontSize: 14 }} />
               {geoStatus === "prompt"
-                ? "Locating…"
+                ? t("detail.loc.locating", "Locating…")
                 : geoStatus === "denied"
-                  ? "Location blocked — allow it in your browser settings"
+                  ? t("detail.loc.blocked", "Location blocked — allow it in your browser settings")
                   : geoStatus === "unsupported"
-                    ? "Location unavailable on this device"
-                    : "Allow location"}
+                    ? t("detail.loc.unsupported", "Location unavailable on this device")
+                    : t("detail.loc.allow", "Allow location")}
             </>
           )}
         </Box>
@@ -174,7 +178,7 @@ const IdentityCard: React.FC<Props> = ({
                 {totalSessions >= 1000
                   ? `${Math.round(totalSessions / 100) / 10}k`
                   : totalSessions}{" "}
-                sessions
+                {t("detail.chip.sessions", "sessions")}
               </Box>
             )}
             {rebookRate && rebookRate !== "—" && parseFloat(rebookRate) > 0 && (
@@ -191,7 +195,7 @@ const IdentityCard: React.FC<Props> = ({
                   color: "var(--sr-ink)",
                 }}
               >
-                {rebookRate} rebook
+                {rebookRate} {t("detail.chip.rebook", "rebook")}
               </Box>
             )}
             {rating && rating !== "—" && (
@@ -213,7 +217,7 @@ const IdentityCard: React.FC<Props> = ({
                 {rating}
                 {reviewCount != null && reviewCount > 0 && (
                   <Box component="span" sx={{ fontWeight: 400, opacity: 0.75 }}>
-                    {" "}· {reviewCount} reviews
+                    {" "}· {reviewCount} {t("detail.chip.reviews", "reviews")}
                   </Box>
                 )}
               </Box>
