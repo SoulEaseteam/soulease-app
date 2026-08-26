@@ -206,9 +206,11 @@ const QuickNavRow: React.FC = () => {
               <Box
                 aria-hidden
                 sx={{
+                  // 🆕 (founder: "จัดให้บาล้าน") — tucked in so it no longer
+                  //   kisses the card's top edge after the slimmer padding.
                   position: "absolute",
-                  top: -3,
-                  right: -8,
+                  top: -1,
+                  right: -5,
                   px: "5px",
                   height: 15,
                   display: "flex",
@@ -239,6 +241,9 @@ const QuickNavRow: React.FC = () => {
               letterSpacing: "0.01em",
               color: "var(--sr-body)", // CREAM label text (light on dark)
               lineHeight: 1.2,
+              // 🆕 (founder: "จัดให้บาล้าน") — every label stays one line so
+              //   all four columns sit at identical height.
+              whiteSpace: "nowrap",
             }}
           >
             {labelEn}
