@@ -11,6 +11,8 @@
 
 import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
+// 🆕 (founder: "การ์ดหมอ เพิ่มลูกเล่นด้วย") — scroll-in entrance via framer.
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -214,6 +216,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
 
   return (
     <Box
+      // 🆕 ลูกเล่น — each card rises softly into view as the guest scrolls
+      //   (once). The eager/LCP first card renders instantly — animating the
+      //   LCP element's opacity would hurt the Core Web Vitals score 28s227
+      //   exists to protect.
+      component={motion.div}
+      initial={eager ? false : { opacity: 0, y: 18 }}
+      whileInView={eager ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       onClick={handleCardTap}
       tabIndex={0}
       onKeyDown={(e) => {
@@ -259,6 +270,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
         // extra dark shadow.
         "&:hover": {
           transform: "translateY(-2px)",
+        },
+        // 🆕 ลูกเล่น — the portrait zooms gently while hovered/pressed
+        //   (interaction-only; holiday photos keep their own blur transform,
+        //   they never get the sr-card-photo class).
+        "&:hover .sr-card-photo, &:active .sr-card-photo": {
+          transform: "scale(1.05)",
         },
         "&:focus-visible": {
           outline: `2px solid ${oceanAccent}`,
@@ -351,6 +368,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                every card render. Matches TherapistProfileCard. */
             {...(eager ? { fetchpriority: "high" as const } : {})}
             decoding={eager ? "sync" : "async"}
+            className={isOnHoliday ? undefined : "sr-card-photo"}
             sx={{
               width: "100%",
               height: "100%",
@@ -461,6 +479,22 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 flexShrink: 0,
                 background:
                   nextFreeAt === "Now" ? accents.availableText : "var(--sr-dim)",
+                // 🆕 ลูกเล่น — the NOW dot pings like a live signal, the same
+                //   pulse the "พร้อมให้บริการ 24 ชม." dot already uses
+                //   (moko-pulse). Only when she's free RIGHT NOW.
+                ...(nextFreeAt === "Now"
+                  ? {
+                      animation: "srNowPing 2s ease-out infinite",
+                      "@keyframes srNowPing": {
+                        "0%": { boxShadow: "0 0 0 0 rgba(87,184,139,0.55)" },
+                        "70%": { boxShadow: "0 0 0 6px rgba(87,184,139,0)" },
+                        "100%": { boxShadow: "0 0 0 0 rgba(87,184,139,0)" },
+                      },
+                      "@media (prefers-reduced-motion: reduce)": {
+                        animation: "none",
+                      },
+                    }
+                  : {}),
               }}
             />
             <Typography
