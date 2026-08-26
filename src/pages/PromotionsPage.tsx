@@ -13,6 +13,11 @@
 import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
+// 🆕 (founder audit: "หน้า promotions") — this page never imported i18n at
+//   all; every visible string was hardcoded English. All chrome now runs
+//   through t().
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Ticket, Package, CheckCircle, Megaphone } from "phosphor-react";
 
@@ -39,14 +44,17 @@ const ROSE = "#FF9999";
 const HERO_GRADIENT = "linear-gradient(160deg, #FF9999 0%, #FF9999 100%)";
 
 /** One-line human discount label for a custom promo code. */
-function codeDiscountLabel(type: "percent" | "fixed", amount: number, capThb?: number | null): string {
+function codeDiscountLabel(t: TFunction, type: "percent" | "fixed", amount: number, capThb?: number | null): string {
   if (type === "percent") {
-    return capThb && capThb > 0 ? `${amount}% off · up to ${formatTHB(capThb)}` : `${amount}% off`;
+    return capThb && capThb > 0
+      ? t("promos.percentOffCap", "{{amount}}% off · up to {{cap}}", { amount, cap: formatTHB(capThb) })
+      : t("promos.percentOff", "{{amount}}% off", { amount });
   }
-  return `${formatTHB(amount)} off`;
+  return t("promos.fixedOff", "{{amount}} off", { amount: formatTHB(amount) });
 }
 
 const PromotionsPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { activeCustomCodes, activeBundles, totalCount } = useActivePromos();
   const [copied, setCopied] = useState<string | null>(null);
@@ -59,9 +67,11 @@ const PromotionsPage: React.FC = () => {
   const annivLive = anniversaryIsLive();
 
   useDocumentMeta({
-    title: "Promotions & News · SunRed Bangkok",
-    description:
+    title: t("meta.promos.title", "Promotions & News · SunRed Bangkok"),
+    description: t(
+      "meta.promos.description",
       "Current SunRed offers and where to follow nightly availability and flash promotions.",
+    ),
   });
 
   const copyCode = async (code: string) => {
@@ -90,7 +100,7 @@ const PromotionsPage: React.FC = () => {
           <Box
             component="button"
             onClick={() => void navigate(-1)}
-            aria-label="Go back"
+            aria-label={t("common.goBack", "Go back")}
             sx={{
               display: "flex",
               alignItems: "center",
@@ -110,20 +120,20 @@ const PromotionsPage: React.FC = () => {
           </Box>
 
           <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-            Promotions &amp; News
+            {t("promos.title", "Promotions & News")}
           </Typography>
           <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
             {totalCount > 0
-              ? `${totalCount} offer${totalCount > 1 ? "s" : ""} live right now`
+              ? t("promos.liveCount", "{{count}} offers live right now", { count: totalCount })
               : annivLive
-              ? "Our 1st Anniversary privileges are live"
-              : "Follow our channels for the next drop"}
+              ? t("promos.annivLive", "Our 1st Anniversary privileges are live")
+              : t("promos.followNext", "Follow our channels for the next drop")}
           </Typography>
         </Box>
 
         {/* ── Current offers ──────────────────────────────────────── */}
         <Box sx={{ px: 2, pt: 3 }}>
-          <SectionEyebrow>Current Offers</SectionEyebrow>
+          <SectionEyebrow>{t("promos.current", "Current Offers")}</SectionEyebrow>
 
           {/* 🆕 28x.16 — anniversary privileges card (only while the campaign
               is live). Tapping it opens the same reward dialog as the home
@@ -146,7 +156,7 @@ const PromotionsPage: React.FC = () => {
                   <OfferCard
                     icon={<Ticket size={22} weight="duotone" />}
                     title={p.label}
-                    subtitle={codeDiscountLabel(p.type, p.amount, p.capThb)}
+                    subtitle={codeDiscountLabel(t, p.type, p.amount, p.capThb)}
                     code={p.code}
                     copied={copied === p.code}
                     onCopy={() => void copyCode(p.code)}
@@ -163,7 +173,7 @@ const PromotionsPage: React.FC = () => {
                   <OfferCard
                     icon={<Package size={22} weight="duotone" />}
                     title={b.name}
-                    subtitle={`${b.sessionCount} sessions · ${b.discountPct}% off${b.label ? ` · ${b.label}` : ""}`}
+                    subtitle={`${t("promos.bundleSub", "{{n}} sessions · {{pct}}% off", { n: b.sessionCount, pct: b.discountPct })}${b.label ? ` · ${b.label}` : ""}`}
                   />
                 </motion.div>
               ))}
@@ -173,24 +183,24 @@ const PromotionsPage: React.FC = () => {
 
         {/* ── News & updates ──────────────────────────────────────── */}
         <Box sx={{ px: 2, pt: 3.5 }}>
-          <SectionEyebrow>News &amp; Updates</SectionEyebrow>
+          <SectionEyebrow>{t("promos.news", "News & Updates")}</SectionEyebrow>
           <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)", mt: 0.5, mb: 1.5, lineHeight: 1.5 }}>
-            Nightly availability, new practitioners and flash offers are posted first on our channels.
+            {t("promos.newsBody", "Nightly availability, new practitioners and flash offers are posted first on our channels.")}
           </Typography>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             <ChannelCard
               iconSrc="/images/profli/telegram.png"
               tint="#26A1E0"
-              title="Telegram Channel"
+              title={t("promos.telegram", "Telegram Channel")}
               subtitle={CONCIERGE.telegramChannel}
               href={CONCIERGE.telegramChannelUrl}
             />
             <ChannelCard
               iconSrc="/images/profli/line.png"
               tint="#06C755"
-              title="LINE Official"
-              subtitle="Add for updates in your language"
+              title={t("promos.line", "LINE Official")}
+              subtitle={t("promos.lineSub", "Add for updates in your language")}
               href={CONCIERGE.lineUrl}
             />
           </Box>
@@ -204,7 +214,9 @@ const PromotionsPage: React.FC = () => {
 // ── Anniversary privileges card — full infographic, tap to open the
 //    reward dialog. Shown on the Promotions page only while the campaign
 //    is live (28x.16).
-const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => (
+const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => {
+  const { t } = useTranslation();
+  return (
   <Box
     component={motion.div}
     initial={{ opacity: 0, y: 12 }}
@@ -219,7 +231,7 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => (
         onOpen();
       }
     }}
-    aria-label="SunRed 1st Anniversary privileges, tap to claim your reward"
+    aria-label={t("promos.annivAria", "SunRed 1st Anniversary privileges, tap to claim your reward")}
     sx={{
       position: "relative",
       display: "block",
@@ -239,7 +251,7 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => (
     <Box
       component="img"
       src={ANNIV_IMG}
-      alt="SunRed 1st Anniversary exclusive privileges. New guests: THB 100 welcome gift. Returning guests choose one: THB 200 gift, THB 300 voucher, or double SunPoints. Valid 15 July to 15 August 2026."
+      alt={t("anniv.image.alt", "SunRed 1st Anniversary exclusive privileges poster")}
       loading="lazy"
       decoding="async"
       sx={{ display: "block", width: "100%", height: "auto" }}
@@ -261,10 +273,11 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => (
       }}
     >
       <Ticket size={16} weight="fill" />
-      Tap to claim your reward
+      {t("promos.annivTap", "Tap to claim your reward")}
     </Box>
   </Box>
-);
+  );
+};
 
 // ── bits ────────────────────────────────────────────────────────────
 const SectionEyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -292,7 +305,9 @@ const OfferCard: React.FC<{
   code?: string;
   copied?: boolean;
   onCopy?: () => void;
-}> = ({ icon, title, subtitle, code, copied, onCopy }) => (
+}> = ({ icon, title, subtitle, code, copied, onCopy }) => {
+  const { t } = useTranslation();
+  return (
   <Box
     sx={{
       display: "flex",
@@ -334,7 +349,7 @@ const OfferCard: React.FC<{
         component="button"
         type="button"
         onClick={onCopy}
-        aria-label={`Copy promo code ${code}`}
+        aria-label={t("promos.copyAria", "Copy promo code {{code}}", { code })}
         sx={{
           flexShrink: 0,
           display: "flex",
@@ -355,11 +370,12 @@ const OfferCard: React.FC<{
         }}
       >
         {copied ? <CheckCircle size={14} weight="fill" /> : null}
-        {copied ? "Copied" : code}
+        {copied ? t("promos.copied", "Copied") : code}
       </Box>
     )}
   </Box>
-);
+  );
+};
 
 const ChannelCard: React.FC<{
   iconSrc: string;
@@ -417,7 +433,9 @@ const ChannelCard: React.FC<{
   </Box>
 );
 
-const EmptyOffers: React.FC = () => (
+const EmptyOffers: React.FC = () => {
+  const { t } = useTranslation();
+  return (
   <Box
     sx={{
       mt: 1.5,
@@ -430,12 +448,13 @@ const EmptyOffers: React.FC = () => (
     }}
   >
     <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: "var(--sr-ink)" }}>
-      No promotions running right now
+      {t("promos.empty.title", "No promotions running right now")}
     </Typography>
     <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)", mt: 0.5, lineHeight: 1.5 }}>
-      Follow our channels below — new offers drop there first.
+      {t("promos.empty.body", "Follow our channels below — new offers drop there first.")}
     </Typography>
   </Box>
-);
+  );
+};
 
 export default PromotionsPage;
