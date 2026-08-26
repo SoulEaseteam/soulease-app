@@ -185,7 +185,41 @@ const BottomNavGlass: React.FC = () => {
                 zIndex: 0,
                 pointerEvents: "none",
               }}
-            />
+            >
+              {/* 🆕 (founder: "เมนูข้างล่าง เพิ่มลูกเล่นด้วย") — the same glossy
+                  "แวววาว" glint as the banner/NEW badge/book button, sweeping
+                  the active pill every ~4.2s (offset from the others so nothing
+                  blinks in sync). Pill itself stays still (28x.133 rule). */}
+              <Box
+                aria-hidden
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: 999,
+                  overflow: "hidden",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    width: "46%",
+                    left: "-75%",
+                    transform: "skewX(-18deg)",
+                    background:
+                      "linear-gradient(100deg, transparent, rgba(255,255,255,0.5), transparent)",
+                    animation: "srTabShine 4.2s ease-in-out infinite",
+                  },
+                  "@keyframes srTabShine": {
+                    "0%": { left: "-75%" },
+                    "38%": { left: "120%" },
+                    "100%": { left: "120%" },
+                  },
+                  "@media (prefers-reduced-motion: reduce)": {
+                    "&::after": { animation: "none" },
+                  },
+                }}
+              />
+            </motion.div>
           )}
 
           {/* Tabs */}
@@ -241,7 +275,33 @@ const BottomNavGlass: React.FC = () => {
                   transition={{ type: "spring", stiffness: 550, damping: 28 }}
                   style={{ position: "relative", zIndex: 3, lineHeight: 0 }}
                 >
-                  {tab.icon(active)}
+                  {/* 🆕 "เมนูข้างล่าง เพิ่มลูกเล่นด้วย" — the Practitioners tab
+                      is a heart, so when it's the active tab it gets a soft
+                      heartbeat (double-thump then rest, like a real pulse).
+                      Other tabs stay still; reduced-motion turns it off. */}
+                  {tab.value === "/" && active ? (
+                    <Box
+                      component="span"
+                      sx={{
+                        display: "inline-flex",
+                        lineHeight: 0,
+                        animation: "srHeartBeat 2.6s ease-in-out infinite",
+                        "@keyframes srHeartBeat": {
+                          "0%, 30%, 100%": { transform: "scale(1)" },
+                          "8%": { transform: "scale(1.18)" },
+                          "16%": { transform: "scale(0.95)" },
+                          "23%": { transform: "scale(1.12)" },
+                        },
+                        "@media (prefers-reduced-motion: reduce)": {
+                          animation: "none",
+                        },
+                      }}
+                    >
+                      {tab.icon(active)}
+                    </Box>
+                  ) : (
+                    tab.icon(active)
+                  )}
                 </motion.div>
 
                 {/* Label */}
