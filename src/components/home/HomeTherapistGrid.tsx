@@ -17,6 +17,9 @@ import TherapistProfileCard from "@/components/TherapistProfileCard";
 import TherapistMinimalCard from "@/components/TherapistMinimalCard";
 import { useHomeSearch } from "@/context/HomeSearchContext";
 import MokoDiscoveryHeader from "@/components/home/MokoDiscoveryHeader";
+// 🆕 (founder: "ย้าย ลงมาข้างล่าง") — search bar returns to the grid, below
+//   the location line, instead of squeezing into the top nav bar.
+import TherapistSearchBar from "@/components/TherapistSearchBar";
 import HomeMapBrowse from "@/components/home/HomeMapBrowse";
 import { matchesQuery } from "@/utils/therapistSearch";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -78,7 +81,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
   const [loadError, setLoadError] = useState(false);
   // 🆕 28x.132 — search moved to TopNav (site-wide); this grid now just
   //   reads the shared query instead of owning its own input/state.
-  const { searchQ } = useHomeSearch();
+  const { searchQ, setSearchQ } = useHomeSearch();
 
   // ── Single GPS watcher — feeds every card with a fresh userLocation.
   //    🆕 Round 28b14 — autoStart removed. Modern browsers silently block
@@ -515,6 +518,11 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
           express: totalExpress,
         }}
       />
+
+      {/* 🆕 (founder: "ย้าย ลงมาข้างล่าง") — practitioner search, moved down
+          from TopNav (28x.132 had moved it up there). Full-width under the
+          location line, right above the cards it filters. */}
+      <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />
 
       {/* 🆕 28x.99x (founder "ป้ายกลางวัน จองคิวคืนนี้") added a daytime
           "tonight is bookable" notice strip here; 🆕 28x.140 (founder

@@ -22,6 +22,11 @@
 
 import React from "react";
 import { Box } from "@mui/material";
+// 🆕 (founder selected this row: "เพิ่ม ลูกเล่น") — interaction-triggered
+//   micro-animations only: staggered one-time entrance + springy tap squash.
+//   Deliberately NO looping/ambient motion — 28x.133 removed the pulsing
+//   badge because constant movement annoyed ("สีของปุ่มวิ่งไปมา").
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -112,11 +117,18 @@ const QuickNavRow: React.FC = () => {
         zIndex: 2, // float above the hero it overlaps
       }}
     >
-      {items.map(({ key, Icon, labelEn, onTap, highlight }) => (
+      {items.map(({ key, Icon, labelEn, onTap, highlight }, i) => (
         <Box
           key={key}
-          component="button"
+          component={motion.button}
           type="button"
+          // 🆕 ลูกเล่น — each column pops in with a slight upward drift, one
+          //   after another (one-time, on mount), and squashes on tap like a
+          //   real spring before navigating.
+          initial={{ opacity: 0, y: 14, scale: 0.92 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.06 + i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          whileTap={{ scale: 0.88 }}
           onClick={onTap}
           aria-label={labelEn}
           sx={{
@@ -149,6 +161,11 @@ const QuickNavRow: React.FC = () => {
               background: "var(--sr-panel-2)", // WALNUT hover-on-panel
               borderColor: "#D2B67C", // GOLD hairline
               color: "#FF9999", // ROSE icon accent
+              // 🆕 ลูกเล่น — playful tilt + grow on hover (interaction-only).
+              transform: "rotate(-8deg) scale(1.1)",
+            },
+            "&:active .qn-icon": {
+              transform: "rotate(-8deg) scale(0.95)",
             },
             "&:hover": {
               transform: "translateY(-1px)",
@@ -177,7 +194,7 @@ const QuickNavRow: React.FC = () => {
                 justifyContent: "center",
                 // Rose accent at rest for the highlighted tile; muted otherwise.
                 color: highlight ? "#FF9999" : "var(--sr-muted)",
-                transition: "background 0.18s ease, color 0.18s ease",
+                transition: "background 0.18s ease, color 0.18s ease, transform 0.22s cubic-bezier(.34,1.56,.64,1)",
               }}
             >
               <Icon size={20} weight={highlight ? "fill" : "regular"} />

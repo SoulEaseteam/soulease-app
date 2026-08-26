@@ -443,30 +443,24 @@ const TopNav: React.FC = () => {
             HomeTherapistGrid. Mobile + home-route only: it's meaningless
             chrome on pages with no filterable list, and desktop already has
             its own horizontal nav + concierge CTA filling this row. */}
-        {isHome && (
-          <Box sx={{ display: { xs: "flex", md: "none" }, flex: 1, minWidth: 0 }}>
-            {/* 🆕 28x.145 (founder selected the hamburger icon: "ให้search
-                bar ขยับออกห่าง จาก 3 แถบ หน่อย") — right margin bumped so the
-                pill doesn't crowd the menu button's tap target. */}
-            <TherapistSearchBar
-              value={searchQ}
-              onChange={setSearchQ}
-              m="0 10px 0 16px"
-              compact
-            />
-          </Box>
-        )}
+        {/* 🆕 (founder selected the search bar: "ย้าย ลงมาข้างล่าง") — the
+            practitioner search moved OUT of this bar, down into
+            HomeTherapistGrid (below the location line, right above the
+            cards). The top bar is now just wordmark · language · menu. */}
 
         {/* 🆕 Founder: "เพิ่มปุ่มแปลภาษาข้างช่องค้นหา" — the manual language
             switcher (removed 28s168 for device auto-detect) returns here, right
             next to the practitioner search on the mobile home bar. Reuses the
             shared LanguageSwitcher (already imported); its menu still carries
             "Auto (device)" so auto-detect is one tap away. */}
-        {isHome && (
-          <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", flexShrink: 0, mr: 0.5 }}>
-            <LanguageSwitcher size="sm" flagOnly />
-          </Box>
-        )}
+        {/* 🆕 (founder: "แปลภาษาได้ทั้งเว็บ") — was isHome-only; now renders on
+            EVERY customer page's mobile bar. TopNav is site-wide via MainLayout,
+            so this one line makes the switcher reachable everywhere. */}
+        {/* 🆕 (founder selected the flag pill: "ให้ขึ้นเป็นตัวย่อ") — back to
+            flag + short code (🇹🇭 TH) so the current language is readable. */}
+        <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", flexShrink: 0, mr: 0.5, ml: "auto" }}>
+          <LanguageSwitcher size="sm" />
+        </Box>
 
         {/* Menu button — opens drawer. Hidden on desktop where the
             inline horizontal nav takes over. Moved to the END (right side)
@@ -566,6 +560,12 @@ const TopNav: React.FC = () => {
               </Box>
             );
           })}
+        </Box>
+
+        {/* 🆕 (founder: "แปลภาษาได้ทั้งเว็บ") — desktop gets the same switcher,
+            tucked between the nav links and the concierge CTA. */}
+        <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", mr: 1.25 }}>
+          <LanguageSwitcher size="sm" />
         </Box>
 
         {/* 🆕 Round 28r52 — Desktop concierge CTA (opens Refer & earn
