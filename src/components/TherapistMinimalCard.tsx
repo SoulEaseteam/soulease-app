@@ -737,6 +737,41 @@ const TherapistMinimalCard: React.FC<Props> = ({
                     ? "0 6px 16px rgba(217, 119, 6, 0.40)"
                     : "0 6px 16px rgba(255, 99, 99, 0.40)",
               transition: "transform 0.15s ease, background 0.15s ease",
+              // 🆕 (founder: "ปุ่มจอง เพิ่มลูกเล่นด้วย") — the same glossy
+              //   "แวววาว" glint as the NEW badge/anniversary banner sweeps
+              //   across the CTA every ~3.6s (offset from the badge's 3s so
+              //   they don't blink in sync), plus a springy squash on press.
+              //   Off-duty buttons get NO shine — a sparkling "Resting" would
+              //   invite taps on a dead button. Button itself stays still
+              //   (28x.133: no pulsing/moving color).
+              ...(isOffDuty
+                ? {}
+                : {
+                    position: "relative" as const,
+                    overflow: "hidden",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      bottom: 0,
+                      width: "45%",
+                      left: "-70%",
+                      transform: "skewX(-18deg)",
+                      background:
+                        "linear-gradient(100deg, transparent, rgba(255,255,255,0.55), transparent)",
+                      animation: "srBookShine 3.6s ease-in-out infinite",
+                      pointerEvents: "none",
+                    },
+                    "@keyframes srBookShine": {
+                      "0%": { left: "-70%" },
+                      "40%": { left: "115%" },
+                      "100%": { left: "115%" },
+                    },
+                    "@media (prefers-reduced-motion: reduce)": {
+                      "&::after": { animation: "none" },
+                    },
+                    "&:active": { transform: "scale(0.95)" },
+                  }),
               "&:hover": isOffDuty
                 ? {}
                 : {
