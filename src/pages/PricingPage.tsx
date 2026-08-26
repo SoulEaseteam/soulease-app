@@ -163,38 +163,46 @@ const ENHANCEMENTS = [
     icon: DirectionsCarRoundedIcon,
     labelKey: "pricing.addons.travel",
     label: "Beyond-central travel",
+    hintKey: "pricing.addons.travelHint",
     hint: "Extra travel fare quoted for areas beyond central Bangkok.",
   },
   {
     icon: HourglassTopRoundedIcon,
     labelKey: "pricing.addons.extend",
     label: "Extend session",
+    hintKey: "pricing.addons.extendHint",
     hint: "Add 30 or 60 minutes on request · tier-priced.",
   },
   {
     icon: DiamondRoundedIcon,
     labelKey: "pricing.addons.oil",
     label: "Premium aromatic oil",
+    hintKey: "pricing.addons.oilHint",
     hint: "Small upgrade for a signature scent · ask concierge.",
   },
   {
     icon: PeopleRoundedIcon,
     labelKey: "pricing.addons.duo",
     label: "Duo experience",
+    hintKey: "pricing.addons.duoHint",
     hint: "Two practitioners for two guests · quoted per session.",
   },
 ];
 
 
 const PAYMENT_METHODS = [
-  { icon: PaymentsRoundedIcon, label: "Cash on arrival", note: "" },
-  { icon: QrCode2RoundedIcon, label: "PromptPay", note: "" },
+  // labelKey only where the label is a phrase — PromptPay/WeChat Pay/Alipay
+  // are brand names and stay verbatim in every language.
+  { icon: PaymentsRoundedIcon, labelKey: "pricing.pay.cash", label: "Cash on arrival", noteKey: "", note: "" },
+  { icon: QrCode2RoundedIcon, labelKey: "", label: "PromptPay", noteKey: "", note: "" },
   {
     // 🆕 28x.99s — real brand marks (react-icons/si) instead of a generic
     //   icon, since this row bundles two distinct payment platforms.
     icon: null,
+    labelKey: "",
     label: "WeChat Pay · Alipay",
     // 🆕 28r121 — Surcharge simplified to flat 7% (see paymentSurcharge.ts).
+    noteKey: "pricing.pay.surcharge",
     note: "+ 7% handling",
   },
 ];
@@ -675,7 +683,7 @@ const PricingPage: React.FC = () => {
                     lineHeight: 1.5,
                   }}
                 >
-                  {a.hint}
+                  {t(a.hintKey, a.hint)}
                 </Box>
               </Box>
             </Box>
@@ -783,7 +791,7 @@ const PricingPage: React.FC = () => {
                     color: grays.g900,
                   }}
                 >
-                  {p.label}
+                  {p.labelKey ? t(p.labelKey, p.label) : p.label}
                 </Box>
               </Box>
               {p.note && (
@@ -797,7 +805,7 @@ const PricingPage: React.FC = () => {
                     letterSpacing: "0.02em",
                   }}
                 >
-                  {p.note}
+                  {p.noteKey ? t(p.noteKey, p.note) : p.note}
                 </Box>
               )}
             </Box>
@@ -906,7 +914,7 @@ const PricingPage: React.FC = () => {
               key={name}
               component="a"
               href={href}
-              aria-label={aria}
+              aria-label={t("pricing.reserveOn", "Reserve on {{channel}}", { channel: name }) || aria}
               {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               sx={{
                 flex: 1,
