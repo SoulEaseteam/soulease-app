@@ -47,7 +47,12 @@ type QuickNavItem = {
   highlight?: boolean;
 };
 
-const QuickNavRow: React.FC = () => {
+// 🆕 (founder annotated the band: "ป้ายโดนบัง") — the -28px pull-up exists to
+//   overlap the promo banner's lower edge (28u.2). With the anniversary
+//   campaign ended the banner renders null (height 0), so the band was
+//   yanking itself up over neighbouring content instead. Overlap is now
+//   OPT-IN: HomePage passes overlapBanner only while a banner actually shows.
+const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = false }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -101,7 +106,10 @@ const QuickNavRow: React.FC = () => {
         padding: { xs: "11px 8px", md: "14px 16px" },
         // 🆕 28u.2 — ลด overlap ลง (เดิม -46px) เพื่อไม่บังข้อความในรูป banner
         //   แต่ยังลอยเหนือขอบล่างรูปอยู่.
-        margin: { xs: "-28px 16px 10px", md: "-36px 20px 14px" },
+        // 🆕 "ป้ายโดนบัง" fix — negative pull-up ONLY while a banner exists.
+        margin: overlapBanner
+          ? { xs: "-28px 16px 10px", md: "-36px 20px 14px" }
+          : { xs: "6px 16px 10px", md: "8px 20px 14px" },
         background: "var(--sr-panel)", // CHOCOLATE panel on ESPRESSO home bg
         borderRadius: { xs: "22px", md: "24px" },
         border: "1px solid var(--sr-hairline)", // gold hairline (embroidery)

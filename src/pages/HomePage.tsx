@@ -37,6 +37,10 @@ import BundleSection from "@/components/common/BundleSection";
 import QuickNavRow from "@/components/home/QuickNavRow";
 // 🆕 28w.37 — 1st-anniversary banner (links to /pricing).
 import AnniversaryBanner from "@/components/home/AnniversaryBanner";
+// 🆕 "ป้ายโดนบัง" fix — HomePage now shares the banner's own live-gate so the
+//   wrapper + QuickNavRow's overlap follow the campaign switch in real time.
+import { anniversaryIsLive } from "@/config/anniversary";
+import { useAnniversaryConfigVersion } from "@/hooks/useAnniversaryConfigVersion";
 import HomeFooterV2 from "@/components/home/HomeFooterV2";
 import InstallAppBanner from "@/components/common/InstallAppBanner";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
@@ -58,6 +62,10 @@ interface HomePageProps {
 }
 
 const HomePage: React.FC<HomePageProps> = ({ district }) => {
+  // 🆕 "ป้ายโดนบัง" fix — live-subscribe so ending/starting a campaign from
+  //   /admin/promotions updates the layout without a reload.
+  useAnniversaryConfigVersion();
+  const promoBannerLive = anniversaryIsLive();
   const { t, i18n } = useTranslation();
 
   const districtCopy = district
@@ -154,9 +162,14 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
           — HomeHero removed entirely; the anniversary/promo banner
           (moved above hero in 28x.130) is now the page's sole top
           visual, no separate hero section underneath it. */}
-      <Box sx={{ px: { xs: 3, sm: 3.5, md: 2 }, mt: 1, mb: 1 }}>
-        <AnniversaryBanner variant="home" />
-      </Box>
+      {/* 🆕 "ป้ายโดนบัง" fix — wrapper only renders while the campaign is
+          live (same anniversaryIsLive() gate the banner itself uses), so an
+          ended campaign leaves no empty spacer box behind. */}
+      {promoBannerLive && (
+        <Box sx={{ px: { xs: 3, sm: 3.5, md: 2 }, mt: 1, mb: 1 }}>
+          <AnniversaryBanner variant="home" />
+        </Box>
+      )}
 
       {/* 🆕 Round 28x.7 (audit fix #3) — district landing band. Only
           renders on the /outcall-massage-* SEO routes (district prop set);
@@ -226,7 +239,7 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
           Renders at every viewport (mobile-first — the same row is
           just as useful as breadcrumbs on desktop). Therapists tap
           scrolls to the `#therapist-grid` wrapper below. */}
-      <QuickNavRow />
+      <QuickNavRow overlapBanner={promoBannerLive} />
 
       {/* 🆕 Round 28r58 — Bundle Packages between the hero and the
           therapist grid. Self-hides on empty, so no layout impact
