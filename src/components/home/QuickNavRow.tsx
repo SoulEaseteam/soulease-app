@@ -189,8 +189,10 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
             <Box
               className="qn-icon"
               sx={{
-                width: 38,
-                height: 38,
+                // 🆕 (founder: "ไอคอน ขยายขึ้นอีกนิด") — 38→42 after the
+                //   28x.204 declutter went a touch too small.
+                width: 42,
+                height: 42,
                 borderRadius: "50%",
                 // 🆕 28w.38 — highlighted (Pricing) tile gets a soft rose halo
                 //   at rest so the eye lands on it.
@@ -205,7 +207,7 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
                 transition: "background 0.18s ease, color 0.18s ease, transform 0.22s cubic-bezier(.34,1.56,.64,1)",
               }}
             >
-              <Icon size={20} weight={highlight ? "fill" : "regular"} />
+              <Icon size={22} weight={highlight ? "fill" : "regular"} />
             </Box>
 
             {/* 🎉 28w.38 (founder "ให้ตรงนี้ มีอนิเมชั่น หรือ ป้ายไอคอนเล็กๆ") —

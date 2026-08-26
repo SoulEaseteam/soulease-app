@@ -27,6 +27,13 @@ import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { useTranslation } from "react-i18next";
 import { fonts } from "@/theme";
+// 🆕 (founder: "แปลภาษา ไม่แปลตามสั่งที่กด และเปลี่ยนหน้าแล้วไม่คงที่เลือก") —
+//   this switcher predates the 28x.57 langPref mechanism: it changed the live
+//   language but never SAVED the choice, and the detection order deliberately
+//   puts `navigator` above localStorage (28s223) — so any reload re-detected
+//   the device locale and the pick silently reverted. It now persists through
+//   the same sunred.lang key ProfilePage's picker uses.
+import { getLangPref, setLangPref, LANG_PREF_KEY, type LangCode } from "@/utils/langPref";
 
 interface LangOption {
   code: string;
@@ -76,14 +83,18 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     rawLang.split("-")[0];
   const cur = LANGS.find((l) => l.code === langCode) ?? LANGS[0];
 
-  // Whether the current language was auto-detected (no manual choice
-  // saved in localStorage). Used to surface the "Auto" badge state.
-  const isAuto =
-    typeof window !== "undefined" &&
-    !window.localStorage.getItem(I18N_LS_KEY);
+  // Whether the current language was auto-detected (no manual choice saved).
+  // Reads the REAL explicit-choice key (sunred.lang) — the old check against
+  // i18next's own cache was doubly stale: wrong key name since 28s223 bumped
+  // it to i18nextLng_v2, and that cache never outranked the device locale
+  // anyway.
+  const isAuto = !getLangPref();
 
   const handleSelect = async (code: string) => {
     setAnchor(null);
+    // Persist FIRST — this is what makes the pick survive reloads/PWA
+    // relaunches (i18n.ts applies sunred.lang after init, above navigator).
+    setLangPref(code as LangCode);
     if (code !== langCode) {
       await i18n.changeLanguage(code);
       document.documentElement.lang = code;
@@ -91,13 +102,15 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   };
 
   /**
-   * Reset to device-detected language. Wipes the sticky preference in
-   * localStorage so the language detector re-runs against `navigator`.
+   * Reset to device-detected language. Wipes the explicit choice AND
+   * i18next's own caches so the detector re-runs against `navigator`.
    */
   const handleAuto = async () => {
     setAnchor(null);
     if (typeof window !== "undefined") {
+      window.localStorage.removeItem(LANG_PREF_KEY);
       window.localStorage.removeItem(I18N_LS_KEY);
+      window.localStorage.removeItem("i18nextLng_v2");
     }
     // Detect device language inline so the pill flips immediately.
     // Mirrors i18n.ts's convertDetectedLanguage: zh-HK/zh-MO/zh-TW all
