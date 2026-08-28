@@ -165,3 +165,49 @@ html.sr-heart-cursor body {
   0%, 70% { left: -80%; }
   90%, 100% { left: 130%; }
 }
+
+/* ═══ 28x.234 — "ไม่ให้ดูเหมือน AI ทำ" craft layer ═══════════════════
+   Founder: หน้าเว็บดูเหมือนใช้ Claude ทำ เห็นหลายเจ้าตกแต่งคล้ายกัน.
+   AI-built sites share a look because they share DEFAULTS — flat digital
+   color, unfiltered stock-ish photos, zero texture. This layer adds the
+   physical-print details template sites never have. No layout changes —
+   founder-approved structures (Moko home, 28x.119 cards) untouched. */
+
+/* 1 · warm-film photo treatment: every photo shares one graded mood,
+   like a single art-directed shoot instead of assorted uploads */
+img:not([src*=".svg"]) {
+  filter: saturate(0.94) contrast(1.05) sepia(0.05) brightness(1.01);
+}
+
+/* 2 · paper grain: a whisper of print texture over the whole page —
+   kills the dead-flat digital ground AI pages share. SVG turbulence,
+   fixed, non-interactive, ~2.5% opacity. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147482000;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  background-size: 160px 160px;
+}
+
+/* 3 · brand-rose text selection — a signature nobody templates */
+::selection {
+  background: rgba(255, 153, 153, 0.4);
+  color: #2a1a14;
+}
+
+/* 4 · thin rose scrollbar on desktop */
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar { width: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 153, 153, 0.55);
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 132, 132, 0.8); }
+}
