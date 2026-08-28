@@ -143,11 +143,16 @@ const HomeFooterV2: React.FC = () => {
         // 28x.227 modern dress: same day/night ground, plus a faint blush
         // wash in the top-right corner and a magenta→gold hairline instead
         // of the flat border. Structure/links untouched (SEO-load-bearing).
-        background: "var(--sr-panel-deep)",
+        // 28x.230 (founder annotated the light footer: "ไม่สวย แก้") — the
+        // footer now commits to ONE dark-luxury ground in both day/night
+        // modes (same call heartitude made for its art panels): espresso
+        // gradient, gold hairlines, ivory text. It anchors the page end
+        // with real contrast instead of white-on-white.
+        background: "linear-gradient(165deg, #2B1A15 0%, #1D110D 100%)",
         backgroundImage:
-          "radial-gradient(120% 90% at 100% 0%, rgba(230, 25, 126, 0.055), transparent 55%)",
+          "radial-gradient(120% 90% at 100% 0%, rgba(240, 80, 160, 0.10), transparent 55%), linear-gradient(165deg, #2B1A15 0%, #1D110D 100%)",
         borderRadius: "24px",
-        border: "1px solid var(--sr-hairline)",
+        border: "1px solid rgba(215, 181, 109, 0.30)",
         position: "relative",
         overflow: "hidden",
         "&::before": {
@@ -180,12 +185,12 @@ const HomeFooterV2: React.FC = () => {
             height: 42,
             borderRadius: "50%",
             background:
-              "linear-gradient(135deg, rgba(240, 80, 160, 0.14), rgba(215, 181, 109, 0.16))",
-            border: "1px solid var(--sr-hairline)",
+              "linear-gradient(135deg, rgba(240, 80, 160, 0.22), rgba(215, 181, 109, 0.24))",
+            border: "1px solid rgba(215, 181, 109, 0.4)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "var(--sr-gold-text)",
+            color: "#E8C87E",
             fontSize: 17,
             lineHeight: 1,
           }}
@@ -198,7 +203,7 @@ const HomeFooterV2: React.FC = () => {
               fontFamily: fonts.heading,
               fontSize: 23,
               fontWeight: 500,
-              color: "var(--sr-ink)",
+              color: "#F4EDE6",
               letterSpacing: "0.04em",
               lineHeight: 1,
             }}
@@ -223,7 +228,7 @@ const HomeFooterV2: React.FC = () => {
               fontWeight: 600,
               letterSpacing: "0.28em",
               textTransform: "uppercase",
-              color: "var(--sr-muted)", // CHAMPAGNE — muted eyebrow
+              color: "#C0AE9C",
               marginTop: "2px",
             }}
           >
@@ -237,7 +242,7 @@ const HomeFooterV2: React.FC = () => {
         sx={{
           fontFamily: fonts.body,
           fontSize: 12,
-          color: "var(--sr-muted)", // CHAMPAGNE — muted tagline
+          color: "#C9B8A6",
           lineHeight: 1.6,
           marginBottom: "22px",
           maxWidth: 320,
@@ -253,7 +258,7 @@ const HomeFooterV2: React.FC = () => {
           gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" },
           gap: { xs: "18px 16px", md: "20px" },
           paddingTop: "20px",
-          borderTop: "1px solid var(--sr-line)", // subtle divider on dark
+          borderTop: "1px solid rgba(255, 255, 255, 0.10)",
         }}
       >
         {columns.map((col) => (
@@ -272,7 +277,7 @@ const HomeFooterV2: React.FC = () => {
                 fontWeight: 700,
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
-                color: "var(--sr-muted)",
+                color: "#D7B56D",
                 marginBottom: "10px",
               }}
             >
@@ -308,7 +313,7 @@ const HomeFooterV2: React.FC = () => {
                     fontFamily: fonts.body,
                     fontSize: 11.5,
                     fontWeight: 400,
-                    color: "var(--sr-body)", // CREAM — links
+                    color: "#E8DED2",
                     lineHeight: 1.5,
                   }}
                 >
@@ -352,13 +357,13 @@ const HomeFooterV2: React.FC = () => {
                               alignItems: "center",
                               padding: "6px 12px",
                               borderRadius: "99px",
-                              border: "1px solid var(--sr-line)",
+                              border: "1px solid rgba(255, 255, 255, 0.22)",
                               transition:
                                 "color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
                               "&:hover": {
                                 color: "#F050A0",
                                 borderColor: "rgba(240, 80, 160, 0.5)",
-                                background: "rgba(240, 80, 160, 0.06)",
+                                background: "rgba(240, 80, 160, 0.14)",
                                 transform: "translateY(-1px)",
                               },
                               "&:focus-visible": {
@@ -416,16 +421,16 @@ const HomeFooterV2: React.FC = () => {
         sx={{
           marginTop: "22px",
           paddingTop: "16px",
-          borderTop: "1px solid var(--sr-line)", // subtle divider on dark
+          borderTop: "1px solid rgba(255, 255, 255, 0.10)",
           fontFamily: fonts.body,
           fontSize: 10.5,
-          color: "var(--sr-dim)", // DIM — legal caption
+          color: "#9C8D7E",
           textAlign: "center",
           letterSpacing: "0.02em",
         }}
       >
         © {new Date().getFullYear()} SunRed Wellness &amp; Massage
-        <Box component="span" aria-hidden sx={{ color: "var(--sr-gold-text)", margin: "0 7px", fontSize: 9 }}>
+        <Box component="span" aria-hidden sx={{ color: "#E8C87E", margin: "0 7px", fontSize: 9 }}>
           ✦
         </Box>
         Bangkok

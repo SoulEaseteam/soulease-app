@@ -321,7 +321,7 @@ function RouteFx({ children }: { children: React.ReactNode }) {
       firstPaint.current = false;
       return;
     }
-    if (location.pathname.startsWith("/admin")) return;
+    // 28x.230 — admin routes fade too (founder: "แอดมินมีลูกเล่น").
     const el = ref.current;
     if (!el) return;
     el.classList.remove("sr-route-in");

@@ -134,7 +134,7 @@ const BottomNavGlass: React.FC = () => {
         // still tappable) and springs back to full size on scroll-up.
         transform: showNav
           ? "translate(-50%, 0) scale(1)"
-          : "translate(-50%, 6px) scale(0.7)",
+          : "translate(-50%, 6px) scale(0.8)",
         transformOrigin: "50% 100%",
         transition: "transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)",
         pointerEvents: "auto",
@@ -317,11 +317,17 @@ const BottomNavGlass: React.FC = () => {
                   )}
                 </motion.div>
 
-                {/* Label */}
+                {/* Label — 28x.230 (founder: "ย่อ เป็นแค่ไอคอน ขยาย มีข้อความ")
+                    collapses to nothing while the bar is shrunk, so the
+                    หุบ state reads as a pure icon puck. */}
                 <motion.div
-                  animate={{ scale: active ? 1.06 : 1, opacity: active ? 1 : 0.55 }}
-                  transition={{ duration: 0.16 }}
-                  style={{ position: "relative", zIndex: 3 }}
+                  animate={{
+                    scale: active ? 1.06 : 1,
+                    opacity: showNav ? (active ? 1 : 0.55) : 0,
+                    height: showNav ? 11 : 0,
+                  }}
+                  transition={{ duration: 0.22 }}
+                  style={{ position: "relative", zIndex: 3, overflow: "hidden" }}
                 >
                   <Typography
                     sx={{

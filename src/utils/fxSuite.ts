@@ -30,8 +30,10 @@ const MAGENTA = "230,25,126";
 const GOLD = "215,181,109";
 const BLUSH = "240,80,160";
 
-const isCustomerPath = (p: string) =>
-  !p.startsWith("/admin") && !p.startsWith("/staff");
+// 28x.230 (founder: "แอดมินมีลูกเล่น") — the admin/staff exclusion from
+// 28x.219 is lifted: the suite runs everywhere now. Keeping the function
+// so a future re-gate is a one-line change.
+const isCustomerPath = (_p: string) => true;
 
 type Spark = {
   x: number;
