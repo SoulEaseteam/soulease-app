@@ -141,16 +141,18 @@ const BottomNavGlass: React.FC = () => {
       }}
     >
       <Paper
-        elevation={14}
+        elevation={0}
         sx={{
           pointerEvents: "auto",
-          // 🕯️ 28t — mode-aware glass bar (light glass by day, dark by night).
-          background: "var(--sr-nav-scrim)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          // 28x.229 (founder: "แถบบาร์ ใสแบบไอจี") — IG-clear glass: the
+          // 🕯️ 28t day/night scrim thinned to ~42% so the page shows
+          // through, heavier blur doing the legibility work, whisper
+          // shadow. color-mix keeps it mode-aware without a new token.
+          background: "color-mix(in srgb, var(--sr-nav-scrim) 42%, transparent)",
+          backdropFilter: "blur(26px) saturate(170%)",
+          WebkitBackdropFilter: "blur(26px) saturate(170%)",
           border: "1px solid var(--sr-hairline)",
-          boxShadow:
-            "0 14px 34px rgba(0, 0, 0, 0.24), 0 3px 10px rgba(0, 0, 0, 0.12)",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.10)",
           borderRadius: "999px",
           px: 1, py: 0.75,
         }}
