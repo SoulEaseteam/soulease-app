@@ -120,16 +120,20 @@ const BottomNavGlass: React.FC = () => {
   return (
     <Box
       sx={{
+        // 28x.226 (founder: "แถบบาร์ หุบย่อ ทุกอย่างเปลี่ยนแบบเว็บ heartitude")
+        // — full-width bottom sheet → heartitude's fx-tabbar geometry: a
+        // COMPACT floating pill, centered, lifted off the bottom edge,
+        // with the same bouncy spring show/hide from 28x.224.
         position: "fixed",
-        left: 0, right: 0, bottom: 0,
+        left: "50%",
+        bottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
+        width: "min(420px, calc(100vw - 28px))",
         zIndex: 2000,
-        // 28x.224 (founder: "แถบบาร์ เอาลูกเล่นแบบเว็บ heartitude") — the
-        // fx-tabbar spring: slide + slight shrink with a bouncy overshoot
-        // curve, instead of the old flat ease. Same auto-hide logic.
-        transform:  showNav ? "translateY(0) scale(1)" : "translateY(112%) scale(0.92)",
+        transform: showNav
+          ? "translate(-50%, 0) scale(1)"
+          : "translate(-50%, 110px) scale(0.85)",
         transformOrigin: "50% 100%",
         transition: "transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
         pointerEvents: showNav ? "auto" : "none",
       }}
     >
@@ -141,13 +145,10 @@ const BottomNavGlass: React.FC = () => {
           background: "var(--sr-nav-scrim)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderTop:    "1px solid var(--sr-hairline)",
-          borderLeft:   "1px solid var(--sr-hairline)",
-          borderRight:  "1px solid var(--sr-hairline)",
-          borderBottom: "none",
+          border: "1px solid var(--sr-hairline)",
           boxShadow:
-            "0 -10px 28px rgba(0, 0, 0, 0.22), 0 -2px 6px rgba(0, 0, 0,0.12)",
-          borderRadius: "22px 22px 0 0",
+            "0 14px 34px rgba(0, 0, 0, 0.24), 0 3px 10px rgba(0, 0, 0, 0.12)",
+          borderRadius: "999px",
           px: 1, py: 0.75,
         }}
       >
