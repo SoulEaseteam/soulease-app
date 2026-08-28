@@ -7,10 +7,14 @@
 //   • TopNav.tsx          — inline pill on the home top bar
 //   • GlobalLanguagePill  — fixed-position wrapper for non-home pages
 //
-// Behavior:
-//   • Pill shows current language flag + 2-letter code (EN / TH / 中 / 日 / 한)
-//   • Click → MUI menu with all 5 languages + an "Auto" entry that
-//     resets back to the device's preferred language (navigator.language)
+// Behavior (28x.224 — founder: "ตรงแปลภาษา เอาลูกเล่นแบบเว็บ heartitude"):
+//   • Pill shows current language flag + short code + a ▾ caret
+//   • Tap → the pill EXPANDS IN PLACE, heartitude .fx-lang style — every
+//     language as a mini pill in one row (overlaid, anchored right, so a
+//     narrow top bar never reflows), active = magenta gradient pill,
+//     plus an ✨ Auto chip that re-detects the device language
+//   • Picking one plays heartitude's ".picked" flash (gradient + glow +
+//     scale) for ~320ms before the switch applies
 //   • On select:
 //       - i18n.changeLanguage(code) — propagates app-wide
 //       - document.documentElement.lang = code — keeps SEO + a11y in sync
@@ -21,9 +25,8 @@
 // "แปลภาษาของ TopNav ใช้ได้ทั้งเว็บ" — same UX, available everywhere,
 // not stuck to a floating bottom-left bubble.
 
-import React, { useState } from "react";
-import { Box, Menu, MenuItem } from "@mui/material";
-import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import React, { useEffect, useRef, useState } from "react";
+import { Box } from "@mui/material";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { useTranslation } from "react-i18next";
 import { fonts } from "@/theme";
@@ -70,7 +73,28 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   flagOnly = false,
 }) => {
   const { i18n, t } = useTranslation();
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [picked, setPicked] = useState<string | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // close on outside tap / Escape while expanded
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   // 🆕 Round 28x.99f — zh-TW is now its own bundle, not an alias of zh.
   // A blind `.split("-")[0]` would turn "zh-TW" into "zh" and show the
@@ -91,7 +115,6 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const isAuto = !getLangPref();
 
   const handleSelect = async (code: string) => {
-    setAnchor(null);
     // Persist FIRST — this is what makes the pick survive reloads/PWA
     // relaunches (i18n.ts applies sunred.lang after init, above navigator).
     setLangPref(code as LangCode);
@@ -106,7 +129,6 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
    * i18next's own caches so the detector re-runs against `navigator`.
    */
   const handleAuto = async () => {
-    setAnchor(null);
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(LANG_PREF_KEY);
       window.localStorage.removeItem(I18N_LS_KEY);
@@ -131,25 +153,31 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     }
   };
 
+  // heartitude ".picked" flash: light the chosen pill up first, then apply.
+  const pickWithFlash = (code: string, apply: () => void) => {
+    setPicked(code);
+    window.setTimeout(() => {
+      setPicked(null);
+      setOpen(false);
+      apply();
+    }, 320);
+  };
+
   const dim = size === "sm" ? 36 : 40;
   const fontSize = size === "sm" ? 10 : 11;
   const flagSize = size === "sm" ? 13 : 14;
 
   return (
-    <>
+    <Box ref={wrapRef} sx={{ position: "relative", display: "inline-flex" }}>
       <Box
         component="button"
         type="button"
-        // 28x.223 (founder: "ตรงแปลภาษา ปรับลูกเล่นเหมือนกัน") — same fx
-        // treatment as the rest of the suite: glint sweep + tap sparks +
-        // squash + desktop magnetic, all via the opt-in classes.
+        // 28x.223 fx classes + 28x.224 heartitude-style expander trigger
         className="sr-fx-tap sr-shine"
         aria-label={ariaLabel ?? t("nav.changeLanguage", "Change language")}
-        aria-haspopup="menu"
-        aria-expanded={Boolean(anchor)}
-        onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
-          setAnchor(e.currentTarget)
-        }
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
         sx={{
           display: "flex",
           alignItems: "center",
@@ -169,8 +197,12 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           letterSpacing: "0.05em",
           cursor: "pointer",
           fontFamily: fonts.body,
-          transition: "background 0.2s ease",
-          "&:hover": { background: "rgba(255, 255, 255, 0.75)" },
+          transition: "background 0.2s ease, border-color 0.25s ease, box-shadow 0.25s ease",
+          "&:hover": {
+            background: "rgba(255, 255, 255, 0.75)",
+            borderColor: "rgba(230, 25, 126, 0.4)",
+            boxShadow: "0 0 14px rgba(230, 25, 126, 0.18)",
+          },
           "&:focus-visible": {
             outline: "2px solid #2D2D2B",
             outlineOffset: 2,
@@ -181,102 +213,129 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           {cur.flag}
         </Box>
         {!flagOnly && cur.short}
-      </Box>
-
-      <Menu
-        anchorEl={anchor}
-        open={Boolean(anchor)}
-        onClose={() => setAnchor(null)}
-        MenuListProps={{ sx: { padding: "6px" } }}
-        PaperProps={{
-          sx: {
-            mt: 1,
-            borderRadius: "14px",
-            background: "rgba(244, 246, 245, 0.95)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(255, 255, 255, 0.7)",
-            boxShadow: "0 12px 32px rgba(15, 23, 42, 0.18)",
-            minWidth: 180,
-          },
-        }}
-      >
-        {/* Auto / device language — resets the sticky preference */}
-        <MenuItem
-          onClick={() => void handleAuto()}
-          selected={isAuto}
+        <Box
+          component="i"
+          aria-hidden
           sx={{
-            borderRadius: "10px",
-            fontFamily: fonts.body,
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#1A2B2E",
-            gap: 1,
-            "&.Mui-selected": {
-              background: "rgba(45, 45, 43, 0.08)",
-              "&:hover": { background: "rgba(15, 23, 42, 0.12)" },
-            },
+            fontStyle: "normal",
+            fontSize: "8px",
+            marginLeft: "2px",
+            transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            transform: open ? "rotate(180deg)" : "none",
           }}
         >
-          <AutoAwesomeRoundedIcon
-            sx={{ fontSize: 16, color: "#4B4B48" }}
-          />
-          <Box sx={{ flex: 1 }}>
-            {t("language.auto", "Auto (device)")}
-          </Box>
-          {isAuto && (
-            <CheckRoundedIcon
-              sx={{ fontSize: 16, color: "#4B4B48" }}
-              aria-label="current"
-            />
-          )}
-        </MenuItem>
+          ▾
+        </Box>
+      </Box>
 
-        {/* Divider line */}
+      {open && (
         <Box
+          role="group"
+          aria-label={t("nav.changeLanguage", "Change language")}
           sx={{
-            height: 1,
-            background: "rgba(184, 92, 60, 0.18)",
-            margin: "4px 8px 4px",
+            position: "absolute",
+            top: "50%",
+            right: 0,
+            zIndex: 60,
+            display: "flex",
+            alignItems: "center",
+            gap: "2px",
+            height: dim,
+            padding: "0 6px",
+            borderRadius: "99px",
+            background: "rgba(255, 255, 255, 0.94)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            border: "1px solid rgba(230, 25, 126, 0.25)",
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.16), 0 0 18px rgba(230, 25, 126, 0.12)",
+            whiteSpace: "nowrap",
+            transformOrigin: "100% 50%",
+            animation: "srLangPop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+            "@keyframes srLangPop": {
+              from: { opacity: 0, transform: "translateY(-50%) scale(0.7)" },
+              to: { opacity: 1, transform: "translateY(-50%) scale(1)" },
+            },
+            "@media (prefers-reduced-motion: reduce)": { animation: "none", transform: "translateY(-50%)" },
           }}
-          aria-hidden
-        />
-
-        {LANGS.map((l) => {
-          const selected = l.code === langCode && !isAuto;
-          return (
-            <MenuItem
-              key={l.code}
-              selected={selected}
-              onClick={() => void handleSelect(l.code)}
-              sx={{
-                borderRadius: "10px",
-                fontFamily: fonts.body,
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#1A2B2E",
-                gap: 1,
-                "&.Mui-selected": {
-                  background: "rgba(45, 45, 43, 0.08)",
-                  "&:hover": { background: "rgba(15, 23, 42, 0.12)" },
-                },
-              }}
-            >
-              <Box component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
-                {l.flag}
+        >
+          {LANGS.map((l) => {
+            const active = l.code === langCode && !isAuto;
+            const isPicked = picked === l.code;
+            return (
+              <Box
+                key={l.code}
+                component="button"
+                type="button"
+                aria-label={l.label}
+                aria-pressed={active}
+                onClick={() => pickWithFlash(l.code, () => void handleSelect(l.code))}
+                sx={{
+                  border: 0,
+                  cursor: "pointer",
+                  height: dim - 12,
+                  padding: "0 9px",
+                  borderRadius: "99px",
+                  fontFamily: fonts.body,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  lineHeight: 1,
+                  color: active || isPicked ? "#FFFFFF" : "#4A5568",
+                  background:
+                    isPicked
+                      ? "linear-gradient(135deg, #F050A0, #E6197E)"
+                      : active
+                        ? "linear-gradient(135deg, #F050A0, #E6197E)"
+                        : "transparent",
+                  boxShadow: isPicked ? "0 0 16px rgba(230, 25, 126, 0.55)" : "none",
+                  transform: isPicked ? "scale(1.12)" : "none",
+                  transition:
+                    "background 0.25s ease, color 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease",
+                  "&:hover": {
+                    background:
+                      active || isPicked
+                        ? "linear-gradient(135deg, #F050A0, #E6197E)"
+                        : "rgba(252, 231, 240, 0.9)",
+                    color: active || isPicked ? "#FFFFFF" : "#C2185B",
+                  },
+                }}
+              >
+                {l.short}
               </Box>
-              <Box sx={{ flex: 1 }}>{l.label}</Box>
-              {selected && (
-                <CheckRoundedIcon
-                  sx={{ fontSize: 16, color: "#4B4B48" }}
-                  aria-label="current"
-                />
-              )}
-            </MenuItem>
-          );
-        })}
-      </Menu>
-    </>
+            );
+          })}
+          <Box
+            component="button"
+            type="button"
+            aria-label={t("language.auto", "Auto (device)")}
+            aria-pressed={isAuto}
+            onClick={() => pickWithFlash("auto", () => void handleAuto())}
+            sx={{
+              border: 0,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: dim - 12,
+              width: dim - 12,
+              borderRadius: "99px",
+              color: isAuto || picked === "auto" ? "#FFFFFF" : "#8A94A2",
+              background:
+                isAuto || picked === "auto"
+                  ? "linear-gradient(135deg, #F050A0, #E6197E)"
+                  : "transparent",
+              boxShadow: picked === "auto" ? "0 0 16px rgba(230, 25, 126, 0.55)" : "none",
+              transform: picked === "auto" ? "scale(1.12)" : "none",
+              transition:
+                "background 0.25s ease, color 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease",
+              "&:hover": { background: isAuto ? undefined : "rgba(252, 231, 240, 0.9)", color: isAuto ? "#FFFFFF" : "#C2185B" },
+            }}
+          >
+            <AutoAwesomeRoundedIcon sx={{ fontSize: 14 }} />
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 };
 

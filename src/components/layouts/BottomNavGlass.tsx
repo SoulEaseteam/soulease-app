@@ -123,8 +123,12 @@ const BottomNavGlass: React.FC = () => {
         position: "fixed",
         left: 0, right: 0, bottom: 0,
         zIndex: 2000,
-        transform:  showNav ? "translateY(0)" : "translateY(110%)",
-        transition: "transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)",
+        // 28x.224 (founder: "แถบบาร์ เอาลูกเล่นแบบเว็บ heartitude") — the
+        // fx-tabbar spring: slide + slight shrink with a bouncy overshoot
+        // curve, instead of the old flat ease. Same auto-hide logic.
+        transform:  showNav ? "translateY(0) scale(1)" : "translateY(112%) scale(0.92)",
+        transformOrigin: "50% 100%",
+        transition: "transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
         pointerEvents: showNav ? "auto" : "none",
       }}

@@ -1,8 +1,8 @@
 // 🪄 Round 28x.219 — the FULL heartitude effect suite, SunRed-cut.
 // Founder re-issued "เอาลูกเล่นทั้งหมดไปปรับแต่งให้ sunred" after the
 // selective 28x.218 port — so this time everything comes over, restyled
-// from studio-mint to Moko magenta + candlelight gold: ambient ember
-// dust, pointer stardust trail, click sparks, magnetic CTAs, 3D card
+// from studio-mint to Moko magenta + candlelight gold: twinkle
+// starfield (28x.224), pointer stardust trail, click sparks, magnetic CTAs, 3D card
 // tilt, floating hearts from the concierge FAB, and a heart cursor
 // (CSS, in fx.css). The silk curtain shipped here in 28x.219 and was
 // removed in 28x.220 — founder: "ไม่เอาพรึ่บตอนเปลี่ยนหน้า". Vanilla on
@@ -69,27 +69,58 @@ export function initFxSuite(): void {
     canvas.height = H * DPR;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   };
+  // (stars reseed below once seedStars exists — see resize listener swap)
   resize();
-  window.addEventListener("resize", resize);
-
-  // ambient embers — tuned twice by founder eye: 28x.221 "แทบไม่เห็น"
-  // (22 dim dots → boosted), then 28x.222 "พุ้งเกิน" (46 bright puffs →
-  // settled midway). These numbers are her calibration — nudge, don't jump.
-  const embers: Spark[] = Array.from({ length: 32 }, () => ({
-    x: Math.random() * 400,
-    y: Math.random() * 800,
-    vx: 0,
-    vy: -(0.12 + Math.random() * 0.3),
-    life: Math.random() * 1,
-    max: 1,
-    size: 1 + Math.random() * 1.8,
-    color: Math.random() < 0.45 ? GOLD : MAGENTA,
-  }));
-  embers.forEach((e) => {
-    e.x = Math.random() * (W || 400);
-    e.y = Math.random() * (H || 800);
-    e.ember = true;
+  window.addEventListener("resize", () => {
+    resize();
+    seedStars();
   });
+
+  // ambient field — 28x.224, founder: "เอาลูกเล่นแบบเว็บ heartitude".
+  // The rising ember dust (tuned 28x.221→222) is replaced by heartitude's
+  // signature: a fixed twinkle STARFIELD — small dots on 3 parallax depth
+  // layers + a few 4-point sparkles, breathing in place, drifting with
+  // scroll. Gold/magenta instead of heartitude's mint, same soul.
+  type Star = {
+    x: number; y: number; size: number; color: string;
+    phase: number; speed: number; depth: number; sparkle: boolean;
+  };
+  const stars: Star[] = [];
+  const seedStars = () => {
+    stars.length = 0;
+    for (let i = 0; i < 34; i++) {
+      stars.push({
+        x: Math.random() * W, y: Math.random() * H,
+        size: 0.8 + Math.random() * 1.4,
+        color: Math.random() < 0.5 ? GOLD : MAGENTA,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.4 + Math.random() * 0.9,
+        depth: [0.04, 0.09, 0.16][i % 3],
+        sparkle: false,
+      });
+    }
+    for (let i = 0; i < 9; i++) {
+      stars.push({
+        x: Math.random() * W, y: Math.random() * H,
+        size: 3 + Math.random() * 4.5,
+        color: Math.random() < 0.7 ? GOLD : MAGENTA,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.25 + Math.random() * 0.5,
+        depth: 0.1 + Math.random() * 0.08,
+        sparkle: true,
+      });
+    }
+  };
+  seedStars();
+  const drawSparkle = (x: number, y: number, r: number) => {
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.quadraticCurveTo(x, y, x, y + r);
+    ctx.quadraticCurveTo(x, y, x - r, y);
+    ctx.quadraticCurveTo(x, y, x, y - r);
+    ctx.fill();
+  };
 
   const sparks: Spark[] = [];
   const spawnTrail = (x: number, y: number) => {
@@ -154,23 +185,23 @@ export function initFxSuite(): void {
     if (!running) return;
     ctx.clearRect(0, 0, W, H);
     if (customer) {
-      for (const p of embers) {
-        p.y += p.vy;
-        p.x += Math.sin((p.y + p.x) * 0.01) * 0.3;
-        if (p.y < -8) {
-          p.y = H + 8;
-          p.x = Math.random() * W;
+      const t0 = performance.now() / 1000;
+      const sy = window.scrollY;
+      for (const s of stars) {
+        const tw = Math.abs(Math.sin(s.phase + t0 * s.speed)); // 0..1 twinkle
+        // parallax: deeper layers slide more as the guest scrolls
+        const py = (((s.y - sy * s.depth) % (H + 40)) + H + 40) % (H + 40) - 20;
+        if (s.sparkle) {
+          const a = 0.12 + 0.4 * tw;
+          ctx.fillStyle = `rgba(${s.color},${a.toFixed(3)})`;
+          drawSparkle(s.x, py, s.size * (0.7 + 0.5 * tw));
+        } else {
+          const a = 0.08 + 0.3 * tw;
+          ctx.fillStyle = `rgba(${s.color},${a.toFixed(3)})`;
+          ctx.beginPath();
+          ctx.arc(s.x, py, s.size, 0, Math.PI * 2);
+          ctx.fill();
         }
-        const a = 0.16 + 0.2 * Math.abs(Math.sin(p.y * 0.02 + p.x));
-        // soft halo behind the core so each mote reads as a glow puff
-        ctx.fillStyle = `rgba(${p.color},${(a * 0.18).toFixed(3)})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = `rgba(${p.color},${a.toFixed(3)})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
       }
       for (let i = sparks.length - 1; i >= 0; i--) {
         const p = sparks[i];
