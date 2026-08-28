@@ -122,11 +122,13 @@ const HomeFooterV2: React.FC = () => {
     },
   ];
 
-  const columns: { title: string; links: FooterLink[] }[] = [
+  // 28x.227 (founder: "ปรับสวยขึ้น เหมาะกับสมัยใหม่") — contact entries
+  // render as tappable glass chips instead of plain text rows.
+  const columns: { title: string; links: FooterLink[]; chips?: boolean }[] = [
     { title: t("footer.col.menu", "Menu"), links: menuLinks },
     { title: t("footer.col.areas", "Areas"), links: areaLinks },
     { title: t("footer.col.help", "Help"), links: helpLinks },
-    { title: t("footer.col.contact", "Contact us"), links: contactLinks },
+    { title: t("footer.col.contact", "Contact us"), links: contactLinks, chips: true },
   ];
 
   return (
@@ -137,10 +139,28 @@ const HomeFooterV2: React.FC = () => {
       sx={{
         marginTop: { xs: "36px", md: "48px" },
         marginX: { xs: "12px", md: "12px" },
-        padding: { xs: "28px 20px 32px", md: "36px 32px 40px" },
-        background: "var(--sr-panel-deep)", // PANEL_DEEP — deepest ground, just above ESPRESSO bg
-        borderRadius: "20px",
-        borderTop: "1px solid var(--sr-hairline)", // GOLD hairline — embroidery
+        padding: { xs: "30px 20px 30px", md: "40px 36px 36px" },
+        // 28x.227 modern dress: same day/night ground, plus a faint blush
+        // wash in the top-right corner and a magenta→gold hairline instead
+        // of the flat border. Structure/links untouched (SEO-load-bearing).
+        background: "var(--sr-panel-deep)",
+        backgroundImage:
+          "radial-gradient(120% 90% at 100% 0%, rgba(230, 25, 126, 0.055), transparent 55%)",
+        borderRadius: "24px",
+        border: "1px solid var(--sr-hairline)",
+        position: "relative",
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: "8%",
+          right: "8%",
+          height: "2px",
+          borderRadius: "2px",
+          background:
+            "linear-gradient(90deg, transparent, rgba(240, 80, 160, 0.8), rgba(215, 181, 109, 0.8), transparent)",
+        },
       }}
     >
       {/* Brand lockup */}
@@ -154,17 +174,19 @@ const HomeFooterV2: React.FC = () => {
       >
         <Box
           aria-hidden
+          className="sr-shine"
           sx={{
-            width: 36,
-            height: 36,
+            width: 42,
+            height: 42,
             borderRadius: "50%",
-            background: "var(--sr-panel-2)", // WALNUT — inner chip
-            border: "1px solid var(--sr-hairline)", // GOLD hairline
+            background:
+              "linear-gradient(135deg, rgba(240, 80, 160, 0.14), rgba(215, 181, 109, 0.16))",
+            border: "1px solid var(--sr-hairline)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "var(--sr-gold-text)", // GOLD — logo star
-            fontSize: 15,
+            color: "var(--sr-gold-text)",
+            fontSize: 17,
             lineHeight: 1,
           }}
         >
@@ -174,14 +196,25 @@ const HomeFooterV2: React.FC = () => {
           <Box
             sx={{
               fontFamily: fonts.heading,
-              fontSize: 17,
+              fontSize: 23,
               fontWeight: 500,
-              color: "var(--sr-ink)", // IVORY — brand heading
-              letterSpacing: "0.02em",
+              color: "var(--sr-ink)",
+              letterSpacing: "0.04em",
               lineHeight: 1,
             }}
           >
-            SUNRED
+            SUN
+            <Box
+              component="span"
+              sx={{
+                background: "linear-gradient(135deg, #F050A0, #E6197E)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              RED
+            </Box>
           </Box>
           <Box
             sx={{
@@ -248,11 +281,11 @@ const HomeFooterV2: React.FC = () => {
             <Box
               aria-hidden
               sx={{
-                width: 18,
+                width: 22,
                 height: "2px",
                 borderRadius: "1px",
-                background: "#FF9999",
-                opacity: 0.55,
+                background: "linear-gradient(90deg, #F050A0, #D7B56D)",
+                opacity: 0.8,
                 marginBottom: "12px",
               }}
             />
@@ -286,10 +319,11 @@ const HomeFooterV2: React.FC = () => {
                       sx={{
                         color: "inherit",
                         textDecoration: "none",
-                        transition: "color 0.16s ease",
-                        "&:hover": { color: "#FF9999" }, // ROSE — link hover
+                        display: "inline-block",
+                        transition: "color 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                        "&:hover": { color: "#F050A0", transform: "translateX(3px)" },
                         "&:focus-visible": {
-                          outline: "2px solid #FF9999", // ROSE focus ring
+                          outline: "2px solid #F050A0",
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },
@@ -309,17 +343,43 @@ const HomeFooterV2: React.FC = () => {
                           ? "noopener noreferrer"
                           : undefined
                       }
-                      sx={{
-                        color: "inherit",
-                        textDecoration: "none",
-                        transition: "color 0.16s ease",
-                        "&:hover": { color: "#FF9999" }, // ROSE — link hover
-                        "&:focus-visible": {
-                          outline: "2px solid #FF9999", // ROSE focus ring
-                          outlineOffset: 2,
-                          borderRadius: "3px",
-                        },
-                      }}
+                      sx={
+                        col.chips
+                          ? {
+                              color: "inherit",
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "6px 12px",
+                              borderRadius: "99px",
+                              border: "1px solid var(--sr-line)",
+                              transition:
+                                "color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                              "&:hover": {
+                                color: "#F050A0",
+                                borderColor: "rgba(240, 80, 160, 0.5)",
+                                background: "rgba(240, 80, 160, 0.06)",
+                                transform: "translateY(-1px)",
+                              },
+                              "&:focus-visible": {
+                                outline: "2px solid #F050A0",
+                                outlineOffset: 2,
+                              },
+                            }
+                          : {
+                              color: "inherit",
+                              textDecoration: "none",
+                              display: "inline-block",
+                              transition:
+                                "color 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                              "&:hover": { color: "#F050A0", transform: "translateX(3px)" },
+                              "&:focus-visible": {
+                                outline: "2px solid #F050A0",
+                                outlineOffset: 2,
+                                borderRadius: "3px",
+                              },
+                            }
+                      }
                     >
                       {link.label}
                     </Box>
@@ -364,7 +424,11 @@ const HomeFooterV2: React.FC = () => {
           letterSpacing: "0.02em",
         }}
       >
-        © {new Date().getFullYear()} SunRed Wellness &amp; Massage · Bangkok
+        © {new Date().getFullYear()} SunRed Wellness &amp; Massage
+        <Box component="span" aria-hidden sx={{ color: "var(--sr-gold-text)", margin: "0 7px", fontSize: 9 }}>
+          ✦
+        </Box>
+        Bangkok
       </Box>
     </Box>
   );

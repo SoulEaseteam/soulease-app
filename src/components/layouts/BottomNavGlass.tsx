@@ -129,12 +129,15 @@ const BottomNavGlass: React.FC = () => {
         bottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
         width: "min(420px, calc(100vw - 28px))",
         zIndex: 2000,
+        // 28x.228 (founder: "ย่อหุบ ไม่ซ่อน") — scrolling down no longer
+        // slides the bar off-screen: it SHRINKS in place (still visible,
+        // still tappable) and springs back to full size on scroll-up.
         transform: showNav
           ? "translate(-50%, 0) scale(1)"
-          : "translate(-50%, 110px) scale(0.85)",
+          : "translate(-50%, 6px) scale(0.7)",
         transformOrigin: "50% 100%",
         transition: "transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        pointerEvents: showNav ? "auto" : "none",
+        pointerEvents: "auto",
       }}
     >
       <Paper
