@@ -281,7 +281,10 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => {
 
 // ── bits ────────────────────────────────────────────────────────────
 const SectionEyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+  <Box
+    className="deco-eyebrow-left"
+    sx={{ display: "flex", alignItems: "center", gap: 1, color: "var(--sr-gold-text)" }}
+  >
     <Megaphone size={15} weight="fill" color={ROSE} />
     <Typography
       sx={{

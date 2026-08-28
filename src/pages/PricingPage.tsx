@@ -347,6 +347,7 @@ const PricingPage: React.FC = () => {
         }}
       >
         <Box
+          className="deco-eyebrow-left"
           sx={{
             fontFamily: fonts.body,
             fontSize: 11,
@@ -354,6 +355,7 @@ const PricingPage: React.FC = () => {
             letterSpacing: "0.20em",
             textTransform: "uppercase",
             color: "rgba(255,255,255,0.72)",
+            justifyContent: { xs: "flex-start", md: "center" },
           }}
         >
           SunRed · Bangkok
@@ -361,11 +363,13 @@ const PricingPage: React.FC = () => {
         <Box
           component="h1"
           sx={{
-            fontFamily: fonts.heading,
-            fontSize: { xs: 32, md: 48 },
-            fontWeight: 500,
-            lineHeight: 1.1,
-            letterSpacing: "-0.01em",
+            // 28x.236 art direction — deco caps (see fx.css kit).
+            fontFamily: '"Federo", "Cinzel", "Playfair Display", Georgia, serif',
+            fontSize: { xs: 27, md: 40 },
+            fontWeight: 400,
+            lineHeight: 1.18,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
             color: "#fff",
             margin: "12px 0 0",
           }}

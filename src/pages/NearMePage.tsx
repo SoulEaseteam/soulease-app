@@ -929,6 +929,7 @@ const NearMePage: React.FC = () => {
       {/* Header */}
       <Box sx={{ px: 0.5, pt: 1, pb: 2 }}>
         <Typography
+          className="deco-eyebrow-left"
           sx={{
             fontFamily: SANS,
             fontSize: 11,
@@ -943,12 +944,14 @@ const NearMePage: React.FC = () => {
         <Typography
           component="h1"
           sx={{
-            fontFamily: SERIF,
-            fontSize: { xs: 24, md: 28 },
-            fontWeight: 700,
+            // 28x.236 art direction — deco caps (see fx.css kit).
+            fontFamily: '"Federo", "Cinzel", "Playfair Display", Georgia, serif',
+            fontSize: { xs: 20, md: 24 },
+            fontWeight: 400,
             color: "var(--sr-ink)",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.15,
+            letterSpacing: "0.07em",
+            textTransform: "uppercase",
+            lineHeight: 1.28,
             mt: 0.5,
           }}
         >

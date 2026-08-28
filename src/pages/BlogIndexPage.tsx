@@ -88,18 +88,22 @@ const BlogIndexPage: React.FC = () => {
             letterSpacing: "0.20em",
             textTransform: "uppercase",
             color: "rgba(255,255,255,0.72)",
+            justifyContent: "center",
           }}
+          className="deco-eyebrow"
         >
           SunRed · Bangkok
         </Box>
         <Box
           component="h1"
           sx={{
-            fontFamily: fonts.heading,
-            fontSize: { xs: 30, md: 44 },
-            fontWeight: 500,
-            lineHeight: 1.12,
-            letterSpacing: "-0.01em",
+            // 28x.236 art direction — deco caps (see fx.css kit).
+            fontFamily: '"Federo", "Cinzel", "Playfair Display", Georgia, serif',
+            fontSize: { xs: 25, md: 36 },
+            fontWeight: 400,
+            lineHeight: 1.2,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
             color: "#fff",
             margin: "12px 0 0",
           }}
