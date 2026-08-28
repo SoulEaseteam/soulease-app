@@ -437,9 +437,12 @@ routes / no-JS clients never see hidden content; IO reveal is backed by
 a scroll+visibilitychange manual bounds check, and reveals write INLINE
 style, not just a class (React reconciliation wipes classList-added
 classes on MUI Boxes — learned the hard way in dev). Typecheck + build +
-prerender pass. ⚠️ NOT visually confirmed in a live browser yet (the
-embedded dev pane suspends rendering when hidden — IO/scroll/style-recalc
-all freeze, untestable there); first real phone/browser look still owed.
+prerender pass. ✅ Visually confirmed on PROD (sunred.vip, 375px mobile
+viewport, 2026-08-28): home renders, QuickNavRow + footer reveal on
+scroll, route fade fires + cleans up on / → /services, services page
+intact. (The embedded dev pane suspends rendering when hidden —
+IO/scroll/style-recalc all freeze — so dev-server testing was
+impossible; prod + fronted-tab screenshots were the working method.)
 
 **Open / not done:**
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
