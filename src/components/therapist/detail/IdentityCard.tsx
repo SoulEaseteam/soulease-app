@@ -134,9 +134,11 @@ const IdentityCard: React.FC<Props> = ({
             gap: "4px",
             marginTop: "6px",
             fontFamily: SANS,
-            fontSize: "12px",
+            // 🆕 28x.241 editorial — quieter: a permission hint shouldn't
+            //   compete with the serif name above it.
+            fontSize: "11px",
             fontWeight: 500,
-            color: "var(--sr-muted)",
+            color: "var(--sr-dim)",
             cursor: hasLocation || geoStatus === "denied" ? "default" : "pointer",
           }}
         >
@@ -166,7 +168,11 @@ const IdentityCard: React.FC<Props> = ({
                 sx={{
                   display: "inline-flex",
                   alignItems: "center",
-                  background: "rgba(217,124,149,0.12)",
+                  // 🆕 28x.241 editorial (founder: "ปรับ") — outline chips;
+                  //   the tinted fill turned into flat gray slabs on the
+                  //   night theme.
+                  background: "transparent",
+                  border: "1px solid rgba(217,124,149,0.38)",
                   borderRadius: "999px",
                   padding: "3px 10px",
                   fontFamily: SANS,
@@ -186,7 +192,11 @@ const IdentityCard: React.FC<Props> = ({
                 sx={{
                   display: "inline-flex",
                   alignItems: "center",
-                  background: "rgba(217,124,149,0.12)",
+                  // 🆕 28x.241 editorial (founder: "ปรับ") — outline chips;
+                  //   the tinted fill turned into flat gray slabs on the
+                  //   night theme.
+                  background: "transparent",
+                  border: "1px solid rgba(217,124,149,0.38)",
                   borderRadius: "999px",
                   padding: "3px 10px",
                   fontFamily: SANS,
@@ -204,7 +214,11 @@ const IdentityCard: React.FC<Props> = ({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "3px",
-                  background: "rgba(217,124,149,0.12)",
+                  // 🆕 28x.241 editorial (founder: "ปรับ") — outline chips;
+                  //   the tinted fill turned into flat gray slabs on the
+                  //   night theme.
+                  background: "transparent",
+                  border: "1px solid rgba(217,124,149,0.38)",
                   borderRadius: "999px",
                   padding: "3px 10px",
                   fontFamily: SANS,

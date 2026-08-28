@@ -100,9 +100,12 @@ button,
   --sr-panel: rgba(32, 34, 43, 0.82);       /* card / section panel */
   --sr-panel-2: rgba(42, 45, 56, 0.82);     /* raised / inner / hover */
   --sr-panel-deep: rgba(18, 19, 25, 0.86);  /* footer / drawer / deep ground */
-  /* 🆕 28x.219 editorial pass — primary CTA fill. Night runs a DEEPER rose:
-     the day #D97C95 reads washed/pastel against the dark-luxury panels. */
-  --sr-cta: #B4566F;
+  /* 🆕 28x.240 editorial pass — primary CTA fill.
+     🆕 28x.241 (founder selected the night button: "สีธีมร้าน ไม่คล้ำเกิน") —
+     the deeper #B4566F read muddy; night now uses the shop's own Vintage
+     Rose #FF9999, the SAME fixed accent the night theme already runs on the
+     wordmark, badges and heart — white text per the founder's badge spec. */
+  --sr-cta: #FF9999;
   /* text on surfaces (clear hierarchy) */
   --sr-ink: #F3F2F4;         /* headings / brightest */
   --sr-body: #BCC0CA;        /* body */

@@ -34,8 +34,11 @@ import { brand, fonts } from "@/theme";
 //   Instagram/Grab tab-bar convention. Reads as real polish rather than a
 //   flat color toggle, and costs nothing extra now that there are only 3
 //   tabs to draw.
+// 🆕 28x.241 (founder selected the tab: "เปลี่ยนชื่อสั้นลง") — "Practitioners"
+//   was by far the longest label on the bar; the tab IS the home grid, so it
+//   now reads "Home" and the three tabs sit balanced.
 const TABS = [
-  { label: "Practitioners", value: "/",         icon: (a: boolean) => a ? <FaHeart size={18} color="#fff" /> : <FaRegHeart size={18} color="#9AA0AC" /> },
+  { label: "Home", value: "/",         icon: (a: boolean) => a ? <FaHeart size={18} color="#fff" /> : <FaRegHeart size={18} color="#9AA0AC" /> },
   { label: "Services",      value: "/services", icon: (a: boolean) => a ? <Spa sx={{ fontSize: 20, color: "#fff" }} /> : <SpaOutlined sx={{ fontSize: 20, color: "#9AA0AC" }} /> },
   { label: "Profile",       value: "/profile",  icon: (a: boolean) => <UserCircle size={20} color={a ? "#fff" : "#9AA0AC"} weight={a ? "fill" : "regular"} /> },
 ] as const;
