@@ -890,6 +890,24 @@ Flat colours, no `linear-gradient(...)` for brand surfaces. Status
 pill rgba tints kept (functional). Photo scrims kept (legibility).
 </details>
 
+### 🎩 Art-Deco editorial identity (Round 28x.235, 2026-08-28)
+
+Founder: "ลุยรอบ art-direction เลย" (after "ไม่ให้ดูเหมือนใช้ Claude ทำ").
+The ownable look = 1920s grand-hotel print language on fonts the brand
+already owns. When styling new customer surfaces, use this kit
+(src/styles/fx.css) instead of the generic template patterns:
+- Mastheads/service names: Federo deco CAPS, tracking 0.08-0.12em —
+  NEVER the italic-serif-accent headline (that's the AI-template look
+  she called out)
+- `.deco-eyebrow` / `.deco-eyebrow-left`: hairline-flanked small caps
+- `.deco-divider` + `.deco-diamond` (◆): gold ornament divider
+- `.deco-frame`: inner gold hairline frame (footer wears it)
+- Craft layer (28x.234): warm-film grade on ALL photos, paper grain,
+  rose ::selection/scrollbar — don't remove when touching fx.css
+Applied so far: ServicesPage masthead, ServiceDetailPage title block +
+More Rituals divider, footer frame. The Moko home (28s378) was NOT
+deco-ified — founder-approved surface, left as-is on purpose.
+
 ### 🔤 Type system (Round 28s154-156, current)
 
 ```
