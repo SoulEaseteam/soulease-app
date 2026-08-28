@@ -135,8 +135,7 @@ warning below for why).
 
 ## 4. Tech stack
 
-- **Frontend**: Vite + React + TypeScript + MUI + framer-motion
-- **Backend**: Firebase (Firestore + Auth + Hosting)
+- **Stack**: Vite + React + TS + MUI + Firebase (Firestore/Auth/Hosting) — exact deps in `package.json`
 - **Booking flow**: BookingFlowPage + PaymentMethodsPage + concierge
   chat confirmation
 - **i18n**: 6 languages (en, th, zh, zh-TW, ja, ko) in `src/locales/` —
@@ -145,7 +144,6 @@ warning below for why).
   broadcast Telegram bot (scheduled channel posts) deliberately does
   NOT support zh-TW — see §9.
 - **Hosting**: Vercel (Hobby tier), domain via Porkbun
-- **Repo**: `/Users/varissarahirunto/sunred-vite/`
 
 ### Key files & where things live
 - `src/data/therapists.ts` — therapist roster + servicesAvailable
@@ -214,109 +212,11 @@ they prefer.
 
 ## 6. Marketing channels — what actually works for this vertical
 
-### ❌ DOES NOT WORK (do not suggest)
-- Google Ads (banned for adult/sensual massage)
-- Facebook/Instagram Ads (banned)
-- Hotel concierge partnerships at luxury hotels (brand risk for them)
-- TripAdvisor / Booking / Agoda mainstream listings
-- Tabelog / Trip.com mainstream travel
-
-### ✅ WORKS for Bangkok outcall gray-area
-- **Telegram channels** — primary + cross-promotion in BKK travel/expat
-  channels (current: `@SunRed_BKK` ~443 subs, 4 boosters paying premium)
-- **WeChat** — Chinese tourists are huge market, mini-program +
-  account for groups
-- **LINE Official Account** — Japanese/Korean/Thai
-- **Niche directories** — secretthai, bangkok101.net, eros directory
-  (⚠️ founder confirmed 2026-07-22 — **Stickman Bangkok and Lookpasi
-  were never actually used**: they were a research suggestion in this
-  file's own §🔐 playbook, never real marketing history. Don't cite
-  them as "used" channels again. **Sammyboy/Samsguide WAS real** —
-  billed every 2 months at ฿15,200 (~฿7,600/mo effective, confirmed
-  2026-07-22 — not a flat ฿7,500/mo), cancelled on cost. As of this
-  date SunRed has no active directory-listing channel beyond the
-  three above.)
-- **X/Twitter** — less Meta restrictions
-- **Reddit r/Bangkok / r/ThailandTourism** — soft community engagement
-- **Referral program** — existing customers get free upgrade
-- **Word-of-mouth** via taxi drivers (informal, Bangkok-style)
-
-### Failed channel (cancel ASAP)
-- ❌ Singapore website ad — ฿7,500/mo × 10 months = ฿75,000 burnt, 0
-  ROI, audience too narrow
-
-### Paused channel — cost AND customer-quality, not just cost (2026-07-22)
-- ⏸️ **Sammyboy/Samsguide network** (samsguide.living/.services,
-  sammyboyforum.com, sbf.net.nz, samsforum.com — same forum family) —
-  cancelled by founder, confirmed 2026-07-22 real bank slips (billed
-  every 2 months, ~฿15,000-15,200/cycle, ~฿7,500-7,600/mo effective;
-  the shifting recipient name/bank across payments is just how this
-  informally-run forum collects money, not a red flag — founder
-  confirmed). TWO reasons she stopped, not one:
-  1. **Cost** — didn't feel worth it at the time (couldn't see if it
-     converted — see attribution gap below).
-  2. **Customer quality** (founder, 2026-07-22: "ลูกค้าจร ที่มาไทย
-     ไม่ใช่ ลค ในไทย") — Sammyboy mostly brings ONE-TIME transient
-     foreign tourists passing through Thailand, not repeat local
-     customers. This matters MORE than reason #1: even if traffic/
-     ROI numbers look good, that doesn't override a real customer-mix
-     concern. Don't recommend resuming based on traffic data alone —
-     the founder needs to independently decide whether one-time
-     tourist volume is worth it, separate from whether it "worked."
-  A read-only audit of `analytics_events` + `bookings` (28x.99t) found
-  real signal while it ran: **213 unique sessions**, `samsguide.living`
-  alone was the site's **#2 referrer** (163 hits, behind only Google,
-  ahead of Instagram+Telegram+Twitter combined), **27 sessions (12.7%)
-  opened the concierge chat**, 5 reached `booking_start`, 1 confirmed
-  `booking_complete`. The true booking count is very likely higher —
-  most guests close via direct Telegram/WhatsApp with the concierge
-  rather than the tracked in-app booking flow, and **only 32 of 615
-  total booking docs carry ANY attribution field at all**
-  (`attributionSource`/`utmSource`/`referrerHost` mostly empty) — so
-  reason #1 (cost/ROI-visibility) was probably a real, fixable gap.
-  Reason #2 (customer mix) is a separate, harder call that data alone
-  won't resolve. Booking-level attribution capture was fixed the same
-  night, Round 28x.99t: `attributionSource` dropdown on New Booking +
-  the edit drawer (AdminBookingAddPage.tsx / AdminBookingListPage.tsx).
-  A one-time scheduled reminder (`sammyboy-attribution-checkin`, fires
-  2026-08-05) will pull ~2 weeks of real attribution data — its job is
-  to answer reason #1 with real numbers, NOT to recommend resuming on
-  its own; reason #2 is View's call to make, present both.
-
-  **✅ That reminder FIRED 2026-08-05. Result — re-run
-  `node scripts/auditAttributionCheckin.mjs` (read-only) rather than
-  rebuilding the query:**
-  - **The dropdown ships but is barely used.** Only 3 bookings were
-    created through the admin New Booking form in the 2 weeks since the
-    fix; 1 was tagged (`telegram`), 2 left blank. All-time only **1 of
-    32** tagged bookings was hand-picked by admin — the other 31 are
-    `direct`/`google` auto-written by `classifyReferrer()` in the
-    CUSTOMER web flow. So the attribution GAP is not closed; the tool
-    exists and the habit doesn't.
-  - ⚠️ **Don't read "tagged" as "admin tagged it."** `direct`/`google`
-    can only come from the web flow, AND `BookingFlowPage` also stamps
-    `createdBy:"admin"` when View books while logged in as admin — so
-    `createdBy` alone can't separate them. The one field that can:
-    `AdminBookingAddPage` hardcodes `userId: null`, `BookingFlowPage`
-    writes `user?.uid`. Test `createdBy==="admin" && !userId`.
-  - **Sammyboy: NOT relisted.** 0 bookings ever tagged `sammyboy`;
-    0 samsguide/sammyboyforum referrer hits since the pause. All-time
-    forum traffic 280 hits / 213 sessions, range 2026-05-07 → 2026-07-09
-    — it stops dead at the cancellation, confirming the ฿15,200/cycle
-    was buying real traffic that ended when she stopped paying.
-  - ⚠️ **Two numbers in this file are stale**: `bookings` now holds
-    **537** docs, not 615, and the pre-fix tagged baseline is **27/529**,
-    not 32/615 (32 is the ALL-TIME tagged count, incl. post-fix). ~78
-    docs are gone since 2026-07-22 — cause not established; the audit
-    didn't delete anything (`scripts/deleteTestBookings.mjs` exists and
-    is the likely candidate). Worth confirming before anyone treats a
-    booking-count trend as real.
-  - ⚠️ **Volume collapse, unexplained and bigger than the Sammyboy
-    question**: bookings/month ran 83 (Oct 25) → 45 (May 26) → **12
-    (Jun) → 24 (Jul) → 3 (Aug 1-5)**. Only 7 bookings in the whole
-    check-in window, which is why the attribution percentages above are
-    a tiny sample. Raised with View 2026-08-05; her call on whether to
-    dig in.
+Moved to the `marketing-channels` skill (loads on demand instead of every
+session) — see `.claude/skills/marketing-channels/SKILL.md`. Covers what works
+vs. banned for this vertical, the Sammyboy/Samsguide paused-channel history +
+attribution audit, and the unexplained booking-volume collapse. Load it whenever
+View asks about marketing, acquisition channels, ad spend, or a paused channel.
 
 ---
 
@@ -359,142 +259,21 @@ deliberately does NOT support zh-TW (`@manguyujianniSPA` is a mainland-CN-only
 sub-brand channel). Don't merge the two lists; a Taiwan/HK promo channel is a
 real new acquisition-channel decision for View to make, not a code default.
 
-**🖼️ Every image on the site depends on ONE external CDN — Round 28x.156**
+**🖼️ Images: ALL photos ride ONE metered Cloudinary fetch proxy (28x.156).**
+If photos break site-wide, check the Cloudinary dashboard's monthly credit
+usage FIRST — it looks like a site bug and isn't. Mitigations already live:
+capture-phase error fallback + `cloudinaryDown` latch (imageFallback.ts), and
+`VITE_CLOUDINARY_DISABLED=1` (Vercel env) bypasses the proxy entirely (photos
+then unoptimised — deliberate). Full incident detail: CLAUDE-HISTORY.md.
 
-Founder, 2026-07-30, with a screenshot of the home grid: "หน้าเว็บรูป เสียหมด
-แก้ด่วน" — every practitioner photo a broken-image glyph, alt text showing
-through. Nothing in the repo was wrong: all 227 files present in
-`public/images`, shipping to Vercel, CSP `img-src` permits both hosts.
-
-The cause class is architectural. EVERY image anywhere in this app — home
-cards, detail heroes, service tiles, map pins, the staff app — is rewritten by
-`enhanceImage()` (src/utils/cloudinary.ts) into a Cloudinary **fetch** URL. That
-is one metered external dependency in front of 100% of the site's photos, and
-Cloudinary's free tier is monthly-metered: run out of credits (or get the
-account restricted) and every image fails at once, site-wide, with no code
-change and no warning. **If the photos ever break everywhere again, check the
-Cloudinary dashboard's monthly credit usage FIRST** — it looks like a site bug
-and it isn't one.
-
-What 28x.156 changed so it can't blank the site again:
-- `src/utils/imageFallback.ts` — a capture-phase `error` listener (image load
-  errors don't bubble, so a normal listener never sees them). Any failed
-  Cloudinary URL has its original address decoded straight back out of it and
-  swapped in; the originals are on our own domain, so they load.
-- The first failure **latches** `cloudinaryDown`, and `enhanceImage()` reads
-  that latch — so after ONE broken image every later render goes direct,
-  instead of the guest paying a failed request per photo.
-- `VITE_CLOUDINARY_DISABLED=1` (Vercel env) turns the proxy off entirely with
-  no code change. That switch exists for the case the latch cannot see:
-  Cloudinary returning 200 but degraded (timeouts, blank placeholders), where
-  no error event ever fires.
-- Verified in a real browser: with Cloudinary requests aborted, a proxied URL
-  self-heals to its origin file and renders.
-- Trade-off while bypassed: photos are unoptimised (no WebP/AVIF, no resize,
-  heavier). Deliberate — a slow photo beats no photo on a site whose product
-  IS the photo.
-
-**📉 Funnel audit 2026-08-05 (Round 28x.166-168) — read this before touching
-pricing/promos/chat:**
-Real analytics_events funnel: home→booking_start stable ~6% every month, but
-(a) start→complete fell 40%→~25% after May, (b) concierge_chat_open collapsed
-153 (May) → 44 (Jun, the 28s140-202 overhaul month) → 4 (Aug 1-5). Three causes
-found + fixed that night:
-- Travel fare was ~3× real GrabBike (10 km ฿450 vs ฿136 real) → re-anchored to
-  the real Grab round-trip (28x.166: 0→฿50 · 3→฿70 · 6→฿100 · 10→฿140 ·
-  15→฿200), verified live in the prod bundle. Note: the fare is the
-  THERAPIST's money (cash jobs she keeps it) — old curve gave her ~฿300 hidden
-  margin per 10 km job, now ~breakeven; watch for far-job refusals.
-- Auto-filled welcome code showed "Code not recognised" on the bestseller
-  (premium PROMO_BLOCKED) and Thai 60' (below ฿1,400 min) → 28x.167 silently
-  clears OUR auto-filled code when it can't apply; guest-typed codes still get
-  the honest hint.
-- The concierge FAB's expanded panel was an unreadable ghost — 82%-alpha
-  --sr-panel floated bare over the photo grid (photos bled through, no scrim).
-  28x.168: solid layered background + scrim, same treatment as 28x.161's
-  greeting bubble. This was very likely THE chat-collapse cause.
-Still owed / View's call:
-- ALL builtin promo codes are admin-deleted (FIRST10/WELCOME20/TONIGHT500/
-  VIP100/FREETAXI) → the ฿2,200 bestseller has ZERO working codes for real
-  guests. Re-enabling VIP100 (฿100, premium-safe) is the one-switch fix —
-  money decision, not made unilaterally.
-- ADMIN_QUOTE_KM still 15; with honest fares now, 20 km is defensible.
-- Re-check concierge_chat_open in ~1 week to confirm the fix moved the number.
-
-**🪄 fx polish layer (28x.218, 2026-08-28) — heartitude effects, luxury-cut:**
-Founder: "เอาลูกเล่นทั้งหมดไปปรับแต่งให้ sunred". Ported SELECTIVELY, not
-wholesale — starfield/cursor-hearts/curtain-wave/HUD-brackets were left
-behind on purpose (playful-studio register + §12 "less chrome" rules).
-What shipped: `src/styles/fx.css` + `src/utils/fxReveal.ts` (site-wide
-photo long-press/drag protection — privacy-first; link tap-highlight
-silence; `.sr-reveal` scroll reveal on QuickNavRow/HomeFooterV2/HowItWorks
-roots — therapist cards keep their own whileInView, never double-animate)
-+ `RouteFx` in App.tsx (220ms opacity-only route fade, customer routes
-only — opacity-only because a transform would re-anchor fixed children
-like BottomNavGlass). Reveal is progressive-enhancement: hiding only
-applies under `html.sr-fx` set at runtime, so the 79 prerendered SEO
-routes / no-JS clients never see hidden content; IO reveal is backed by
-a scroll+visibilitychange manual bounds check, and reveals write INLINE
-style, not just a class (React reconciliation wipes classList-added
-classes on MUI Boxes — learned the hard way in dev). Typecheck + build +
-prerender pass. ✅ Visually confirmed on PROD (sunred.vip, 375px mobile
-viewport, 2026-08-28): home renders, QuickNavRow + footer reveal on
-scroll, route fade fires + cleans up on / → /services, services page
-intact. (The embedded dev pane suspends rendering when hidden —
-IO/scroll/style-recalc all freeze — so dev-server testing was
-impossible; prod + fronted-tab screenshots were the working method.)
-
-**🪄 Full fx suite (28x.219, 2026-08-28) — founder re-issued "ทั้งหมด":**
-28x.218's selective port wasn't what she meant — the verbatim repeat of
-"เอาลูกเล่นทั้งหมดไปปรับแต่งให้ sunred" = bring EVERYTHING, restyled.
-`src/utils/fxSuite.ts` (idle-loaded from main.tsx, vanilla, zero
-component surgery beyond 2 one-liners): ambient candlelight ember dust +
-pointer stardust trail + click sparks (one shared canvas, one rAF, DPR
-≤1.5, paused when hidden), magnetic CTAs + 3D card tilt (fine pointers,
-via INDIVIDUAL css translate/rotate props so framer's transform is never
-touched), silk curtain sweep on customer route changes (blush→magenta,
-listens to RouteFx's `sr:route` event), floating CSS hearts from the
-concierge FAB (no emoji — founder rule respected), magenta heart cursor
-(desktop only), press squash on all MuiButtonBase, breathing
-magenta↔gold aurora on the bestseller ritual card (`sr-aurora`,
-ServicesPage). Gates: reduced-motion → module no-ops; /admin + /staff →
-canvas hidden, curtain/hearts/cursor off. Dev-tested in a clean tab:
-curtain fires+cleans, canvas alive, no console errors beyond the
-pre-existing fetchPriority warning.
-⚠️ 28x.220 (same night): the silk curtain was REMOVED — founder saw it
-live and said "ไม่เอาพรึ่บตอนเปลี่ยนหน้า". Route changes keep only the
-soft 220ms RouteFx opacity fade. Don't bring the curtain back. (HMR NotFoundError scare during the
-build was a double-createRoot artifact of hot-editing main.tsx — clean
-loads are fine.)
-
-**🌙 Founder live-audit night (28x.226-234, 2026-08-28) — nine rapid
-rounds from her phone, each a terse order on a selected element:**
-- 226 "แถบบาร์ หุบย่อ": bar → heartitude floating compact pill (420px,
-  radius 999, spring). 228 "ย่อหุบ ไม่ซ่อน": scroll-down SHRINKS in
-  place (scale .8, tappable), never slides away. 229 "ใสแบบไอจี":
-  scrim thinned to 42% via color-mix + blur 26. 230 "ย่อ เป็นแค่ไอคอน":
-  labels collapse to height 0 while shrunk.
-- 227+230 footer: modern dress → then "ไม่สวย แก้" → committed DARK
-  espresso ground (single look both modes, like heartitude's art
-  panels). 232 "ซ่อนเป็นดรอปดาวน์": link columns are MUI Collapse
-  accordions — links stay MOUNTED so the 28x.99d SEO <a href> paths
-  survive. 233 "ลบ"+"สีโลโก้เหมือนกัน": ✦ badge gone, wordmark mirrors
-  TopNav (Playfair 700/0.12em, RED #FF9999).
-- 231 "แปลได้ทั้งเว็บ คือทั้งเว็บจริงๆ": service CONTENT now translates —
-  src/utils/serviceI18n.ts + svcData.<sku>.* keys in th/zh/zh-TW/ja/ko
-  (euphemism-compliant), wired into ServiceDetail/Services/StepService/
-  NearMe. Fallback = live catalog value (28s300 admin overrides still
-  show); booking payloads/Telegram keep EN names for the concierge.
-- 230 "แอดมินมีลูกเล่น": fxSuite + route fade now run on /admin too.
-- 233 drawer ghost (founder screenshot): --sr-panel-deep is ~72-86%
-  alpha BY DESIGN; the Drawer had no blur so photos bled through —
-  double-layered token + blur(28), same fix class as 28x.168.
-- 233 lang pill recolored rose (#FFADAD→#FF8484) "สีธีมเดียวกับเว็บ".
-- 234 "ไม่ให้ดูเหมือนใช้ Claude ทำ": craft layer in fx.css — warm-film
-  grade on every photo, 2.8% paper-grain overlay, rose ::selection +
-  desktop scrollbar. Zero layout changes. NEXT STEP if she wants to go
-  further: a real art-direction round (editorial deco type, photo
-  shoot direction) is a decision to make together, not a default.
+**📉 Funnel audit 28x.166-168 (2026-08-05) — fixes shipped; still owed:**
+- ALL builtin promo codes are admin-deleted → the ฿2,200 bestseller has ZERO
+  working codes for real guests. Re-enabling VIP100 (฿100, premium-safe) is
+  the one-switch fix — money decision, View's call.
+- ADMIN_QUOTE_KM still 15; with honest fares, 20 km is defensible.
+- Re-check concierge_chat_open ~1 week after 2026-08-05 to confirm the fix.
+(Fare re-anchor ฿140/10km · welcome-code autofill · chat-panel scrim — detail
+in CLAUDE-HISTORY.md. Fare is the THERAPIST's money; watch far-job refusals.)
 
 **Open / not done:**
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
@@ -512,98 +291,34 @@ rounds from her phone, each a terse order on a selected element:**
   push to main). Local and origin must never be allowed to drift again —
   push after every committed round.
 
-**🔥 2026-08-14 rollback incident (RESOLVED same night) — read before
-trusting "it's deployed":**
-- 16:57 a "Merge PR #20: admin money audit" landed on GitHub main (payslip
-  promo absorption, abandoned-checkout payroll, promo capacity — genuinely
-  good money fixes, authored in a parallel session against an OLD base) and
-  Vercel auto-deployed it. GitHub main did not contain the 36 local-only
-  commits (28x.156-HOTFIX → 28x.187), so prod silently rolled back ~2 weeks:
-  the ฿450/10km fare curve, the ghost chat panel, the broken welcome-code
-  autofill and the 1.78MB banner all came BACK during prime time. Rules +
-  functions were untouched (they deploy via firebase, not Vercel) — the
-  28x.165 security fix stayed live throughout.
-- Same night: merged origin/main into local (clean; overlap only in
-  CLAUDE.md, AdminBookingListPage, BookingFlowPage — commission.ts was
-  origin-only and consistent with our promo-absorption rule), verified
-  typecheck/build, pushed, verified the live bundle. Both workstreams
-  survive; nothing was dropped.
-- 28x.187 bonus find: the "emergency" Firestore fare override we reached for
-  first (adminSettings/publicRules.motoFareCheckpoints) had NEVER worked —
-  Firestore rejects nested arrays, so every write of the [km,thb][] shape
-  (admin Save included) failed since 28x.99u. Now stored as {km,thb} maps
-  with a serialize/deserialize codec in taxiFare.ts.
+**🔥 2026-08-14 GitHub-merge rollback — RESOLVED; durable lesson lives in
+§12 ("A local-only commit is one GitHub merge away…"). Full story:
+CLAUDE-HISTORY.md.**
 
-**⭐ Review-consistency overhaul, same night (28x.188-191) — founder:
-"รีวิว หน้าเว็บ ไม่ตรงกัน สักอัน" (2nd time filing this; 28x.1 was round 1).
-FOUR stacked causes, all fixed + verified live as an anonymous guest:**
-1. Card showed the doc's Bayesian rating, review section showed the raw
-   mean of visible reviews — mismatched on every low-review practitioner.
-   One formula everywhere now (bayesianRating over written reviews).
-2. Card counted star-only ratings; the visible list only holds WRITTEN
-   ones. One definition now: review = rating + non-empty reviewText.
-3. The live review query is permission-denied for logged-out guests
-   (booking docs carry guest PII — deliberate). Every guest saw "No
-   reviews yet." under a header claiming N reviews. Sync now denormalizes
-   a PII-free newest-40 copy onto the public therapist doc
-   (`publicReviews`); TherapistDetailPage falls back to it
-   (effectiveReviews) when the live query has nothing.
-4. The Bayesian prior existed in 4 places with 2 values (rating.ts +
-   2 inline copies = 4.5/10 vs sync script = 4.6/3). rating.ts (4.6/3,
-   the 28s388 tuning) is now the only owner; everything imports it.
-- ⚠️ scripts/syncTherapistRatings.ts NO LONGER writes totalSessions —
-  bookings is not full history (~78 docs deleted Aug 2026), so re-deriving
-  would slash public counts (dry run showed Barbie 79→36, Vivian 77→11,
-  YaYa 55→2). Public session counts stay as-is (boosted-display model).
-- ✅ NO LONGER MANUAL (28x.194, 2026-08-15): `onBookingWriteSyncReviews`
-  (functions/src/index.ts, deployed asia-southeast1) recomputes the affected
-  therapist's rating/ratingRaw/reviews/publicReviews on any booking write
-  that can move her review aggregate — same definitions as the script, and
-  it NEVER writes totalSessions. Verified live: a review-text edit reached
-  the therapist doc in ~3s, and the doc's Bayesian rating matched a local
-  recompute. The node script + /admin recompute stay as audit/backfill
-  tools. The Bayesian prior is MIRRORED there (functions can't import
-  src/) — retune rating.ts and the function's constants together.
+**⭐ Reviews: one formula everywhere since 28x.188-194 (auto-synced).**
+`onBookingWriteSyncReviews` (deployed) recomputes rating/publicReviews on
+every relevant booking write; Bayesian prior lives in rating.ts AND is
+mirrored in the function — retune BOTH together. ⚠️ Never re-derive
+totalSessions from bookings (~78 docs deleted Aug 2026; would slash public
+counts — boosted-display model stays). Detail: CLAUDE-HISTORY.md.
 
-**📱 SunRed is now an installable app (28x.192, 2026-08-15) — PWA strategy,
-by decision:** app stores don't accept this vertical (rejection + dev-account
-ban risk under real identity), so installed-PWA IS the app. 28x.166 shipped
-manifest+icons; 28x.192 shipped the service worker (vite-plugin-pwa,
-autoUpdate + skipWaiting so a deploy takes over on the guest's next
-navigation — no stale clients) and the InstallAppBanner on home (Android:
-real install button via beforeinstallprompt; iOS: Share→Add-to-Home-Screen
-hint; 6 locales; 14-day snooze on dismiss). Precache = first-paint shell
-ONLY (20 files/1.6 MB — the first attempt globbed all 224 chunks incl. the
-admin exceljs bundle and made every guest download the admin app on mobile
-data; don't widen the globs). Practitioner photos runtime-cache CacheFirst.
-Firestore/Auth/Functions are deliberately unmatched by any cache rule.
-Verified live: SW activated + controlling, all 5 caches populating.
-NEXT STEPS when View wants them: guest-side push (promos), then optional
-Android APK wrap (TWA) distributed via Telegram.
+**📱 Installed-PWA IS the app (28x.192) — app stores don't accept this
+vertical.** ⚠️ SW precache = first-paint shell ONLY (don't widen the globs —
+first attempt shipped the admin bundle to every guest). NEXT when View wants:
+guest push (promos), then TWA APK via Telegram. Detail: CLAUDE-HISTORY.md.
 
-**🔔 Admin push alerts shipped 28x.193 (2026-08-15) — ⚠️ TWO SETUP STEPS
-STILL OWED (View's actions, in order):**
-1. Run `node scripts/setWebPushKeys.mjs` once (generates + stores the
-   VAPID pair in adminSettings/webPush — the permission classifier blocks
-   Claude from handling key material, so this one is hers).
-2. On her phone: open sunred.vip/admin (installed PWA on iPhone —
-   Add to Home Screen first, iOS only exposes push to installed PWAs),
-   tap the crossed-bell in the admin AppBar, allow notifications.
-Then every guest-side booking pings every enabled device.
-Architecture: raw Web Push (NOT the FCM SDK — no console certificate);
-notifyAdminPushOnBooking (deployed, asia-southeast1) reads
-adminSettings/webPush + webPushSubs (both behind isAdmin()), skips
-admin-hand-entered bookings, prunes dead subscriptions. Push handlers in
-public/push-sw.js ride the main Workbox SW via importScripts. Until step
-1 runs, the function logs "no VAPID keys yet" and exits — harmless.
+**🔔 Admin push alerts (28x.193) — ⚠️ TWO SETUP STEPS STILL OWED (View):**
+1. Run `node scripts/setWebPushKeys.mjs` once (classifier blocks Claude from
+   key material).
+2. iPhone: install sunred.vip/admin as PWA (Add to Home Screen) → tap the
+   crossed-bell in the admin AppBar → allow notifications.
+Until step 1, the function logs "no VAPID keys yet" and exits — harmless.
+Architecture detail: CLAUDE-HISTORY.md.
 
-**🎉 Anniversary campaign ENDED by founder 2026-08-14 ("ปล่อยจบ ลบออก"):**
-`anniversary.enabled=false` in adminSettings/publicRules
-(scripts/endAnniversaryCampaign.mjs). Do NOT delete the field — absent
-config falls back to code DEFAULTS which are enabled:true. 28x.189 fixed
-the deeper bug: NOTHING ever gated the banner (it would have outlived its
-own endISO forever) — AnniversaryBanner + PromotionsPage now gate on
-anniversaryIsLive() with a live subscription (useAnniversaryConfigVersion).
+**🎉 Anniversary ENDED 2026-08-14** (`anniversary.enabled=false`). Do NOT
+delete the field — absent config falls back to code DEFAULTS (enabled:true).
+Banner gates on anniversaryIsLive() since 28x.189. Detail: CLAUDE-HISTORY.md.
+
 - Google Search Console — ✅ VERIFIED (discovered 2026-07-23: the
   owner-only "Search performance for this query" card renders on
   Google SERPs while logged in as sunredbkk@gmail.com — brand query
