@@ -72,17 +72,17 @@ export function initFxSuite(): void {
   resize();
   window.addEventListener("resize", resize);
 
-  // ambient embers — 28x.221: founder saw prod and said "แทบไม่เห็น",
-  // so the first cut (22 dim 1-2px dots) was tuned up: more of them,
-  // bigger, brighter, wider sway, plus a soft halo pass in tick().
-  const embers: Spark[] = Array.from({ length: 46 }, () => ({
+  // ambient embers — tuned twice by founder eye: 28x.221 "แทบไม่เห็น"
+  // (22 dim dots → boosted), then 28x.222 "พุ้งเกิน" (46 bright puffs →
+  // settled midway). These numbers are her calibration — nudge, don't jump.
+  const embers: Spark[] = Array.from({ length: 32 }, () => ({
     x: Math.random() * 400,
     y: Math.random() * 800,
     vx: 0,
     vy: -(0.12 + Math.random() * 0.3),
     life: Math.random() * 1,
     max: 1,
-    size: 1.2 + Math.random() * 2.4,
+    size: 1 + Math.random() * 1.8,
     color: Math.random() < 0.45 ? GOLD : MAGENTA,
   }));
   embers.forEach((e) => {
@@ -101,7 +101,7 @@ export function initFxSuite(): void {
       vy: -0.3 - Math.random() * 0.6,
       life: 0,
       max: 34 + Math.random() * 18,
-      size: 1.4 + Math.random() * 2,
+      size: 1.2 + Math.random() * 1.8,
       color: Math.random() < 0.5 ? GOLD : BLUSH,
     });
   };
@@ -156,16 +156,16 @@ export function initFxSuite(): void {
     if (customer) {
       for (const p of embers) {
         p.y += p.vy;
-        p.x += Math.sin((p.y + p.x) * 0.01) * 0.4;
+        p.x += Math.sin((p.y + p.x) * 0.01) * 0.3;
         if (p.y < -8) {
           p.y = H + 8;
           p.x = Math.random() * W;
         }
-        const a = 0.24 + 0.3 * Math.abs(Math.sin(p.y * 0.02 + p.x));
+        const a = 0.16 + 0.2 * Math.abs(Math.sin(p.y * 0.02 + p.x));
         // soft halo behind the core so each mote reads as a glow puff
-        ctx.fillStyle = `rgba(${p.color},${(a * 0.25).toFixed(3)})`;
+        ctx.fillStyle = `rgba(${p.color},${(a * 0.18).toFixed(3)})`;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 2.6, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = `rgba(${p.color},${a.toFixed(3)})`;
         ctx.beginPath();
@@ -183,7 +183,7 @@ export function initFxSuite(): void {
           sparks.splice(i, 1);
           continue;
         }
-        ctx.fillStyle = `rgba(${p.color},${0.7 * t})`;
+        ctx.fillStyle = `rgba(${p.color},${0.6 * t})`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size * t, 0, Math.PI * 2);
         ctx.fill();
