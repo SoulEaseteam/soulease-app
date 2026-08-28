@@ -483,6 +483,7 @@ const ServiceDetailPage: React.FC = () => {
                 color: brand.accent,
                 marginBottom: "6px",
               }}
+              className="deco-eyebrow-left"
             >
               {config.tier}
             </Typography>
@@ -491,11 +492,13 @@ const ServiceDetailPage: React.FC = () => {
             <Typography
               component="h1"
               sx={{
-                fontFamily: fonts.heading,
+                // 28x.235 art direction — deco caps, tracked wide.
+                fontFamily: '"Federo", "Cinzel", "Playfair Display", Georgia, serif',
                 ...responsiveType.h3,
-                fontWeight: 600,
+                fontWeight: 400,
                 color: brand.text,
-                letterSpacing: "-0.015em",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
                 marginBottom: "8px",
               }}
             >
@@ -539,7 +542,11 @@ const ServiceDetailPage: React.FC = () => {
         >
           {t("serviceDetail.choose", "Choose duration")}
         </Typography>
-        {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+        {/* 🆕 Round 28r61 — bilingual pass: tiny subtitle in the OTHER
+            register. 28x.235: hidden when it would just repeat the
+            eyebrow (EN/EN or same-locale collisions). */}
+        {t("service.chooseDuration", "Choose duration").toLowerCase() !==
+          t("serviceDetail.choose", "Choose duration").toLowerCase() && (
         <Typography
           sx={{
             fontFamily: fonts.body,
@@ -553,6 +560,7 @@ const ServiceDetailPage: React.FC = () => {
         >
           {t("service.chooseDuration", "Choose duration")}
         </Typography>
+        )}
         <Box
           role="group"
           aria-label={t("serviceDetail.durationAria", "Duration tiers")}
@@ -687,7 +695,10 @@ const ServiceDetailPage: React.FC = () => {
         >
           {t("serviceDetail.included", "What's included")}
         </Typography>
-        {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+        {/* 🆕 Round 28r61 bilingual subtitle — 28x.235: hidden when it
+            would just repeat the heading above. */}
+        {t("service.whatsIncluded", "What's included").toLowerCase() !==
+          t("serviceDetail.included", "What's included").toLowerCase() && (
         <Typography
           sx={{
             fontFamily: fonts.body,
@@ -701,6 +712,7 @@ const ServiceDetailPage: React.FC = () => {
         >
           {t("service.whatsIncluded", "What's included")}
         </Typography>
+        )}
         <Box
           component="ul"
           sx={{
@@ -923,7 +935,8 @@ const ServiceDetailPage: React.FC = () => {
               mb: 2.5,
             }}
           >
-            <Box sx={{ flex: 1, height: "1px", background: "var(--sr-hairline)" }} />
+            <Box sx={{ flex: 1, height: "1px", background: "linear-gradient(90deg, transparent, rgba(215, 181, 109, 0.55))" }} />
+            <Box component="span" className="deco-diamond" aria-hidden sx={{ color: "rgba(215, 181, 109, 0.9)" }}>◆</Box>
             <Typography
               sx={{
                 fontFamily: fonts.body,
@@ -937,7 +950,8 @@ const ServiceDetailPage: React.FC = () => {
             >
               {t("serviceDetail.moreRituals", "More Rituals")}
             </Typography>
-            <Box sx={{ flex: 1, height: "1px", background: "var(--sr-hairline)" }} />
+            <Box component="span" className="deco-diamond" aria-hidden sx={{ color: "rgba(215, 181, 109, 0.9)" }}>◆</Box>
+            <Box sx={{ flex: 1, height: "1px", background: "linear-gradient(270deg, transparent, rgba(215, 181, 109, 0.55))" }} />
           </Box>
 
           {/* Horizontal scroll row */}

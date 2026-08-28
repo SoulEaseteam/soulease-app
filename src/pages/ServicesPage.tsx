@@ -290,6 +290,7 @@ const ServicesPage: React.FC = () => {
                   transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
                 },
               }}
+              className="deco-eyebrow"
               sx={{
                 fontFamily: SANS,
                 fontSize: 11,
@@ -313,25 +314,29 @@ const ServicesPage: React.FC = () => {
                 },
               }}
               sx={{
-                fontFamily: SERIF,
-                fontSize: { xs: 32, md: 40 },
-                fontWeight: 500,
+                // 28x.235 art direction — the italic-accent serif headline
+                // was the classic template look; the masthead now speaks the
+                // brand's own Federo deco caps (founder's 28s156 font pick).
+                fontFamily: '"Federo", "Cinzel", "Playfair Display", Georgia, serif',
+                fontSize: { xs: 25, md: 33 },
+                fontWeight: 400,
                 color: "var(--sr-ink)",
-                letterSpacing: "-0.02em",
-                lineHeight: 1.05,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                lineHeight: 1.22,
                 mt: 1.25,
-                mb: 1.75,
+                mb: 1.5,
               }}
             >
               {t("services.editorialLine1", "Our")}{" "}
-              <Box
-                component="em"
-                sx={{ fontStyle: "italic", color: ROSE, fontWeight: 500 }}
-              >
+              <Box component="em" sx={{ fontStyle: "normal", color: ROSE }}>
                 {t("services.editorialAccent", "Signature")}
               </Box>
               <Box component="br" />
               {t("services.editorialLine2", "Experiences")}
+            </Box>
+            <Box className="deco-divider" aria-hidden sx={{ mb: 1.75 }}>
+              <Box component="span" className="deco-diamond">◆</Box>
             </Box>
             <Box
               component={motion.p}

@@ -211,3 +211,70 @@ body::after {
   }
   ::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 132, 132, 0.8); }
 }
+
+/* ═══ 28x.235 — ART-DECO editorial kit (founder: ลุยรอบ art-direction) ═
+   The ownable identity: 1920s grand-hotel print language built on fonts
+   the brand ALREADY owns (Federo deco caps — the founder's own pick in
+   28s154-156 — Cinzel, Playfair) + the gold/rose/espresso palette.
+   Utilities only; each surface opts in by class. */
+
+/* centered eyebrow flanked by fading hairlines: — ◆ TEXT ◆ — */
+.deco-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.deco-eyebrow::before,
+.deco-eyebrow::after {
+  content: "";
+  height: 1px;
+  flex: 0 0 42px;
+  opacity: 0.55;
+}
+.deco-eyebrow::before { background: linear-gradient(90deg, transparent, currentColor); }
+.deco-eyebrow::after  { background: linear-gradient(270deg, transparent, currentColor); }
+
+/* left-aligned variant: TEXT — (trailing fade only) */
+.deco-eyebrow-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.deco-eyebrow-left::after {
+  content: "";
+  height: 1px;
+  flex: 0 0 36px;
+  background: linear-gradient(90deg, currentColor, transparent);
+  opacity: 0.55;
+}
+
+/* ornament divider: ——— ◆ ——— (gold) */
+.deco-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(215, 181, 109, 0.9);
+}
+.deco-divider::before,
+.deco-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  max-width: 110px;
+}
+.deco-divider::before { background: linear-gradient(90deg, transparent, rgba(215, 181, 109, 0.6)); }
+.deco-divider::after  { background: linear-gradient(270deg, transparent, rgba(215, 181, 109, 0.6)); }
+.deco-diamond { font-size: 8px; line-height: 1; }
+
+/* inner hairline frame — the grand-hotel menu card */
+.deco-frame { position: relative; }
+.deco-frame::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(215, 181, 109, 0.32);
+  border-radius: inherit;
+  pointer-events: none;
+}
