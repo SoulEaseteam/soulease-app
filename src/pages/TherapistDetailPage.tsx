@@ -776,11 +776,22 @@ const TherapistDetailPage: React.FC = () => {
   //   fallback for a therapist not yet in Firestore. (All 14 current
   //   therapists carry features + bios in Firestore, so nothing is lost.)
   const realRow = firestoreRow ?? hardcodedRow;
+  // 🆕 28x.238 (founder: "กดการ์ดแล้วรูปกระพริบเป็นรูปอื่นก่อน") — 28s347
+  //   always fetches the live Firestore row so the detail photo matches the
+  //   home card, but the STATIC row rendered first, so guests saw the stale
+  //   repo photo flash before the live one replaced it. While the live row
+  //   is still in flight for a therapist we also hold statically, blank the
+  //   photo fields so the hero paints ONCE with the settled image (the
+  //   gradient placeholder covers the ~300ms gap). Text renders instantly
+  //   as before; Firestore-miss falls back to the static photo unchanged.
+  const photoSettled = !firestoreLoading || !hardcodedRow || !!firestoreRow;
+  const rowForBuild =
+    realRow && !photoSettled ? { ...realRow, image: "", gallery: [] } : realRow;
   // 🆕 Round 28s113 — pass the active i18n locale so buildFromReal can
   //   surface the matching `bios[lang]` translation as the About body.
   //   Slice to 2 chars so "en-US" / "zh-CN" both resolve to "en" / "zh".
-  const therapistFromReal = realRow
-    ? buildFromReal(realRow, i18n.language?.slice(0, 2))
+  const therapistFromReal = rowForBuild
+    ? buildFromReal(rowForBuild, i18n.language?.slice(0, 2))
     : null;
 
   // 🆕 2026-08-14 — the live bookings query is PERMISSION-DENIED for
