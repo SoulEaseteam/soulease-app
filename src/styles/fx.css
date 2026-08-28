@@ -77,33 +77,6 @@ html.sr-fx .sr-reveal.sr-in {
   pointer-events: none;
 }
 
-/* silk curtain — sweeps up to reveal the newly mounted route */
-.sr-curtain {
-  position: fixed;
-  inset: -2% -2% auto -2%;
-  height: 106%;
-  z-index: 2147483200;
-  pointer-events: none;
-  background: linear-gradient(165deg, #fce7f0 0%, #f8b8d4 34%, #f050a0 68%, #e6197e 100%);
-  border-radius: 0 0 48% 48% / 0 0 5vh 5vh;
-  box-shadow: 0 22px 60px -18px rgba(230, 25, 126, 0.55);
-  animation: srCurtainUp 0.62s cubic-bezier(0.7, 0, 0.24, 1) both;
-}
-.sr-curtain::after {
-  content: "";
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 10px;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, rgba(215, 181, 109, 0.9), transparent);
-}
-@keyframes srCurtainUp {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-112%); }
-}
-
 /* press squash — individual `scale` prop, composes with MUI/framer */
 .MuiButtonBase-root:active {
   scale: 0.96;

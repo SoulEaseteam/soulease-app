@@ -3,14 +3,15 @@
 // selective 28x.218 port — so this time everything comes over, restyled
 // from studio-mint to Moko magenta + candlelight gold: ambient ember
 // dust, pointer stardust trail, click sparks, magnetic CTAs, 3D card
-// tilt, a silk curtain sweep on route changes, floating hearts from the
-// concierge FAB, and a heart cursor (CSS, in fx.css). Vanilla on
+// tilt, floating hearts from the concierge FAB, and a heart cursor
+// (CSS, in fx.css). The silk curtain shipped here in 28x.219 and was
+// removed in 28x.220 — founder: "ไม่เอาพรึ่บตอนเปลี่ยนหน้า". Vanilla on
 // purpose — zero React component surgery; everything attaches by
 // selector/event so a revert is "remove two imports".
 //
 // Guardrails, all deliberate:
 // - prefers-reduced-motion → the whole module no-ops.
-// - Admin/staff routes → canvas hidden, curtain + hearts skipped
+// - Admin/staff routes → canvas hidden, hearts + cursor skipped
 //   (speed over ceremony in the back office).
 // - One shared canvas + one rAF loop, DPR capped at 1.5, paused while
 //   document.hidden — first paint pays nothing (idle-loaded, main.tsx).
@@ -261,23 +262,13 @@ export function initFxSuite(): void {
     );
   }
 
-  /* ── silk curtain on customer route changes (RouteFx dispatches) ── */
-  let curtainBusy = false;
-  const curtain = () => {
-    if (curtainBusy || !customer) return;
-    curtainBusy = true;
-    const c = document.createElement("div");
-    c.className = "sr-curtain";
-    document.body.appendChild(c);
-    window.setTimeout(() => {
-      c.remove();
-      curtainBusy = false;
-    }, 640);
-  };
+  /* ── route tracking (RouteFx dispatches sr:route) — gates the canvas
+     and cursor per route. The silk curtain that used to play here was
+     REMOVED by founder direction 28x.220 ("ไม่เอาพรึ่บตอนเปลี่ยนหน้า");
+     page changes keep only RouteFx's soft 220ms opacity fade. ── */
   window.addEventListener("sr:route", ((e: CustomEvent<string>) => {
     customer = isCustomerPath(e.detail || location.pathname);
     canvas.style.display = customer ? "" : "none";
-    if (customer) curtain();
   }) as EventListener);
   canvas.style.display = customer ? "" : "none";
 

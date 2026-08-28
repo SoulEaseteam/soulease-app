@@ -460,7 +460,10 @@ magenta↔gold aurora on the bestseller ritual card (`sr-aurora`,
 ServicesPage). Gates: reduced-motion → module no-ops; /admin + /staff →
 canvas hidden, curtain/hearts/cursor off. Dev-tested in a clean tab:
 curtain fires+cleans, canvas alive, no console errors beyond the
-pre-existing fetchPriority warning. (HMR NotFoundError scare during the
+pre-existing fetchPriority warning.
+⚠️ 28x.220 (same night): the silk curtain was REMOVED — founder saw it
+live and said "ไม่เอาพรึ่บตอนเปลี่ยนหน้า". Route changes keep only the
+soft 220ms RouteFx opacity fade. Don't bring the curtain back. (HMR NotFoundError scare during the
 build was a double-createRoot artifact of hot-editing main.tsx — clean
 loads are fine.)
 
