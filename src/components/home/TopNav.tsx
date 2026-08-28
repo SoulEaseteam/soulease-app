@@ -626,7 +626,16 @@ const TopNav: React.FC = () => {
         PaperProps={{
           sx: {
             width: 280,
-            background: "var(--sr-panel-deep)",
+            // 28x.233 (founder screenshot: drawer was a see-through ghost —
+            // same class of bug as the 28x.168 concierge panel). The
+            // --sr-panel-deep token is ~72-86% alpha BY DESIGN, but a
+            // Drawer has no blur behind it, so page photos bled through.
+            // Double-layering the token (~92-98% combined) + real blur
+            // makes it legible in both day/night modes without a new token.
+            background:
+              "linear-gradient(var(--sr-panel-deep), var(--sr-panel-deep)), linear-gradient(var(--sr-panel-deep), var(--sr-panel-deep))",
+            backdropFilter: "blur(28px) saturate(160%)",
+            WebkitBackdropFilter: "blur(28px) saturate(160%)",
             borderRight: "1px solid var(--sr-hairline)",
             boxShadow: "0 24px 60px rgba(0, 0, 0, 0.5)",
           },

@@ -183,47 +183,24 @@ const HomeFooterV2: React.FC = () => {
           marginBottom: "14px",
         }}
       >
-        <Box
-          aria-hidden
-          className="sr-shine"
-          sx={{
-            width: 42,
-            height: 42,
-            borderRadius: "50%",
-            background:
-              "linear-gradient(135deg, rgba(240, 80, 160, 0.22), rgba(215, 181, 109, 0.24))",
-            border: "1px solid rgba(215, 181, 109, 0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#E8C87E",
-            fontSize: 17,
-            lineHeight: 1,
-          }}
-        >
-          ✦
-        </Box>
+        {/* 28x.233 — ✦ badge removed (founder: ลบ) */}
         <Box>
+          {/* 28x.233 (founder: สีโลโก้เหมือนกัน) — mirrors TopNav's lockup
+              exactly: Playfair 700, 0.12em tracking, SUN in ink (ivory on
+              this dark ground) + RED in the brand rose #FF9999. */}
           <Box
             sx={{
-              fontFamily: fonts.heading,
+              fontFamily: '"Playfair Display", "Fraunces", Georgia, serif',
               fontSize: 23,
-              fontWeight: 500,
+              fontWeight: 700,
               color: "#F4EDE6",
-              letterSpacing: "0.04em",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
               lineHeight: 1,
             }}
           >
             SUN
-            <Box
-              component="span"
-              sx={{
-                background: "linear-gradient(135deg, #F050A0, #E6197E)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
-              }}
-            >
+            <Box component="span" sx={{ color: "#FF9999" }}>
               RED
             </Box>
           </Box>

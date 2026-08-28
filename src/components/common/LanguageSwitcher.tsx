@@ -200,8 +200,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           transition: "background 0.2s ease, border-color 0.25s ease, box-shadow 0.25s ease",
           "&:hover": {
             background: "rgba(255, 255, 255, 0.75)",
-            borderColor: "rgba(230, 25, 126, 0.4)",
-            boxShadow: "0 0 14px rgba(230, 25, 126, 0.18)",
+            borderColor: "rgba(255, 153, 153, 0.7)",
+            boxShadow: "0 0 14px rgba(255, 153, 153, 0.35)",
           },
           "&:focus-visible": {
             outline: "2px solid #2D2D2B",
@@ -246,8 +246,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             background: "rgba(255, 255, 255, 0.94)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(230, 25, 126, 0.25)",
-            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.16), 0 0 18px rgba(230, 25, 126, 0.12)",
+            border: "1px solid rgba(255, 153, 153, 0.55)",
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.16), 0 0 18px rgba(255, 153, 153, 0.28)",
             whiteSpace: "nowrap",
             transformOrigin: "100% 50%",
             animation: "srLangPop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both",
@@ -283,20 +283,20 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                   color: active || isPicked ? "#FFFFFF" : "#4A5568",
                   background:
                     isPicked
-                      ? "linear-gradient(135deg, #F050A0, #E6197E)"
+                      ? "linear-gradient(135deg, #FFADAD, #FF8484)"
                       : active
-                        ? "linear-gradient(135deg, #F050A0, #E6197E)"
+                        ? "linear-gradient(135deg, #FFADAD, #FF8484)"
                         : "transparent",
-                  boxShadow: isPicked ? "0 0 16px rgba(230, 25, 126, 0.55)" : "none",
+                  boxShadow: isPicked ? "0 0 16px rgba(255, 132, 132, 0.6)" : "none",
                   transform: isPicked ? "scale(1.12)" : "none",
                   transition:
                     "background 0.25s ease, color 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease",
                   "&:hover": {
                     background:
                       active || isPicked
-                        ? "linear-gradient(135deg, #F050A0, #E6197E)"
-                        : "rgba(252, 231, 240, 0.9)",
-                    color: active || isPicked ? "#FFFFFF" : "#C2185B",
+                        ? "linear-gradient(135deg, #FFADAD, #FF8484)"
+                        : "rgba(255, 229, 236, 0.9)",
+                    color: active || isPicked ? "#FFFFFF" : "#E4738F",
                   },
                 }}
               >
@@ -322,13 +322,13 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               color: isAuto || picked === "auto" ? "#FFFFFF" : "#8A94A2",
               background:
                 isAuto || picked === "auto"
-                  ? "linear-gradient(135deg, #F050A0, #E6197E)"
+                  ? "linear-gradient(135deg, #FFADAD, #FF8484)"
                   : "transparent",
-              boxShadow: picked === "auto" ? "0 0 16px rgba(230, 25, 126, 0.55)" : "none",
+              boxShadow: picked === "auto" ? "0 0 16px rgba(255, 132, 132, 0.6)" : "none",
               transform: picked === "auto" ? "scale(1.12)" : "none",
               transition:
                 "background 0.25s ease, color 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease",
-              "&:hover": { background: isAuto ? undefined : "rgba(252, 231, 240, 0.9)", color: isAuto ? "#FFFFFF" : "#C2185B" },
+              "&:hover": { background: isAuto ? undefined : "rgba(255, 229, 236, 0.9)", color: isAuto ? "#FFFFFF" : "#E4738F" },
             }}
           >
             <AutoAwesomeRoundedIcon sx={{ fontSize: 14 }} />
