@@ -1048,7 +1048,10 @@ const ServiceDetailPage: React.FC = () => {
                       {t("serviceDetail.from", "From")}{" "}
                       <Box
                         component="span"
-                        sx={{ color: "var(--sr-ink)", fontWeight: 700, fontSize: "17px" }}
+                        // 🆕 28x.242 editorial — price numerals in the wordmark
+                        //   serif + the founder's fresh rose, same signature as
+                        //   the home cards and pricing page.
+                        sx={{ fontFamily: fonts.heading, color: "#D97C95", fontWeight: 800, fontSize: "18px" }}
                       >
                         {formatTHB(from)}
                       </Box>

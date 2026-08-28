@@ -52,6 +52,8 @@ import PromoBadge from "@/components/common/PromoBadge";
 import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+// 🆕 28x.242 editorial — price numerals share the wordmark serif site-wide.
+const PRICE_SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 
 // 🆕 28r123 — one-word type tag per service, same map as ServicesPage.tsx.
 //   Kept inline here to avoid a shared import; adjust both if a new
@@ -434,7 +436,7 @@ const StepService: React.FC<Props> = ({
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
                       <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10px", color: "var(--sr-muted)", fontWeight: 600 }}>เริ่มต้น</Typography>
-                      <Typography component="span" sx={{ fontFamily: SANS, fontSize: "16px", fontWeight: 700, color: "#FF9999", lineHeight: 1 }}>{formatTHB(from)}</Typography>
+                      <Typography component="span" sx={{ fontFamily: PRICE_SERIF, fontSize: "17px", fontWeight: 800, color: "#D97C95", lineHeight: 1 }}>{formatTHB(from)}</Typography>
                     </Box>
                   </Box>
                 );
