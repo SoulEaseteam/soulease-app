@@ -142,7 +142,7 @@ export function initFxSuite(): void {
     "pointerdown",
     (e) => {
       const btn = (e.target as Element | null)?.closest?.(
-        ".MuiButtonBase-root"
+        ".MuiButtonBase-root, .sr-fx-tap, .sr-fx-spark"
       );
       if (btn) burst(e.clientX, e.clientY, 7);
     },
@@ -205,7 +205,7 @@ export function initFxSuite(): void {
       "pointermove",
       (e) => {
         const el = (e.target as Element | null)?.closest?.(
-          ".MuiButton-root, .MuiFab-root"
+          ".MuiButton-root, .MuiFab-root, .sr-fx-tap"
         ) as HTMLElement | null;
         if (magnet && magnet !== el) {
           magnet.style.translate = "";
@@ -223,7 +223,7 @@ export function initFxSuite(): void {
     document.addEventListener(
       "pointerout",
       (e) => {
-        if (magnet && !(e.relatedTarget as Element | null)?.closest?.(".MuiButton-root, .MuiFab-root")) {
+        if (magnet && !(e.relatedTarget as Element | null)?.closest?.(".MuiButton-root, .MuiFab-root, .sr-fx-tap")) {
           magnet.style.translate = "";
           magnet = null;
         }

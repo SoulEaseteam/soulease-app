@@ -140,6 +140,10 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       <Box
         component="button"
         type="button"
+        // 28x.223 (founder: "ตรงแปลภาษา ปรับลูกเล่นเหมือนกัน") — same fx
+        // treatment as the rest of the suite: glint sweep + tap sparks +
+        // squash + desktop magnetic, all via the opt-in classes.
+        className="sr-fx-tap sr-shine"
         aria-label={ariaLabel ?? t("nav.changeLanguage", "Change language")}
         aria-haspopup="menu"
         aria-expanded={Boolean(anchor)}

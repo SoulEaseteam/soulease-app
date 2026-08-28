@@ -129,3 +129,39 @@ html.sr-fx .sr-reveal.sr-in {
 html.sr-heart-cursor body {
   cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path fill="%23E6197E" stroke="%23FFFFFF" stroke-width="1.4" d="M12 21s-7.5-4.9-9.7-9.2C.8 8.9 2.3 5.6 5.4 5c1.9-.4 3.9.4 5 2 .4.6 1 .6 1.4 0 1.1-1.6 3.1-2.4 5-2 3.1.6 4.6 3.9 3.1 6.8C19.5 16.1 12 21 12 21z"/></svg>') 4 4, auto;
 }
+
+/* 28x.223 — founder: "ตรงแปลภาษา ปรับลูกเล่นเหมือนกัน แถบบาร์ด้วย".
+   Opt-in classes for non-MUI tappables:
+   - .sr-fx-tap   → gold spark burst + press squash + desktop magnetic
+                    (language pill)
+   - .sr-fx-spark → spark burst only (bottom-nav tabs — they already own
+                    their press scale + ripple, don't double-squash)
+   - .sr-shine    → the same glossy glint the active nav pill sweeps,
+                    on a slower offset so nothing blinks in sync */
+.sr-fx-tap:active {
+  scale: 0.95;
+}
+.sr-fx-tap {
+  transition-property: scale;
+  transition-duration: 0.16s;
+}
+.sr-shine {
+  position: relative;
+  overflow: hidden;
+}
+.sr-shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 55%;
+  left: -80%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-18deg);
+  pointer-events: none;
+  animation: srShine 6.4s ease-in-out infinite;
+}
+@keyframes srShine {
+  0%, 70% { left: -80%; }
+  90%, 100% { left: 130%; }
+}

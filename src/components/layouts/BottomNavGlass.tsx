@@ -228,6 +228,9 @@ const BottomNavGlass: React.FC = () => {
             return (
               <motion.div
                 key={tab.value}
+                // 28x.223 — gold spark burst on tap (fxSuite), spark-only:
+                // the tab already owns its press scale + ripple flash.
+                className="sr-fx-spark"
                 onClick={() => handleTap(tab.value)}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 600, damping: 28 }}
