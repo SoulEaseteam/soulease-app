@@ -132,6 +132,7 @@ const HomeFooterV2: React.FC = () => {
   return (
     <Box
       component="footer"
+      className="sr-reveal"
       aria-label="SunRed footer"
       sx={{
         marginTop: { xs: "36px", md: "48px" },

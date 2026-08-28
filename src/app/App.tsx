@@ -306,6 +306,33 @@ const AdminPagesListPage = React.lazy(
   () => import("@/pages/admin/AdminPagesListPage")
 );
 
+// 🪄 Round 28x.218 — replay a 220ms opacity fade on customer route
+//   changes (class + keyframes in src/styles/fx.css). Opacity ONLY — a
+//   transform on this wrapper would re-anchor position:fixed children
+//   (BottomNavGlass, FABs) mid-animation and make them jump. First paint
+//   never animates (LCP protection, same reasoning as 28s227), and admin
+//   routes skip it — speed over ceremony in the back office.
+function RouteFx({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const ref = React.useRef<HTMLDivElement>(null);
+  const firstPaint = React.useRef(true);
+  React.useEffect(() => {
+    if (firstPaint.current) {
+      firstPaint.current = false;
+      return;
+    }
+    if (location.pathname.startsWith("/admin")) return;
+    const el = ref.current;
+    if (!el) return;
+    el.classList.remove("sr-route-in");
+    void el.offsetWidth; // reflow so the animation restarts
+    el.classList.add("sr-route-in");
+    const t = window.setTimeout(() => el.classList.remove("sr-route-in"), 400);
+    return () => window.clearTimeout(t);
+  }, [location.pathname]);
+  return <div ref={ref}>{children}</div>;
+}
+
 export default function App() {
   return (
     <Suspense
@@ -332,6 +359,7 @@ export default function App() {
       </Suspense>
 
       <MaintenanceGate>
+      <RouteFx>
       <Routes>
         {/* ===== Round 28s109: localized crawler entry points ===== */}
         <Route path="/zh/*" element={<LocaleEntryRedirect lng="zh" />} />
@@ -531,6 +559,7 @@ export default function App() {
         {/* ================= 404 ================= */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </RouteFx>
       </MaintenanceGate>
     </Suspense>
   );

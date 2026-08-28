@@ -421,6 +421,26 @@ Still owed / View's call:
 - ADMIN_QUOTE_KM still 15; with honest fares now, 20 km is defensible.
 - Re-check concierge_chat_open in ~1 week to confirm the fix moved the number.
 
+**🪄 fx polish layer (28x.218, 2026-08-28) — heartitude effects, luxury-cut:**
+Founder: "เอาลูกเล่นทั้งหมดไปปรับแต่งให้ sunred". Ported SELECTIVELY, not
+wholesale — starfield/cursor-hearts/curtain-wave/HUD-brackets were left
+behind on purpose (playful-studio register + §12 "less chrome" rules).
+What shipped: `src/styles/fx.css` + `src/utils/fxReveal.ts` (site-wide
+photo long-press/drag protection — privacy-first; link tap-highlight
+silence; `.sr-reveal` scroll reveal on QuickNavRow/HomeFooterV2/HowItWorks
+roots — therapist cards keep their own whileInView, never double-animate)
++ `RouteFx` in App.tsx (220ms opacity-only route fade, customer routes
+only — opacity-only because a transform would re-anchor fixed children
+like BottomNavGlass). Reveal is progressive-enhancement: hiding only
+applies under `html.sr-fx` set at runtime, so the 79 prerendered SEO
+routes / no-JS clients never see hidden content; IO reveal is backed by
+a scroll+visibilitychange manual bounds check, and reveals write INLINE
+style, not just a class (React reconciliation wipes classList-added
+classes on MUI Boxes — learned the hard way in dev). Typecheck + build +
+prerender pass. ⚠️ NOT visually confirmed in a live browser yet (the
+embedded dev pane suspends rendering when hidden — IO/scroll/style-recalc
+all freeze, untestable there); first real phone/browser look still owed.
+
 **Open / not done:**
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
   `createCustomToken` signs via IAM, so the functions' runtime service account

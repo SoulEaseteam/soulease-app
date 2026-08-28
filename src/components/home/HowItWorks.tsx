@@ -93,7 +93,7 @@ const HowItWorks: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <Box>
+    <Box className="sr-reveal">
       {/* ───────── 1. Section header ───────── */}
       <Box sx={{ padding: "18px 20px 8px", position: "relative" }}>
         <Box

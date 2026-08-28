@@ -22,6 +22,10 @@ const ToastContainerLazy = React.lazy(() =>
 
 import App from "./app/App";
 import "./index.css";
+// 🪄 Round 28x.218 — fx polish layer (photo protection, scroll reveal,
+//   route fade). See src/styles/fx.css header for what was deliberately
+//   NOT ported from heartitude and why.
+import "./styles/fx.css";
 
 import { reloadOnceForStaleChunk } from "@/utils/staleChunkReload";
 // 🆕 Round 28x.36 — Vite fires `vite:preloadError` when a lazy chunk fails to
@@ -159,6 +163,10 @@ const Root = () => {
 };
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<Root />);
+
+// 🪄 Round 28x.218 — start observing `.sr-reveal` landmarks after render
+//   (module is tiny + vanilla; nothing here blocks first paint).
+void import("@/utils/fxReveal").then(({ initFxReveal }) => initFxReveal());
 
 // 🆕 Round 28x.192 — service worker (vite-plugin-pwa, autoUpdate mode).
 //   Registered AFTER render so it never competes with first paint. The

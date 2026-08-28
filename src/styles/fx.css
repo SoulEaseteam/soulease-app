@@ -1,0 +1,68 @@
+/* ─────────────────────────────────────────────────────────────────
+   🪄 Round 28x.218 — fx polish layer, ported from the heartitude
+   studio site and re-cut for SunRed's quiet-luxury register.
+
+   What lives here ON PURPOSE (and what doesn't):
+   - Photo protection: every <img> site-wide blocks the long-press
+     save sheet + drag ghost. Privacy-first brand and the photos ARE
+     the product; this only removes the accidental browser chrome
+     that makes the site feel like a web page instead of an app.
+   - Links get the same tap-highlight silence that buttons already
+     have (index.css covers button/[role=button]/[role=tab] only).
+   - .sr-reveal → .sr-in: section-level scroll reveal for landmarks
+     that DON'T already animate. Therapist cards run their own
+     whileInView with LCP protection (28s227) — never double-animate
+     those.
+   - .sr-route-in: a 220ms opacity-only fade replayed on customer
+     route changes (RouteFx in App.tsx). Opacity only — a transform
+     here would re-anchor position:fixed descendants (BottomNavGlass,
+     FABs) for the duration and make them jump. Admin routes skip it.
+   - NOT ported from heartitude, deliberately: starfield, cursor
+     hearts, stardust trail, curtain wave, HUD card corners — playful
+     studio energy, wrong register for Aman-quiet luxury, and the
+     founder's own "less chrome" lessons (§12) outrank an effects
+     checklist. The Moko header already has its own shine sweep.
+
+   The global prefers-reduced-motion envelope in index.css already
+   shrinks everything here to ≤10ms in reduce mode. */
+
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hidden ONLY under `html.sr-fx`, which fxReveal.ts adds after it has
+   confirmed IntersectionObserver support and started observing. The 79
+   prerendered SEO routes, no-JS crawlers, and any browser where the
+   observer can't run therefore never see hidden content — reveal is a
+   progressive enhancement, not a gate. */
+.sr-reveal {
+  transition:
+    opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+html.sr-fx .sr-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+html.sr-fx .sr-reveal.sr-in {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes srRouteIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sr-route-in {
+  animation: srRouteIn 0.22s ease-out both;
+}

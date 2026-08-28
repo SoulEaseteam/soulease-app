@@ -92,6 +92,7 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
   return (
     <Box
       component="nav"
+      className="sr-reveal"
       aria-label="Quick navigation"
       sx={{
         // 🆕 Round 28s328 (founder 2026-07-08) — floating white card,
