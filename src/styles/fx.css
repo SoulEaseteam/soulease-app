@@ -66,3 +66,93 @@ html.sr-fx .sr-reveal.sr-in {
 .sr-route-in {
   animation: srRouteIn 0.22s ease-out both;
 }
+
+/* ═══ Round 28x.219 — full suite (see src/utils/fxSuite.ts header) ═══ */
+
+/* shared canvas: ember dust + pointer trail + click sparks */
+.sr-fx-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+}
+
+/* silk curtain — sweeps up to reveal the newly mounted route */
+.sr-curtain {
+  position: fixed;
+  inset: -2% -2% auto -2%;
+  height: 106%;
+  z-index: 2147483200;
+  pointer-events: none;
+  background: linear-gradient(165deg, #fce7f0 0%, #f8b8d4 34%, #f050a0 68%, #e6197e 100%);
+  border-radius: 0 0 48% 48% / 0 0 5vh 5vh;
+  box-shadow: 0 22px 60px -18px rgba(230, 25, 126, 0.55);
+  animation: srCurtainUp 0.62s cubic-bezier(0.7, 0, 0.24, 1) both;
+}
+.sr-curtain::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 10px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(215, 181, 109, 0.9), transparent);
+}
+@keyframes srCurtainUp {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-112%); }
+}
+
+/* press squash — individual `scale` prop, composes with MUI/framer */
+.MuiButtonBase-root:active {
+  scale: 0.96;
+}
+.MuiButtonBase-root {
+  transition-property: scale;
+  transition-duration: 0.16s;
+}
+
+/* aurora glow — breathing magenta↔gold halo on the bestseller ritual */
+.sr-aurora {
+  animation: srAurora 4.2s ease-in-out infinite;
+}
+@keyframes srAurora {
+  0%, 100% { box-shadow: 0 10px 34px -12px rgba(230, 25, 126, 0.42), 0 0 0 1px rgba(230, 25, 126, 0.18); }
+  50% { box-shadow: 0 12px 40px -12px rgba(215, 181, 109, 0.55), 0 0 0 1px rgba(215, 181, 109, 0.34); }
+}
+
+/* floating hearts from the concierge FAB — pure CSS heart, no emoji */
+.sr-heart {
+  position: fixed;
+  z-index: 2147483100;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  background: linear-gradient(135deg, #f050a0, #e6197e);
+  transform: rotate(45deg);
+  border-radius: 0 0 2px 0;
+  animation: srHeartFloat 1.8s ease-out both;
+}
+.sr-heart::before,
+.sr-heart::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: inherit;
+}
+.sr-heart::before { left: -6px; top: 0; }
+.sr-heart::after { left: 0; top: -6px; }
+@keyframes srHeartFloat {
+  0% { opacity: 0; translate: 0 0; scale: 0.5; }
+  12% { opacity: 0.9; }
+  100% { opacity: 0; translate: var(--drift, 0px) -140px; scale: 1; }
+}
+
+/* heart cursor — magenta heart on customer routes, fine pointers only.
+   Inputs/buttons keep their own UA/MUI cursors (text, pointer). */
+html.sr-heart-cursor body {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path fill="%23E6197E" stroke="%23FFFFFF" stroke-width="1.4" d="M12 21s-7.5-4.9-9.7-9.2C.8 8.9 2.3 5.6 5.4 5c1.9-.4 3.9.4 5 2 .4.6 1 .6 1.4 0 1.1-1.6 3.1-2.4 5-2 3.1.6 4.6 3.9 3.1 6.8C19.5 16.1 12 21 12 21z"/></svg>') 4 4, auto;
+}

@@ -444,6 +444,26 @@ intact. (The embedded dev pane suspends rendering when hidden —
 IO/scroll/style-recalc all freeze — so dev-server testing was
 impossible; prod + fronted-tab screenshots were the working method.)
 
+**🪄 Full fx suite (28x.219, 2026-08-28) — founder re-issued "ทั้งหมด":**
+28x.218's selective port wasn't what she meant — the verbatim repeat of
+"เอาลูกเล่นทั้งหมดไปปรับแต่งให้ sunred" = bring EVERYTHING, restyled.
+`src/utils/fxSuite.ts` (idle-loaded from main.tsx, vanilla, zero
+component surgery beyond 2 one-liners): ambient candlelight ember dust +
+pointer stardust trail + click sparks (one shared canvas, one rAF, DPR
+≤1.5, paused when hidden), magnetic CTAs + 3D card tilt (fine pointers,
+via INDIVIDUAL css translate/rotate props so framer's transform is never
+touched), silk curtain sweep on customer route changes (blush→magenta,
+listens to RouteFx's `sr:route` event), floating CSS hearts from the
+concierge FAB (no emoji — founder rule respected), magenta heart cursor
+(desktop only), press squash on all MuiButtonBase, breathing
+magenta↔gold aurora on the bestseller ritual card (`sr-aurora`,
+ServicesPage). Gates: reduced-motion → module no-ops; /admin + /staff →
+canvas hidden, curtain/hearts/cursor off. Dev-tested in a clean tab:
+curtain fires+cleans, canvas alive, no console errors beyond the
+pre-existing fetchPriority warning. (HMR NotFoundError scare during the
+build was a double-createRoot artifact of hot-editing main.tsx — clean
+loads are fine.)
+
 **Open / not done:**
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
   `createCustomToken` signs via IAM, so the functions' runtime service account

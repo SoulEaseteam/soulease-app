@@ -327,6 +327,8 @@ function RouteFx({ children }: { children: React.ReactNode }) {
     el.classList.remove("sr-route-in");
     void el.offsetWidth; // reflow so the animation restarts
     el.classList.add("sr-route-in");
+    // 28x.219 — let the vanilla fx suite hear navigations (silk curtain).
+    window.dispatchEvent(new CustomEvent("sr:route", { detail: location.pathname }));
     const t = window.setTimeout(() => el.classList.remove("sr-route-in"), 400);
     return () => window.clearTimeout(t);
   }, [location.pathname]);

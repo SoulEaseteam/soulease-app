@@ -168,6 +168,19 @@ ReactDOM.createRoot(document.getElementById("root")!).render(<Root />);
 //   (module is tiny + vanilla; nothing here blocks first paint).
 void import("@/utils/fxReveal").then(({ initFxReveal }) => initFxReveal());
 
+// 🪄 Round 28x.219 — the full effect suite idle-loads so first paint pays
+//   nothing (same deferral pattern as GA above). Reduced-motion and
+//   admin/staff routes are gated inside the module itself.
+{
+  const loadSuite = () =>
+    void import("@/utils/fxSuite").then(({ initFxSuite }) => initFxSuite());
+  const w = window as Window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+  };
+  if (w.requestIdleCallback) w.requestIdleCallback(loadSuite, { timeout: 4000 });
+  else window.setTimeout(loadSuite, 2500);
+}
+
 // 🆕 Round 28x.192 — service worker (vite-plugin-pwa, autoUpdate mode).
 //   Registered AFTER render so it never competes with first paint. The
 //   virtual module resolves only in `vite build`; `vite dev` serves a stub.

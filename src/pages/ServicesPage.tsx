@@ -476,6 +476,7 @@ const ServicesPage: React.FC = () => {
                     Floating pills on the images have been removed. */}
                 <Box
                   component={motion.div}
+                  className="sr-aurora"
                   initial={false}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-30px" }}
