@@ -25,6 +25,8 @@
 //   • Keyboard: Space/Enter selects
 
 import React, { useEffect, useMemo, useState } from "react";
+import { svcName, svcDesc } from "@/utils/serviceI18n";
+import { useTranslation } from "react-i18next";
 import { Box, Typography } from "@mui/material";
 import services, { type MassageService } from "@/data/services";
 import { enhanceImage } from "@/utils/cloudinary";
@@ -151,6 +153,7 @@ const StepService: React.FC<Props> = ({
   onConfirm,
   therapistId,
 }) => {
+  const { t } = useTranslation();
   // 🆕 Round 28r79 — resolve therapist via r68 fallback (Firestore when
   //   hardcoded misses). Sync seed for the 12 originals means no
   //   flicker; the effect only fires for admin-added ids.
@@ -379,7 +382,7 @@ const StepService: React.FC<Props> = ({
                   mb: 0.5,
                 }}
               >
-                {s.name}
+                {svcName(t, s.id, s.name)}
               </Typography>
               <Typography
                 sx={{

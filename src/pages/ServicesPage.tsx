@@ -13,6 +13,7 @@
 // ─────────────────────────────────────────────────────────────────────
 
 import React from "react";
+import { svcName, svcDesc, svcDetail, svcBenefits } from "@/utils/serviceI18n";
 import { Box, Typography } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -516,7 +517,7 @@ const ServicesPage: React.FC = () => {
                 <Box
                   component={motion.a}
                   href={`/services/${bestseller.id}`}
-                  aria-label={t("services.detailsAria", "Details for {{name}}", { name: bestseller.name })}
+                  aria-label={t("services.detailsAria", "Details for {{name}}", { name: svcName(t, bestseller.id, bestseller.name) })}
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
@@ -639,7 +640,7 @@ const ServicesPage: React.FC = () => {
                         mb: 0.5,
                       }}
                     >
-                      {bestseller.name}
+                      {svcName(t, bestseller.id, bestseller.name)}
                     </Typography>
 
                     {/* Thai · type tag
@@ -670,7 +671,7 @@ const ServicesPage: React.FC = () => {
                         mb: 2.25,
                       }}
                     >
-                      {bestseller.desc}
+                      {svcDesc(t, bestseller.id, bestseller.desc)}
                     </Typography>
 
                     {/* 🆕 28r113 (founder "Unlock Executive Benefits
@@ -749,7 +750,7 @@ const ServicesPage: React.FC = () => {
                     <Box
                       component={motion.a}
                       href={`/services/${svc.id}`}
-                      aria-label={t("services.detailsAria", "Details for {{name}}", { name: svc.name })}
+                      aria-label={t("services.detailsAria", "Details for {{name}}", { name: svcName(t, svc.id, svc.name) })}
                       initial={false}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: "-30px" }}
@@ -824,7 +825,7 @@ const ServicesPage: React.FC = () => {
                             mb: 0.5,
                           }}
                         >
-                          {svc.name}
+                          {svcName(t, svc.id, svc.name)}
                         </Typography>
 
                         <Typography
@@ -848,7 +849,7 @@ const ServicesPage: React.FC = () => {
                             lineHeight: 1.55,
                           }}
                         >
-                          {svc.desc}
+                          {svcDesc(t, svc.id, svc.desc)}
                         </Typography>
                       </Box>
                     </Box>

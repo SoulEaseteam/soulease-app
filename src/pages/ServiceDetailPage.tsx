@@ -22,6 +22,7 @@
 // To revert: git revert 28s22 — old file in history.
 
 import React, { useEffect, useRef, useState } from "react";
+import { svcName, svcDesc, svcDetail, svcBenefits } from "@/utils/serviceI18n";
 import {
   Box,
   Typography,
@@ -242,7 +243,7 @@ const ServiceDetailPage: React.FC = () => {
           { name: service.name, price: priceForDuration(service, 60).toLocaleString("en-US") }
         )
       : t("meta.serviceDetail.fallback", "SunRed Services"),
-    description: service ? service.desc : undefined,
+    description: service ? svcDesc(t, service.id, service.desc) : undefined,
     locale: langToLocale(i18n.language),
     url: service
       ? `https://sunred.vip/services/${service.id}`
@@ -404,7 +405,7 @@ const ServiceDetailPage: React.FC = () => {
                         key={img}
                         component="img"
                         src={enhanceImage(img, { variant: "hero" })}
-                        alt={`${service.name} — ${i + 1}`}
+                        alt={`${svcName(t, service.id, service.name)} — ${i + 1}`}
                         loading={i === 0 ? "eager" : "lazy"}
                         fetchPriority={i === 0 ? "high" : undefined}
                         draggable={false}
@@ -443,7 +444,7 @@ const ServiceDetailPage: React.FC = () => {
                 <Box
                   component="img"
                   src={enhanceImage(heroImages[0], { variant: "hero" })}
-                  alt={service.name}
+                  alt={svcName(t, service.id, service.name)}
                   loading="eager"
                   fetchPriority="high"
                   sx={{
@@ -498,7 +499,7 @@ const ServiceDetailPage: React.FC = () => {
                 marginBottom: "8px",
               }}
             >
-              {service.name}
+              {svcName(t, service.id, service.name)}
             </Typography>
             {/* 🆕 Round 28r54 (Phase 3.3) — responsiveType.body scales
                 the description 14→15→16 with viewport. */}
@@ -512,7 +513,7 @@ const ServiceDetailPage: React.FC = () => {
                 marginBottom: "24px",
               }}
             >
-              {service.desc}
+              {svcDesc(t, service.id, service.desc)}
             </Typography>
           </Box>
 
@@ -711,7 +712,7 @@ const ServiceDetailPage: React.FC = () => {
             gap: "10px",
           }}
         >
-          {service.benefit.map((line, idx) => (
+          {svcBenefits(t, service.id, [...service.benefit]).map((line, idx) => (
             <Box
               component="li"
               key={idx}
@@ -977,7 +978,7 @@ const ServiceDetailPage: React.FC = () => {
                     <Box
                       component="img"
                       src={enhanceImage(svc.image, { variant: "card" })}
-                      alt={svc.name}
+                      alt={svcName(t, svc.id, svc.name)}
                       loading="lazy"
                       sx={{
                         width: "100%",
@@ -1019,7 +1020,7 @@ const ServiceDetailPage: React.FC = () => {
                         lineHeight: 1.15,
                       }}
                     >
-                      {svc.name}
+                      {svcName(t, svc.id, svc.name)}
                     </Typography>
                     <Typography
                       sx={{

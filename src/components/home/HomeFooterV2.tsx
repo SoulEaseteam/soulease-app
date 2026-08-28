@@ -24,9 +24,9 @@
 // number change never needs to touch this file.
 // ─────────────────────────────────────────────────────────────────────
 
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
+import { Box, Collapse } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import { fonts } from "@/theme";
 import { CONCIERGE } from "@/config/concierge";
@@ -52,6 +52,12 @@ const HomeFooterV2: React.FC = () => {
   //   every page. A Japanese guest browsing an otherwise-Japanese site hit a
   //   Thai nav block at the bottom of every screen. English source + locales.
   const { t } = useTranslation();
+
+  // 28x.232 (founder: "พวกเมนู พื้นที่ ซ่อนไว้เป็นดรอปดาวน์ กดลงมา") —
+  // link columns collapse into tap-to-open accordion rows. MUI Collapse
+  // keeps the links MOUNTED at height 0, so every real <a href> below
+  // stays in the DOM for crawlers — the 28x.99d SEO paths survive.
+  const [openCol, setOpenCol] = useState<string | null>(null);
 
   // 🆕 Round 28x.186 (founder: "ปรับแถบนี้ให้มันดูดีขึ้นเป็นทางการขึ้น
   //   อะไรที่มีอยู่แล้วให้ตัดออก") — dropped "Practitioners" specifically:
@@ -251,18 +257,28 @@ const HomeFooterV2: React.FC = () => {
         {t("footer.tagline", "We care for you like someone who matters, at every moment of your life.")}
       </Box>
 
-      {/* 3-column link grid */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" },
-          gap: { xs: "18px 16px", md: "20px" },
-          paddingTop: "20px",
-          borderTop: "1px solid rgba(255, 255, 255, 0.10)",
-        }}
-      >
-        {columns.map((col) => (
-          <Box key={col.title}>
+      {/* Accordion link sections (28x.232) */}
+      <Box sx={{ borderTop: "1px solid rgba(255, 255, 255, 0.10)" }}>
+        {columns.map((col) => {
+          const open = openCol === col.title;
+          return (
+          <Box key={col.title} sx={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+            <Box
+              component="button"
+              type="button"
+              aria-expanded={open}
+              onClick={() => setOpenCol(open ? null : col.title)}
+              sx={{
+                all: "unset",
+                boxSizing: "border-box",
+                cursor: "pointer",
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "14px 2px",
+              }}
+            >
             {/* 🆕 Round 28x.186 (founder: "ให้มันดูดีขึ้นเป็นทางการขึ้น") —
                 sentence-case headings read as casual sub-labels; switched to
                 the same uppercase/letter-spaced "eyebrow" treatment used for
@@ -270,30 +286,33 @@ const HomeFooterV2: React.FC = () => {
                 RESERVATIONS, the identity card's SEX / HEIGHT · WEIGHT),
                 plus a short accent rule so each column reads as its own
                 titled block instead of a loose list of links. */}
-            <Box
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: "#D7B56D",
-                marginBottom: "10px",
-              }}
-            >
-              {col.title}
+              <Box
+                sx={{
+                  fontFamily: fonts.body,
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "#D7B56D",
+                }}
+              >
+                {col.title}
+              </Box>
+              <Box
+                component="i"
+                aria-hidden
+                sx={{
+                  fontStyle: "normal",
+                  color: "#D7B56D",
+                  fontSize: 10,
+                  transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  transform: open ? "rotate(180deg)" : "none",
+                }}
+              >
+                ▾
+              </Box>
             </Box>
-            <Box
-              aria-hidden
-              sx={{
-                width: 22,
-                height: "2px",
-                borderRadius: "1px",
-                background: "linear-gradient(90deg, #F050A0, #D7B56D)",
-                opacity: 0.8,
-                marginBottom: "12px",
-              }}
-            />
+            <Collapse in={open} timeout={340}>
             <Box
               component="ul"
               sx={{
@@ -302,7 +321,8 @@ const HomeFooterV2: React.FC = () => {
                 margin: 0,
                 display: "flex",
                 flexDirection: "column",
-                gap: "8px",
+                gap: "9px",
+                paddingBottom: "16px",
               }}
             >
               {col.links.map((link) => (
@@ -412,8 +432,10 @@ const HomeFooterV2: React.FC = () => {
                 </Box>
               ))}
             </Box>
+            </Collapse>
           </Box>
-        ))}
+          );
+        })}
       </Box>
 
       {/* © line */}

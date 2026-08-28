@@ -12,6 +12,7 @@
 // ─────────────────────────────────────────────────────────────────────
 
 import React from "react";
+import { svcName } from "@/utils/serviceI18n";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -817,7 +818,7 @@ const TaxiEstimator: React.FC = () => {
               <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
                 <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)" }}>
                   {t("nearme.taxi.allInLabelChosen", "{{svc}}, with {{name}}", {
-                    svc: SERVICE_SHORT[chosenService.id] ?? chosenService.name,
+                    svc: SERVICE_SHORT[chosenService.id] ?? svcName(t, chosenService.id, chosenService.name),
                     name: selected.name,
                   })}
                 </Typography>
