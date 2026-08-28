@@ -100,6 +100,9 @@ button,
   --sr-panel: rgba(32, 34, 43, 0.82);       /* card / section panel */
   --sr-panel-2: rgba(42, 45, 56, 0.82);     /* raised / inner / hover */
   --sr-panel-deep: rgba(18, 19, 25, 0.86);  /* footer / drawer / deep ground */
+  /* 🆕 28x.219 editorial pass — primary CTA fill. Night runs a DEEPER rose:
+     the day #D97C95 reads washed/pastel against the dark-luxury panels. */
+  --sr-cta: #B4566F;
   /* text on surfaces (clear hierarchy) */
   --sr-ink: #F3F2F4;         /* headings / brightest */
   --sr-body: #BCC0CA;        /* body */
@@ -150,6 +153,8 @@ html.sr-day {
   --sr-panel: rgba(255, 255, 255, 0.72);
   --sr-panel-2: rgba(252, 235, 241, 0.75);
   --sr-panel-deep: rgba(255, 255, 255, 0.72);
+  /* 🆕 28x.219 — day keeps the founder's fresh rose for the CTA. */
+  --sr-cta: #D97C95;
   --sr-ink: #232B36;         /* navy-charcoal headings */
   --sr-body: #5C6573;        /* cool-gray body */
   --sr-muted: #8B93A0;       /* muted */

@@ -766,7 +766,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   ? "#13bda6"
                   : isBusyNow
                     ? "#E8A23D"
-                    : "#D97C95",
+                    : "var(--sr-cta)",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
