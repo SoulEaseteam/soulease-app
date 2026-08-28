@@ -467,6 +467,35 @@ soft 220ms RouteFx opacity fade. Don't bring the curtain back. (HMR NotFoundErro
 build was a double-createRoot artifact of hot-editing main.tsx — clean
 loads are fine.)
 
+**🌙 Founder live-audit night (28x.226-234, 2026-08-28) — nine rapid
+rounds from her phone, each a terse order on a selected element:**
+- 226 "แถบบาร์ หุบย่อ": bar → heartitude floating compact pill (420px,
+  radius 999, spring). 228 "ย่อหุบ ไม่ซ่อน": scroll-down SHRINKS in
+  place (scale .8, tappable), never slides away. 229 "ใสแบบไอจี":
+  scrim thinned to 42% via color-mix + blur 26. 230 "ย่อ เป็นแค่ไอคอน":
+  labels collapse to height 0 while shrunk.
+- 227+230 footer: modern dress → then "ไม่สวย แก้" → committed DARK
+  espresso ground (single look both modes, like heartitude's art
+  panels). 232 "ซ่อนเป็นดรอปดาวน์": link columns are MUI Collapse
+  accordions — links stay MOUNTED so the 28x.99d SEO <a href> paths
+  survive. 233 "ลบ"+"สีโลโก้เหมือนกัน": ✦ badge gone, wordmark mirrors
+  TopNav (Playfair 700/0.12em, RED #FF9999).
+- 231 "แปลได้ทั้งเว็บ คือทั้งเว็บจริงๆ": service CONTENT now translates —
+  src/utils/serviceI18n.ts + svcData.<sku>.* keys in th/zh/zh-TW/ja/ko
+  (euphemism-compliant), wired into ServiceDetail/Services/StepService/
+  NearMe. Fallback = live catalog value (28s300 admin overrides still
+  show); booking payloads/Telegram keep EN names for the concierge.
+- 230 "แอดมินมีลูกเล่น": fxSuite + route fade now run on /admin too.
+- 233 drawer ghost (founder screenshot): --sr-panel-deep is ~72-86%
+  alpha BY DESIGN; the Drawer had no blur so photos bled through —
+  double-layered token + blur(28), same fix class as 28x.168.
+- 233 lang pill recolored rose (#FFADAD→#FF8484) "สีธีมเดียวกับเว็บ".
+- 234 "ไม่ให้ดูเหมือนใช้ Claude ทำ": craft layer in fx.css — warm-film
+  grade on every photo, 2.8% paper-grain overlay, rose ::selection +
+  desktop scrollbar. Zero layout changes. NEXT STEP if she wants to go
+  further: a real art-direction round (editorial deco type, photo
+  shoot direction) is a decision to make together, not a default.
+
 **Open / not done:**
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
   `createCustomToken` signs via IAM, so the functions' runtime service account
