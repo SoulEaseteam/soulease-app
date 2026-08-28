@@ -34,6 +34,7 @@
 // only mentions them at the "ask concierge for details" register).
 
 import React from "react";
+import { svcName } from "@/utils/serviceI18n";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -425,7 +426,14 @@ const PricingPage: React.FC = () => {
         }}
       >
         {orderedServices.map((s) => {
-          const copy = SERVICE_COPY[s.id] ?? { thai: "", teaser: s.desc };
+          const base = SERVICE_COPY[s.id] ?? { thai: "", teaser: s.desc };
+          // 28x.237 (founder: "หน้านี้ภาษายังไม่เปลี่ยนเลย") — the card copy
+          // was hardcoded EN/TH; now per-locale with the hardcoded pair as
+          // fallback.
+          const copy = {
+            thai: base.thai ? t(`pricing.sub.${s.id}`, base.thai) : "",
+            teaser: t(`pricing.teaser.${s.id}`, base.teaser),
+          };
           // 🆕 28w.36 (founder 2026-07-14 "โชว์ราคาทั้งหมด") — new pricing
           //   set, so every offered tier shows (Thai/Aroma 60/90/120 ·
           //   Gentleman's/Therapeutic 70/120). Reverses the 28r115 hide.
@@ -478,7 +486,7 @@ const PricingPage: React.FC = () => {
                     margin: 0,
                   }}
                 >
-                  {s.name}
+                  {svcName(t, s.id, s.name)}
                 </Box>
                 {copy.thai && (
                   <Box
