@@ -551,13 +551,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
               component="h3"
               noWrap
               sx={{
-                fontFamily:
-                  '"Inter", "Sarabun", system-ui, sans-serif',
-                fontSize: { xs: "18px", sm: "20px", md: "21px" },
-                fontWeight: 800,
+                // 🆕 Editorial pass (founder: "ไม่ให้ดูเหมือนใช้ Claude ทำ") —
+                //   names set in the brand serif (Playfair/Fraunces), same
+                //   family as the wordmark. The Inter-everywhere look is the
+                //   most recognisable AI-site tell; the serif is ours.
+                fontFamily: fonts.heading,
+                fontSize: { xs: "19px", sm: "21px", md: "22px" },
+                fontWeight: 700,
                 color: "var(--sr-ink)",
                 lineHeight: 1.15,
-                letterSpacing: "-0.01em",
+                letterSpacing: "0",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 minWidth: 0,
@@ -686,7 +689,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   fontFamily: fonts.heading,
                   fontSize: "17px",
                   fontWeight: 800,
-                  color: "#FF9999",
+                  // 🆕 Editorial pass — the fresh rose the founder picked for
+                  //   price numerals (สดกว่า ไม่"แก่" — sunred-color-taste).
+                  color: "#D97C95",
                   lineHeight: 1,
                   whiteSpace: "nowrap",
                 }}
@@ -735,8 +740,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
               minWidth: 0,
               textAlign: "center",
               padding: { xs: "9px 12px", sm: "10px 20px" },
-              fontSize: { xs: "12px", sm: "13.5px" },
-              borderRadius: "999px",
+              fontSize: { xs: "12px", sm: "13px" },
+              // 🆕 Editorial pass — squarer corners: the 999px candy pill is
+              //   the signature AI-site button; 11px reads considered.
+              borderRadius: "11px",
               // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #ff9999
               //   ตอนกด จะเปลี่ยนเป็นชื่อ BOOK NOW สี #13bda6") — idle state
               //   is the 28x.118b coral-pink; pressed state flashes teal.
@@ -748,28 +755,27 @@ const TherapistMinimalCard: React.FC<Props> = ({
               //   — see those rounds' history if this trial gets reverted.
               // 🆕 Round 28v.7 — idle state upgraded from flat #FF9999 to a
               //   warm rose gradient for more visual depth on the card.
+              // 🆕 Editorial pass — flat solid fills instead of the candy
+              //   gradients, and no coloured glow. Quiet-luxury reads flat;
+              //   the glossy glint (::after) + press squash stay as the
+              //   ลูกเล่น. States keep their meanings (rose free · amber
+              //   busy · teal pressed).
               background: isOffDuty
                 ? "var(--sr-panel-2)"
                 : isBookNowActive
                   ? "#13bda6"
                   : isBusyNow
-                    ? "linear-gradient(135deg, #FFCB80 0%, #FFA940 55%, #D9770B 100%)"
-                    : "linear-gradient(135deg, #FFB5C8 0%, #FF9999 55%, #E8607E 100%)",
+                    ? "#E8A23D"
+                    : "#D97C95",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
               fontFamily: fonts.body,
               fontWeight: 700,
-              letterSpacing: "0.04em",
+              letterSpacing: "0.08em",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
-              boxShadow: isOffDuty
-                ? "none"
-                : isBookNowActive
-                  ? "0 6px 16px rgba(19, 189, 166, 0.45)"
-                  : isBusyNow
-                    ? "0 6px 16px rgba(217, 119, 6, 0.40)"
-                    : "0 6px 16px rgba(255, 99, 99, 0.40)",
+              boxShadow: isOffDuty ? "none" : "0 2px 8px rgba(0,0,0,0.10)",
               transition: "transform 0.15s ease, background 0.15s ease",
               // 🆕 (founder: "ปุ่มจอง เพิ่มลูกเล่นด้วย") — the same glossy
               //   "แวววาว" glint as the NEW badge/anniversary banner sweeps

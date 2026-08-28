@@ -273,10 +273,12 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
               fontFamily: fonts.body,
               // 🆕 Round 28r75 — bumped weight 500 → 600 per founder
               //   direction "ปรับตัวหนังสือหนา นิดหน่อย".
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.01em",
-              color: "var(--sr-body)", // CREAM label text (light on dark)
+              // 🆕 Editorial pass — small, letterspaced caption labels, the
+              //   magazine register instead of app-chip type.
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              color: "var(--sr-muted)",
               lineHeight: 1.2,
               // 🆕 (founder: "จัดให้บาล้าน") — every label stays one line so
               //   all four columns sit at identical height.

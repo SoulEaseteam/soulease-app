@@ -76,7 +76,8 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
         //   subtle red focus ring so it reads as an interactive control.
         // 🕯️ 28t — mode-aware search pill (white by day, dark panel by night).
         background: "var(--sr-panel)",
-        borderRadius: 99,
+        // 🆕 Editorial pass — 99px pill → 14px; hairline keeps it crisp.
+        borderRadius: "14px",
         border: "1px solid var(--sr-hairline)",
         boxShadow: "var(--sr-card-shadow)",
         transition: "box-shadow 0.2s ease, border-color 0.2s ease",

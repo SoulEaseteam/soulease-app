@@ -82,8 +82,10 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
             display: "inline-flex",
             alignItems: "center",
             gap: "5px",
-            background: "rgba(87,184,139,0.12)",
-            border: "1px solid rgba(87,184,139,0.30)",
+            // 🆕 Editorial pass — outline-only chip (no tinted fill); the
+            //   filled pastel pill is another AI-site staple.
+            background: "transparent",
+            border: "1px solid rgba(87,184,139,0.45)",
             borderRadius: "999px",
             padding: "3px 10px",
             fontFamily: fonts.body,
