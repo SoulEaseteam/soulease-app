@@ -79,11 +79,11 @@ export function initFxSuite(): void {
   // ambient field — 28x.224, founder: "เอาลูกเล่นแบบเว็บ heartitude".
   // The rising ember dust (tuned 28x.221→222) is replaced by heartitude's
   // signature: a fixed twinkle STARFIELD — small dots on 3 parallax depth
-  // layers + a few 4-point sparkles, breathing in place, drifting with
-  // scroll. Gold/magenta instead of heartitude's mint, same soul.
+  // layers, breathing in place, drifting with scroll. Gold/magenta
+  // instead of heartitude's mint, same soul.
   type Star = {
     x: number; y: number; size: number; color: string;
-    phase: number; speed: number; depth: number; sparkle: boolean;
+    phase: number; speed: number; depth: number;
   };
   const stars: Star[] = [];
   const seedStars = () => {
@@ -96,31 +96,12 @@ export function initFxSuite(): void {
         phase: Math.random() * Math.PI * 2,
         speed: 0.4 + Math.random() * 0.9,
         depth: [0.04, 0.09, 0.16][i % 3],
-        sparkle: false,
       });
     }
-    for (let i = 0; i < 9; i++) {
-      stars.push({
-        x: Math.random() * W, y: Math.random() * H,
-        size: 3 + Math.random() * 4.5,
-        color: Math.random() < 0.7 ? GOLD : MAGENTA,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.25 + Math.random() * 0.5,
-        depth: 0.1 + Math.random() * 0.08,
-        sparkle: true,
-      });
-    }
+    // (the 9 four-point ✦ sparkles that shipped with 28x.224 were cut in
+    // 28x.225 — founder: "4 แฉกวิบวับ ออก". Dots only.)
   };
   seedStars();
-  const drawSparkle = (x: number, y: number, r: number) => {
-    ctx.beginPath();
-    ctx.moveTo(x, y - r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.quadraticCurveTo(x, y, x, y + r);
-    ctx.quadraticCurveTo(x, y, x - r, y);
-    ctx.quadraticCurveTo(x, y, x, y - r);
-    ctx.fill();
-  };
 
   const sparks: Spark[] = [];
   const spawnTrail = (x: number, y: number) => {
@@ -191,17 +172,11 @@ export function initFxSuite(): void {
         const tw = Math.abs(Math.sin(s.phase + t0 * s.speed)); // 0..1 twinkle
         // parallax: deeper layers slide more as the guest scrolls
         const py = (((s.y - sy * s.depth) % (H + 40)) + H + 40) % (H + 40) - 20;
-        if (s.sparkle) {
-          const a = 0.12 + 0.4 * tw;
-          ctx.fillStyle = `rgba(${s.color},${a.toFixed(3)})`;
-          drawSparkle(s.x, py, s.size * (0.7 + 0.5 * tw));
-        } else {
-          const a = 0.08 + 0.3 * tw;
-          ctx.fillStyle = `rgba(${s.color},${a.toFixed(3)})`;
-          ctx.beginPath();
-          ctx.arc(s.x, py, s.size, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        const a = 0.08 + 0.3 * tw;
+        ctx.fillStyle = `rgba(${s.color},${a.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(s.x, py, s.size, 0, Math.PI * 2);
+        ctx.fill();
       }
       for (let i = sparks.length - 1; i >= 0; i--) {
         const p = sparks[i];
