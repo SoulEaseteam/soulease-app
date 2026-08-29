@@ -1613,8 +1613,10 @@ const jobKeyboard = (bookingId: string): InlineKeyboard => [
 
 // ─────────────────────────────────────────────────────────────
 // 🆕 Round 28x.243 (founder: "ประวัติบอทแชท ลบเบอร์ หรือ Contact ลูกค้า
-//   หลังจากเสร็จงานแล้ว") — the guest's phone/name/address must not live on
-//   in a practitioner's Telegram history once the job is over.
+//   หลังจากเสร็จงานแล้ว") — the guest's phone must not live on in a
+//   practitioner's Telegram history once the job is over. (28x.244: founder
+//   pasted the exact after-card — ONLY the phone + map go; address, guest
+//   name and note stay. See formatRedactedJobCard.)
 //
 //   28x.69 already withholds contact until she ACCEPTS; this is the other
 //   half of that promise: once the job is done (or dies), take it back.
@@ -1650,10 +1652,18 @@ async function rememberTherapistContactMsg(
 }
 
 /**
- * 🆕 28x.243 — what the practitioner's full card becomes after the job is
- * over. Keeps what is HERS (which job, when, service, money lines she may
- * need for payout questions); drops what is the guest's (phone, name, exact
- * address, meeting point, note, map — the note often repeats the room/floor).
+ * 🆕 28x.243, card spec 28x.244 — what the practitioner's full card becomes
+ * after the job is over. The founder pasted the exact card she wants left
+ * ("ประวัติจะเหลือแค่ …"): EVERYTHING stays except the guest's 📞 Phone line
+ * — address, guest name and note included. Her call, don't "improve" it: the
+ * phone is the contact channel that matters (a guest reachable directly is a
+ * guest bookable around the shop), while the hotel name and the guest's
+ * short name are what a practitioner needs to recognise the job later in a
+ * payout question. The 📍 map button drops with the edit too (reply_markup
+ * omitted), matching her spec — the pasted card had no Map line.
+ * Layout mirrors formatBookingForAdmin's header (date + Booking ID first):
+ * that is the card she pasted, and the full therapist card only carries
+ * Time, which is useless in a months-old chat history.
  */
 function formatRedactedJobCard(
   bookingId: string,
@@ -1661,23 +1671,32 @@ function formatRedactedJobCard(
   cancelled: boolean
 ): string {
   const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-  const divider = "━━━━━━━━━━";
+  const divider = "────────────────────";
+  const place = b.locationName?.trim() || b.address?.trim() || "—";
   return [
-    cancelled ? `❌ ยกเลิกแล้ว · ${refCode}` : `✅ จบงานแล้ว · ${refCode}`,
-    divider,
+    `${b.date ?? "—"} ${b.time ?? "—"}`,
+    `🧾 Booking ID: ${refCode}`,
+    cancelled ? "❌ งานนี้ถูกยกเลิก" : null,
+    "",
     `Therapist: ${b.therapistName ?? "—"}`,
-    `📅 ${shortDate(b.date)}  ⏰ ${b.time ?? "—"}`,
+    `Time: ${b.time ?? "—"}`,
+    divider,
+    `📍 Address: ${place}`,
+    b.meetingPoint?.trim() ? `Meeting: 👉🏻 ${b.meetingPoint.trim()}` : null,
     "",
     `Service: ${b.serviceName ?? "—"}`,
     `Duration: ${b.duration ?? "?"} min`,
     `Price: ${(b.servicePrice ?? 0).toLocaleString()} ฿`,
+    "",
     `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
     `💳 Payment: ${b.payment ?? "Cash"}`,
     `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
-    divider,
-    `🔒 ข้อมูลติดต่อลูกค้า (ชื่อ · เบอร์ · ที่อยู่)`,
-    `ถูกลบออกอัตโนมัติหลังจบงานค่ะ`,
-  ].join("\n");
+    "",
+    `👤 Name: ${b.contactName ?? "—"}`,
+    `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+  ]
+    .filter((l) => l !== null)
+    .join("\n");
 }
 
 interface TherapistDocLiteForTelegram {
@@ -6045,10 +6064,10 @@ export const onBookingCancelledStrikeTelegram = onDocumentUpdated(
 //
 // The moment a booking reaches a terminal state (job done — or cancelled after
 // someone already accepted), rewrite every full-card message the dispatch bot
-// sent into a PRACTITIONER's private chat so the guest's phone / name / exact
-// address / note stop existing in her Telegram history. The redacted card
-// (formatRedactedJobCard) keeps the lines that are hers: which job, when,
-// service, and the money figures a payout question might need.
+// sent into a PRACTITIONER's private chat so the guest's phone (and the map
+// button) stop existing in her Telegram history. The redacted card
+// (formatRedactedJobCard) keeps everything else — founder-specced field for
+// field in 28x.244, including address, guest name and note.
 //
 // Deliberately mirrors onBookingCancelledStrikeTelegram (28x.132) above:
 // transition-only + one-shot stamp, editMessageText not deleteMessage (deletes

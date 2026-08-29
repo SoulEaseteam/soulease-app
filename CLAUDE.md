@@ -295,12 +295,14 @@ in CLAUDE-HISTORY.md. Fare is the THERAPIST's money; watch far-job refusals.)
 §12 ("A local-only commit is one GitHub merge away…"). Full story:
 CLAUDE-HISTORY.md.**
 
-**🔒 Dispatch privacy (28x.243): guest contact auto-redacted from the
+**🔒 Dispatch privacy (28x.243-244): guest PHONE auto-redacted from the
 practitioner's Telegram chat when the job ends.** Full cards (accept-DM +
 channel-claim) store `telegramTherapistMsgs` on the booking;
 `onBookingFinishedRedactTherapistChat` rewrites them (edit, not delete —
 same 28x.132 reasoning) on status→completed/done/cancelled-family or
-dispatchState→done, once (`telegramContactRedactedAt`). Only covers
+dispatchState→done, once (`telegramContactRedactedAt`). ⚠️ Scope is the
+founder's own paste (28x.244): ONLY 📞 Phone + the map button go — address,
+guest name, note STAY. Don't "improve" it to redact more. Only covers
 messages sent AFTER this deployed — pre-28x.243 chats keep old cards
 (no ids stored). Admin Booking channel is deliberately NOT redacted
 (shop's own record). Needs `firebase deploy --only functions`.
