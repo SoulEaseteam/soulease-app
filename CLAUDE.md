@@ -276,6 +276,17 @@ then unoptimised — deliberate). Full incident detail: CLAUDE-HISTORY.md.
 in CLAUDE-HISTORY.md. Fare is the THERAPIST's money; watch far-job refusals.)
 
 **Open / not done:**
+- ⚠️ **FIREBASE_TOKEN secret not yet added → 28x.243-244 (phone redaction)
+  merged but NOT deployed.** Functions now auto-deploy via GitHub Actions
+  (`firebase-functions-deploy.yml`, 28x.245) on every merge to main that
+  touches `functions/`, but the pipeline is inert until View does the
+  one-time step: on a laptop run `npx firebase-tools@14 login:ci`, log in
+  as sunredbkk, copy the printed `1//…` token, then GitHub repo →
+  Settings → Secrets and variables → Actions → New repository secret →
+  name `FIREBASE_TOKEN` → paste → Add secret. Then Actions tab → "Deploy
+  Firebase Functions" → Re-run the red run (or Run workflow). The token
+  goes ONLY into the GitHub secret — never into chat (classifier blocks
+  Claude from key material anyway, same as the VAPID keys below).
 - ⚠️ **`claimBookingChat` may need one IAM grant on first deploy.**
   `createCustomToken` signs via IAM, so the functions' runtime service account
   needs the **Service Account Token Creator** role. If guest chat is silently
@@ -305,7 +316,9 @@ founder's own paste (28x.244): ONLY 📞 Phone + the map button go — address,
 guest name, note STAY. Don't "improve" it to redact more. Only covers
 messages sent AFTER this deployed — pre-28x.243 chats keep old cards
 (no ids stored). Admin Booking channel is deliberately NOT redacted
-(shop's own record). Needs `firebase deploy --only functions`.
+(shop's own record). Merged to main 2026-08-29 but NOT live until the
+FIREBASE_TOKEN item below is done (functions deploy now rides GitHub
+Actions, 28x.245).
 
 **⭐ Reviews: one formula everywhere since 28x.188-194 (auto-synced).**
 `onBookingWriteSyncReviews` (deployed) recomputes rating/publicReviews on
