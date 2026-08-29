@@ -334,9 +334,9 @@ async function editTelegramMessage(
   chatId: string | number,
   messageId: number,
   text: string
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -348,8 +348,22 @@ async function editTelegramMessage(
         // double-answered from an old message still on screen.
       }),
     });
+    // 🆕 28x.243 — surface a rejected edit instead of swallowing it. The
+    //   contact-redaction trigger below needs to know whether a rewrite
+    //   actually landed; existing callers ignore the return value.
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      logger.warn("[editTelegramMessage] edit rejected", {
+        chatId,
+        messageId,
+        body: body.slice(0, 300),
+      });
+      return false;
+    }
+    return true;
   } catch (err) {
     logger.warn("[editTelegramMessage] failed", err);
+    return false;
   }
 }
 
@@ -1596,6 +1610,94 @@ const jobKeyboard = (bookingId: string): InlineKeyboard => [
     { text: "❌ ไม่รับ", callback_data: `job:decline:${bookingId}` },
   ],
 ];
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.243 (founder: "ประวัติบอทแชท ลบเบอร์ หรือ Contact ลูกค้า
+//   หลังจากเสร็จงานแล้ว") — the guest's phone must not live on in a
+//   practitioner's Telegram history once the job is over. (28x.244: founder
+//   pasted the exact after-card — ONLY the phone + map go; address, guest
+//   name and note stay. See formatRedactedJobCard.)
+//
+//   28x.69 already withholds contact until she ACCEPTS; this is the other
+//   half of that promise: once the job is done (or dies), take it back.
+//   Two pieces: remember every private-chat message that carried the full
+//   unmasked card (below), then rewrite each one in place when the booking
+//   reaches a terminal state (onBookingFinishedRedactTherapistChat, near the
+//   cancel-strike trigger it mirrors). editMessageText rather than
+//   deleteMessage, for the 28x.132 reason: deletes age out after ~48h and
+//   fail silently, and a vanished card also erases her own record that the
+//   job existed — the redacted card keeps the payout-relevant lines.
+async function rememberTherapistContactMsg(
+  bookingId: string,
+  chatId: string | number,
+  sendBody: string
+): Promise<void> {
+  const id = extractMessageId(sendBody);
+  if (!id) return;
+  try {
+    await getFirestore()
+      .collection("bookings")
+      .doc(bookingId)
+      .update({
+        // arrayUnion: the accept path and the channel-claim path can both
+        // fire across a reassignment, and each message lives in its own
+        // private chat — so the chat id rides along per message.
+        telegramTherapistMsgs: FieldValue.arrayUnion({ chatId: String(chatId), id }),
+      });
+  } catch (err) {
+    // Bookkeeping only — a DM that sent fine must never fail on this write.
+    // The cost is that this one message can't be redacted later.
+    logger.error("[rememberTherapistContactMsg] write failed", { bookingId, err });
+  }
+}
+
+/**
+ * 🆕 28x.243, card spec 28x.244 — what the practitioner's full card becomes
+ * after the job is over. The founder pasted the exact card she wants left
+ * ("ประวัติจะเหลือแค่ …"): EVERYTHING stays except the guest's 📞 Phone line
+ * — address, guest name and note included. Her call, don't "improve" it: the
+ * phone is the contact channel that matters (a guest reachable directly is a
+ * guest bookable around the shop), while the hotel name and the guest's
+ * short name are what a practitioner needs to recognise the job later in a
+ * payout question. The 📍 map button drops with the edit too (reply_markup
+ * omitted), matching her spec — the pasted card had no Map line.
+ * Layout mirrors formatBookingForAdmin's header (date + Booking ID first):
+ * that is the card she pasted, and the full therapist card only carries
+ * Time, which is useless in a months-old chat history.
+ */
+function formatRedactedJobCard(
+  bookingId: string,
+  b: BookingDocLite,
+  cancelled: boolean
+): string {
+  const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+  const divider = "────────────────────";
+  const place = b.locationName?.trim() || b.address?.trim() || "—";
+  return [
+    `${b.date ?? "—"} ${b.time ?? "—"}`,
+    `🧾 Booking ID: ${refCode}`,
+    cancelled ? "❌ งานนี้ถูกยกเลิก" : null,
+    "",
+    `Therapist: ${b.therapistName ?? "—"}`,
+    `Time: ${b.time ?? "—"}`,
+    divider,
+    `📍 Address: ${place}`,
+    b.meetingPoint?.trim() ? `Meeting: 👉🏻 ${b.meetingPoint.trim()}` : null,
+    "",
+    `Service: ${b.serviceName ?? "—"}`,
+    `Duration: ${b.duration ?? "?"} min`,
+    `Price: ${(b.servicePrice ?? 0).toLocaleString()} ฿`,
+    "",
+    `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
+    `💳 Payment: ${b.payment ?? "Cash"}`,
+    `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
+    "",
+    `👤 Name: ${b.contactName ?? "—"}`,
+    `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+  ]
+    .filter((l) => l !== null)
+    .join("\n");
+}
 
 interface TherapistDocLiteForTelegram {
   telegramChatId?: string | number | null;
@@ -3035,7 +3137,7 @@ async function handleOpenJobClaim(
   const fresh = await ref.get();
   const full = fresh.data() as BookingDocLite;
   const claimMapUrl = therapistMapUrl(full);
-  await sendTelegramIfEnabled(
+  const claimSend = await sendTelegramIfEnabled(
     token,
     String(pressedBy),
     `${formatBookingForTherapist(bookingId, full, false)}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`,
@@ -3044,6 +3146,9 @@ async function handleOpenJobClaim(
       ...(claimMapUrl ? [[{ text: "📍 เปิดแผนที่", url: claimMapUrl }]] : []),
     ]
   );
+  // 🆕 28x.243 — this message carries the guest's contact; remember it so the
+  //   job-finished trigger can redact it from her chat history.
+  await rememberTherapistContactMsg(bookingId, pressedBy, claimSend.body);
 
   await sendTelegramIfEnabled(
     token,
@@ -3224,7 +3329,7 @@ async function handleJobCallback(
       //   effectively unreachable for anyone who lives in the Telegram chat.
       //   One tap here opens it — she's already signed in from her staff
       //   login, so the browser session carries over.
-      await sendTelegramIfEnabled(
+      const fullSend = await sendTelegramIfEnabled(
         token,
         String(msgChatId),
         `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`,
@@ -3233,6 +3338,9 @@ async function handleJobCallback(
           ...(acceptMapUrl ? [[{ text: "📍 เปิดแผนที่", url: acceptMapUrl }]] : []),
         ]
       );
+      // 🆕 28x.243 — this message carries the guest's contact; remember it so
+      //   the job-finished trigger can redact it from her chat history.
+      await rememberTherapistContactMsg(bookingId, msgChatId, fullSend.body);
     }
 
     // ── Tell the admin group either way. An accept is reassurance; a decline
@@ -5945,6 +6053,126 @@ export const onBookingCancelledStrikeTelegram = onDocumentUpdated(
     logger.info("[onBookingCancelledStrike] done", {
       bookingId: event.params.bookingId,
       struck,
+      total: msgs.length,
+    });
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🆕 Round 28x.243 (founder: "เวลาบอทส่งออร์เดอร์ให้พนักงาน — ประวัติบอทแชท
+//   ลบเบอร์ หรือ Contact ลูกค้า หลังจากเสร็จงานแล้ว")
+//
+// The moment a booking reaches a terminal state (job done — or cancelled after
+// someone already accepted), rewrite every full-card message the dispatch bot
+// sent into a PRACTITIONER's private chat so the guest's phone (and the map
+// button) stop existing in her Telegram history. The redacted card
+// (formatRedactedJobCard) keeps everything else — founder-specced field for
+// field in 28x.244, including address, guest name and note.
+//
+// Deliberately mirrors onBookingCancelledStrikeTelegram (28x.132) above:
+// transition-only + one-shot stamp, editMessageText not deleteMessage (deletes
+// age out after ~48h and fail silently — an edit doesn't), skip-and-log when a
+// booking predates message capture. Differences worth naming:
+//   · NOT gated on isTelegramEnabled(): that toggle pauses notifications, and
+//     rewriting an already-sent message notifies nobody. Privacy cleanup must
+//     not silently stop because notifications were paused.
+//   · Admin-channel messages (telegramAdminMsgs) are untouched on completion —
+//     the Booking channel is the shop's own record and View keeps the master
+//     copy. Only the practitioner-facing copies are redacted.
+// Fires on BOTH paths a job actually finishes through: advanceJobStatus (sets
+// status="completed" + dispatchState="done" in one write) and an admin marking
+// the status done/completed by hand from the admin pages.
+// ─────────────────────────────────────────────────────────────────────────────
+const REDACT_DONE_STATUSES = ["completed", "done"];
+const REDACT_CANCEL_STATUSES = [
+  "cancelled",
+  "canceled",
+  "refunded",
+  "rejected",
+  "failed",
+  "no_show",
+];
+function jobIsOver(b?: { status?: string; dispatchState?: string }): boolean {
+  const st = (b?.status ?? "").toLowerCase();
+  return (
+    REDACT_DONE_STATUSES.includes(st) ||
+    REDACT_CANCEL_STATUSES.includes(st) ||
+    b?.dispatchState === "done"
+  );
+}
+
+export const onBookingFinishedRedactTherapistChat = onDocumentUpdated(
+  {
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+  },
+  async (event) => {
+    const bookingId = event.params.bookingId;
+    const before = event.data?.before.data() as
+      | { status?: string; dispatchState?: string }
+      | undefined;
+    const after = event.data?.after.data() as
+      | (BookingDocLite & {
+          status?: string;
+          dispatchState?: string;
+          telegramTherapistMsgs?: { chatId?: string; id?: number }[];
+          telegramContactRedactedAt?: unknown;
+        })
+      | undefined;
+    if (!after) return;
+
+    // Transition-only: fire once when the job crosses into "over", never on
+    // the edits that follow (payout stamps, review sync, report tweaks).
+    if (jobIsOver(before) || !jobIsOver(after)) return;
+    if (after.telegramContactRedactedAt) return;
+
+    const msgs = Array.isArray(after.telegramTherapistMsgs)
+      ? after.telegramTherapistMsgs
+      : [];
+    if (msgs.length === 0) {
+      // Pre-28x.243 booking, or the practitioner never got a full card
+      // (declined / no DM / job cancelled before accept) — nothing to redact.
+      logger.info("[onBookingFinishedRedact] no stored messages — skipping", {
+        bookingId,
+      });
+      return;
+    }
+
+    const token = TELEGRAM_BOT_TOKEN.value().trim();
+    if (!token) {
+      logger.error("[onBookingFinishedRedact] TELEGRAM_BOT_TOKEN missing");
+      return;
+    }
+
+    const cancelled = REDACT_CANCEL_STATUSES.includes(
+      (after.status ?? "").toLowerCase()
+    );
+    const redactedCard = formatRedactedJobCard(bookingId, after, cancelled);
+
+    let redacted = 0;
+    for (const m of msgs) {
+      if (typeof m?.id !== "number" || !m?.chatId) continue;
+      // Also drops the 📍 เปิดแผนที่ button — editMessageText without
+      // reply_markup removes the inline keyboard, and that button held the
+      // guest's map pin.
+      const ok = await editTelegramMessage(token, m.chatId, m.id, redactedCard);
+      if (ok) redacted++;
+    }
+
+    // Stamp so this can never run twice for the same booking (e.g. a
+    // completed job later moved to refunded is a second terminal transition).
+    try {
+      await getFirestore().collection("bookings").doc(bookingId).update({
+        telegramContactRedactedAt: FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      logger.error("[onBookingFinishedRedact] stamp write failed", err);
+    }
+
+    logger.info("[onBookingFinishedRedact] done", {
+      bookingId,
+      redacted,
       total: msgs.length,
     });
   }
