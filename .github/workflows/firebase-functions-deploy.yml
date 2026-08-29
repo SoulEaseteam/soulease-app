@@ -1,0 +1,61 @@
+# 🆕 Round 28x.245 (founder: "สนใจ" — stop needing a laptop for every
+# functions deploy). Mirrors vercel-deploy.yml's shape: push-to-main
+# trigger, one job, token-in-secret auth. FIREBASE_TOKEN comes from
+# `npx firebase-tools@14 login:ci` run once on a machine with a browser —
+# same pattern the repo already uses for VERCEL_TOKEN.
+#
+# Fires only when a push to main touches the functions codebase (or this
+# file), plus manual Run-workflow from the Actions tab. Until the
+# FIREBASE_TOKEN secret is added the job fails early with instructions —
+# that first red run is expected; add the secret, then Re-run all jobs.
+name: Deploy Firebase Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "functions/**"
+      - "firebase.json"
+      - ".firebaserc"
+      - ".github/workflows/firebase-functions-deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-functions-deploy
+  # Unlike the Vercel job, never cancel a deploy midway — a half-applied
+  # functions rollout leaves a mixed set of old/new triggers live. Queue.
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check FIREBASE_TOKEN secret
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo "::error::FIREBASE_TOKEN secret is missing. One-time setup: run 'npx firebase-tools@14 login:ci' on a machine with a browser (login as the Firebase project owner), copy the printed token, then add it as a repository secret named FIREBASE_TOKEN under Settings → Secrets and variables → Actions — and re-run this workflow."
+            exit 1
+          fi
+
+      - name: Install functions dependencies
+        run: npm ci --prefix functions
+
+      # firebase.json's functions predeploy hook compiles TypeScript before
+      # upload, so no separate build step is needed here. --force lets a
+      # function deleted from source be removed without an interactive
+      # prompt (non-interactive would otherwise abort the whole deploy).
+      - name: Deploy functions
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx -y firebase-tools@14 deploy --only functions --project soulease-spa --non-interactive --force
