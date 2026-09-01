@@ -1228,6 +1228,12 @@ interface BookingDocLite {
   locationName?: string;
   meetingPoint?: string;
   note?: string;
+  // 🆕 Round 28x.246 — the note the guest actually types lives here (the
+  //   SelectLocationPage "Note" field, required for Come-to-my-room). The
+  //   legacy `note` field has no guest-facing writer, so the Telegram cards
+  //   printed "Note: -" on every real order while the reservation-name +
+  //   room-number note never left Firestore.
+  addressNote?: string;
   servicePrice?: number;
   // 🆕 28x.86 (founder: "ตอนจองส่วนลด เทเลแกรมไม่ตัดโค้ด ส่งราคาเต็มมา") —
   //   the discount WAS already correctly baked into totalPrice at booking
@@ -1396,6 +1402,38 @@ function attributionLine(b: BookingDocLite): string | null {
   return parts.length ? `🌐 Source: ${parts.join(" · ")}` : null;
 }
 
+// 🆕 Round 28x.246 (founder: "เวลาลูกค้ากด come to my room แล้วเขียนโน๊ต
+//   ให้ส่งโน๊ตให้แอดมินด้วย") — the Note line on every Telegram card read the
+//   legacy `note` field, which nothing guest-facing ever writes ("" always),
+//   so a Come-to-my-room order arrived with "Note: -" while the required
+//   reservation-name + room-number note sat unread in `addressNote`. One
+//   helper for all three cards (admin / accepted therapist / redacted) so
+//   they can't drift apart; `note` still shown first if some old or
+//   admin-written doc carries it.
+const guestNote = (b: BookingDocLite): string => {
+  const parts = [b.note?.trim(), b.addressNote?.trim()].filter(
+    (s): s is string => !!s
+  );
+  return parts.length ? parts.join(" · ") : "-";
+};
+
+// 🆕 Round 28x.246 — meetingPoint stores the raw form id ("direct"), which
+//   rendered as "Meeting: 👉🏻 direct" on the cards. Map the four known ids to
+//   the labels the guest actually tapped; anything unrecognised (free text on
+//   old docs) passes through unchanged.
+const MEETING_POINT_LABELS: Record<string, string> = {
+  lobby: "Meet at Lobby",
+  lift: "Meet at the Elevator",
+  direct: "Come to my room",
+  other: "Other",
+};
+
+const meetingLine = (b: BookingDocLite): string | null => {
+  const raw = b.meetingPoint?.trim();
+  if (!raw) return null;
+  return `Meeting: 👉🏻 ${MEETING_POINT_LABELS[raw] ?? raw}`;
+};
+
 // 🆕 Round 28s228 (founder: "ให้บอทส่งแบบนี้") — clean, structured admin
 //   booking message. Plain text (sendTelegram has no parse_mode, so NO
 //   markdown escaping — backslashes would show literally). Dropped the
@@ -1439,7 +1477,7 @@ const formatBookingForAdmin = (
     `Time: ${b.time ?? "—"}`,
     divider,
     `📍 Address: ${addressLine}`,
-    b.meetingPoint?.trim() ? `Meeting: 👉🏻 ${b.meetingPoint.trim()}` : null,
+    meetingLine(b),
     "",
     `Service: ${b.serviceName ?? "—"}`,
     `Duration: ${b.duration ?? "?"} min`,
@@ -1469,7 +1507,7 @@ const formatBookingForAdmin = (
     "",
     `📞 Phone: ${b.phone ?? "—"}`,
     `👤 Name: ${b.contactName ?? "—"}`,
-    `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+    `Note: ${guestNote(b)}`,
     divider,
     `🗺️ Map: ${mapUrl || "—"}`,
   ];
@@ -1576,7 +1614,7 @@ const formatBookingForTherapist = (
     `Time: ${b.time ?? "—"}`,
     divider,
     `📍 Address: ${place}`,
-    b.meetingPoint?.trim() ? `Meeting: 👉🏻 ${b.meetingPoint.trim()}` : null,
+    meetingLine(b),
     "",
     `Service: ${b.serviceName ?? "—"}`,
     `Duration: ${b.duration ?? "?"} min`,
@@ -1588,7 +1626,7 @@ const formatBookingForTherapist = (
     "",
     `📞 Phone: ${b.phone ?? "—"}`,
     `👤 Name: ${b.contactName ?? "—"}`,
-    `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+    `Note: ${guestNote(b)}`,
   ]
     .filter((l) => l !== null)
     .join("\n");
@@ -1682,7 +1720,7 @@ function formatRedactedJobCard(
     `Time: ${b.time ?? "—"}`,
     divider,
     `📍 Address: ${place}`,
-    b.meetingPoint?.trim() ? `Meeting: 👉🏻 ${b.meetingPoint.trim()}` : null,
+    meetingLine(b),
     "",
     `Service: ${b.serviceName ?? "—"}`,
     `Duration: ${b.duration ?? "?"} min`,
@@ -1693,7 +1731,7 @@ function formatRedactedJobCard(
     `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
     "",
     `👤 Name: ${b.contactName ?? "—"}`,
-    `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+    `Note: ${guestNote(b)}`,
   ]
     .filter((l) => l !== null)
     .join("\n");
