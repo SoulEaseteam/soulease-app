@@ -12,7 +12,7 @@
 //
 // Fallback ปลอดภัย: ถ้า env ไม่ตั้ง → return URL เดิม (ไม่พัง)
 
-import { isCloudinaryDown } from "@/utils/imageFallback";
+import { isCloudinaryDown, isVercelImageDown } from "@/utils/imageFallback";
 
 // 🆕 28x.24 (founder: "รูปบนเว็บไม่ชัด") — fall back to the public cloud
 //   name instead of "" when the env var is absent. Local/CLI builds don't
@@ -49,6 +49,51 @@ const CLOUD_NAME =
 //   it was, no code change.
 const CLOUDINARY_ENABLED =
   String(import.meta.env.VITE_CLOUDINARY_ENABLED ?? "") === "1";
+
+// 🆕 28x.246 (founder: "แก้หน้าเว็บเปิดช้า") — measured on prod: with the
+//   28x.158 raw-serve default, roster photos now ship at FULL upload size
+//   (1024×1536+, painted into ~135×180 card slots) straight from the
+//   US-region Firebase bucket — 2.2-2.6 s PER IMAGE on a fast desktop line,
+//   worse on Bangkok mobile. The premise 28x.158 measured ("959-1034×1280 at
+//   94-168 KB, already small") aged out as newer, heavier uploads joined.
+//
+//   Fix that KEEPS 28x.158's real constraint (no metered third-party account
+//   whose outage takes every photo down at once): Vercel's own Image
+//   Optimization API — the same platform already serving the site. No separate
+//   account, no separate credit pool, edge-cached, and a single failed load
+//   latches back to the raw URL (today's exact behaviour) via imageFallback.
+//   Config lives in vercel.json `images`; only the `sizes` listed there may be
+//   requested as `w`.
+const VERCEL_IMAGE_DISABLED =
+  String(import.meta.env.VITE_VERCEL_IMAGE_DISABLED ?? "") === "1";
+
+/** Allowed `w` values — MUST mirror vercel.json `images.sizes`. */
+const VERCEL_SIZES = [320, 640, 800, 1080, 1400, 1600];
+
+const vercelWidthByVariant = {
+  thumb: 320,
+  card: 800,
+  hero: 1400,
+  full: 1600,
+} as const;
+
+function vercelImageUrl(url: string, variant: ImageVariant): string | null {
+  // /_vercel/image only exists on Vercel deployments — dev serves raw.
+  if (!import.meta.env.PROD) return null;
+  if (VERCEL_IMAGE_DISABLED || isVercelImageDown()) return null;
+  if (url.startsWith("data:") || url.startsWith("blob:")) return null;
+  if (url.includes("/_vercel/image")) return url; // already wrapped
+  if (url.includes("res.cloudinary.com/")) return null; // legacy — that path owns it
+  // Same-origin statics ride as relative paths; remote hosts must be listed
+  // in vercel.json remotePatterns (currently: the Firebase bucket only).
+  let target: string | null = null;
+  if (url.startsWith("/")) target = url;
+  else if (url.startsWith("https://firebasestorage.googleapis.com/")) target = url;
+  else if (url.startsWith(`${PROD_DOMAIN}/`)) target = url.slice(PROD_DOMAIN.length);
+  if (!target) return null;
+  const w = vercelWidthByVariant[variant];
+  return `/_vercel/image?url=${encodeURIComponent(target)}&w=${w}&q=78`;
+}
 
 /** ขนาดที่ใช้บ่อย */
 export type ImageVariant = "card" | "thumb" | "hero" | "full";
@@ -142,6 +187,12 @@ export function enhanceImage(
 ): string {
   if (!url) return "";
 
+  // 🆕 28x.246 — Vercel edge optimiser first; returns null for anything it
+  //   can't serve (dev, disabled, latched down, foreign host, data:/blob:)
+  //   and the legacy Cloudinary/raw paths below take over unchanged.
+  const vercel = vercelImageUrl(url, options.variant ?? "card");
+  if (vercel) return vercel;
+
   // ถ้าไม่ได้ตั้ง CLOUD_NAME → return เดิม (graceful fallback)
   if (!CLOUD_NAME) return url;
 
@@ -213,6 +264,14 @@ export function enhanceImageSrcSet(
 ): string {
   if (!url || !CLOUD_NAME) return "";
   const base = enhanceImage(url, { variant });
+  // 🆕 28x.246 — Vercel-optimised base: build the 2x from the allowed-sizes
+  //   list (320→640, 800→1600; hero/full already near the 1600 cap → 1x only).
+  if (base.includes("/_vercel/image")) {
+    const w = vercelWidthByVariant[variant];
+    const w2 = VERCEL_SIZES.includes(w * 2) ? w * 2 : 1600;
+    if (w2 <= w) return `${base} 1x`;
+    return `${base} 1x, ${base.replace(`&w=${w}`, `&w=${w2}`)} 2x`;
+  }
   // 🆕 28x.158 — with the proxy off, `base` is the origin URL and carries no
   //   `w_` to rewrite, so both densities resolve to the same full-resolution
   //   file. That is the correct outcome (one sharp original, no upscale), not

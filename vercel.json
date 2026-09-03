@@ -3,6 +3,14 @@
   "framework": "vite",
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
+  "images": {
+    "sizes": [320, 640, 800, 1080, 1400, 1600],
+    "remotePatterns": [
+      { "protocol": "https", "hostname": "firebasestorage.googleapis.com" }
+    ],
+    "formats": ["image/avif", "image/webp"],
+    "minimumCacheTTL": 2678400
+  },
   "rewrites": [
     {
       "source": "/(.*)",

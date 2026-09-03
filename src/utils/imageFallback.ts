@@ -48,6 +48,28 @@ export function isCloudinaryDown(): boolean {
   return cloudinaryDown;
 }
 
+// 🆕 28x.246 — same latch pattern for the Vercel Image Optimization layer:
+//   one failed /_vercel/image load (quota exceeded, disallowed source, edge
+//   hiccup) flips every later render straight back to the raw URL — the exact
+//   pre-28x.246 behaviour, so the worst case is "today's site".
+let vercelImageDown = false;
+
+/** Read by enhanceImage() so later renders skip the Vercel optimiser. */
+export function isVercelImageDown(): boolean {
+  return vercelImageDown;
+}
+
+/** Recover the original address from a /_vercel/image?url=…&w=… URL. */
+export function rawFromVercelImage(src: string): string | null {
+  if (!src.includes("/_vercel/image")) return null;
+  try {
+    const u = new URL(src, window.location.origin);
+    return u.searchParams.get("url");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Recover the original image address from a Cloudinary fetch URL.
  *
@@ -85,6 +107,18 @@ export function installImageFallback(): void {
       if (!el || el.tagName !== "IMG") return;
 
       const current = el.currentSrc || el.src || "";
+
+      // 🆕 28x.246 — Vercel-optimised image failed → latch + swap to raw.
+      const vraw = rawFromVercelImage(current);
+      if (vraw) {
+        vercelImageDown = true;
+        if (el.dataset.rawFallback === "1") return;
+        el.dataset.rawFallback = "1";
+        el.removeAttribute("srcset");
+        el.src = vraw;
+        return;
+      }
+
       const raw = rawFromCloudinary(current);
       if (!raw) return; // not ours to fix — a genuinely missing original
 
