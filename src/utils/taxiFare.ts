@@ -91,7 +91,12 @@ export const FREE_DISTANCE_KM = 0;
 //   fare is the struck "original", and the guest actually pays a slightly lower,
 //   rounded-DOWN figure. Tunable in one place; set to 0 to switch the saving off
 //   (then youPay === original and no "save" chip shows).
-export const WEB_TAXI_SAVING_PCT = 0.05;
+// 🆕 Round 28x.247 (founder: "ไม่มี (was 100 ฿ · saved 10 ฿ booking online)") —
+//   the online-saving framing is OFF. It struck through the real fare and paid
+//   the therapist ฿10 less than the quote, which also punched through the new
+//   ฿100 floor below. 0 ⇒ youPay === original, `save` is 0, and no strike/
+//   "saved" chip renders anywhere. The lever itself stays for a future promo.
+export const WEB_TAXI_SAVING_PCT = 0;
 
 export interface TravelFareDisplay {
   /** The full metered round-trip fare (incl. booking fee + surge) — shown
@@ -162,13 +167,27 @@ const TIER_4_PER_KM = 10;    // applies to km 40+
 //   interpolation/round-to-฿10 machinery below keep working. Re-tune here if
 //   GrabBike rates move; ADMIN_QUOTE_KM (15) still routes anything past the
 //   last point to a manual concierge quote.
+// 🆕 Round 28x.247 (founder: "ค่าเท็กซี่ 0-7 กิโลแรก 100 บาท … ค่าแท๊กซี่เริ่ม
+//   ที่ 100 ห้ามต่ำกว่านี้") — the short end is now a FLAT ฿100 minimum call-out
+//   fee covering 0–7 km, not an interpolated curve that bottomed out at ฿50.
+//   Rationale (hers): no rider takes a round trip for ฿50–70, so the old floor
+//   was quietly costing the practitioner money on every short job. Past 7 km the
+//   28x.166 GrabBike anchors are untouched (10 km ≈ ฿140 · 15 km ≈ ฿200), so
+//   only the short band moved.
+//
+//   ⚠️ MOTO_MIN_FARE below is a HARD floor enforced in motoRoundTripFare(), not
+//   just a checkpoint value — a Firestore `motoFareCheckpoints` override (which
+//   trumps this table) still cannot quote under ฿100.
 let MOTO_FARE_CHECKPOINTS: [km: number, roundTripTHB: number][] = [
-  [0, 50],
-  [3, 70],
-  [6, 100],
+  [0, 100],
+  [7, 100],
   [10, 140],
   [15, 200],
 ];
+
+/** Absolute minimum travel fare (THB), founder rule 28x.247. Applies to the
+ *  BASE, before traffic surge / rain — those only ever add. */
+export const MOTO_MIN_FARE = 100;
 
 /**
  * Round-trip multiplier. 2.0 = outbound full + return full (both legs at
@@ -338,8 +357,12 @@ export function grabCarRoundTripFare(distanceKm: number): number {
  * would need to extrapolate.
  */
 export function motoRoundTripFare(distanceKm: number): number {
+  // 🆕 28x.247 — every return path below runs through this floor, so neither an
+  //   admin checkpoint override nor an interpolated in-between km can quote
+  //   under the founder's ฿100 minimum.
+  const floor = (v: number) => Math.max(MOTO_MIN_FARE, v);
   const pts = MOTO_FARE_CHECKPOINTS;
-  if (!Number.isFinite(distanceKm) || distanceKm <= pts[0][0]) return pts[0][1];
+  if (!Number.isFinite(distanceKm) || distanceKm <= pts[0][0]) return floor(pts[0][1]);
   for (let i = 1; i < pts.length; i++) {
     const [x1, y1] = pts[i];
     if (distanceKm <= x1) {
@@ -351,10 +374,10 @@ export function motoRoundTripFare(distanceKm: number): number {
       // ฿133/฿157/฿203 for the in-between km values. Round to the nearest
       // ฿10 so every distance quotes a clean number, same granularity as
       // the checkpoints themselves (all multiples of 10).
-      return Math.round(raw / 10) * 10;
+      return floor(Math.round(raw / 10) * 10);
     }
   }
-  return pts[pts.length - 1][1];
+  return floor(pts[pts.length - 1][1]);
 }
 
 /** Apply a new set of real spot-checked checkpoints (see
@@ -493,7 +516,14 @@ export function calcTaxiFare(
   }
   // Surge (traffic/idle + peak demand) and rain stack additively so the
   // combined bump stays predictable and legible.
-  const fare = Math.round(base * (1 + surgePct + rain.surchargePct));
+  // 🆕 28x.247 — founder kept BOTH levers explicitly ("อย่าลืมเรื่องการจราจร
+  //   ในแต่ละเวลา และสภาพอากาศด้วย"): rush 07-09/17-20 +25%, late-night peak
+  //   21-02 +15%, rain +15/30% — all still applied here, on top of the new
+  //   ฿100 floor. They only ever ADD, so the floor holds.
+  const fare = Math.max(
+    MOTO_MIN_FARE,
+    Math.round(base * (1 + surgePct + rain.surchargePct)),
+  );
 
   return {
     fare,
