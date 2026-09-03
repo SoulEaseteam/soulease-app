@@ -41,7 +41,11 @@ import { getCachedRainStatus, type RainStatus } from "@/utils/weather";
  * 🆕 Round 28x.115 (founder, same session as the new moto rate below) —
  * back to 15: restated explicitly while recalibrating the fare curve.
  */
-export let ADMIN_QUOTE_KM = 15;
+// 🆕 Round 28x.248 — 15 → 20. The founder's new table prices up to "18 km+",
+//   so a 15 km cut-off would have sent her own quoted distances to a manual
+//   quote. (CLAUDE.md §9 already flagged 20 km as defensible once fares were
+//   honest.) Past 20 km still routes to the concierge.
+export let ADMIN_QUOTE_KM = 20;
 
 /**
  * 🆕 Round 28s231 — Bangkok road-circuity factor. Straight-line
@@ -178,11 +182,34 @@ const TIER_4_PER_KM = 10;    // applies to km 40+
 //   ⚠️ MOTO_MIN_FARE below is a HARD floor enforced in motoRoundTripFare(), not
 //   just a checkpoint value — a Firestore `motoFareCheckpoints` override (which
 //   trumps this table) still cannot quote under ฿100.
+// 🆕 Round 28x.248 — founder handed over a full real-world fare table (a
+//   second pass over 28x.247's flat band), quoted as what the GUEST pays:
+//     0–5 km ฿100 · 7 ฿180 · 8 ฿220 · 9 ฿260 · 13 ฿340 · 15 ฿350 · 18+ ฿480
+//   plus four time-stamped spot checks that pin the surge behaviour:
+//     4.3 km after midnight ฿100 · 4.5 km before midnight ฿100
+//     6.4 km before midnight ฿180 · 6.4 km after midnight ฿160
+//     5.2 km ฿120 · 5.5 km ฿140 (both before midnight)
+//
+//   Reverse-engineering all eight: the guest price = this BASE curve × the
+//   time surge, rounded to ฿10, floored at ฿100. The base therefore keeps
+//   SLOPING below 5 km (≈฿40/km) instead of sitting flat — the ฿100 "first
+//   5 km" is the FLOOR doing the work, which is what makes 4.5 km read ฿100
+//   even before midnight (80 × 1.15 = 92 → floor). A literal flat ฿100 band
+//   would have quoted ฿115 there and missed her number.
+//
+//   Slopes that fall out: ฿40/km from 3→9 km, ฿20/km 9→13, then her own
+//   long-haul steps (13→15 nearly flat, 15→18 back up to the taxi rate she
+//   called out with "ต้องคำนวนเป็นค่าแท็กซี่"). Beyond 18 km it holds ฿480
+//   until ADMIN_QUOTE_KM sends it to a concierge quote.
 let MOTO_FARE_CHECKPOINTS: [km: number, roundTripTHB: number][] = [
-  [0, 100],
-  [7, 100],
-  [10, 140],
-  [15, 200],
+  [3, 20],
+  [5, 100],
+  [7, 180],
+  [8, 220],
+  [9, 260],
+  [13, 340],
+  [15, 350],
+  [18, 480],
 ];
 
 /** Absolute minimum travel fare (THB), founder rule 28x.247. Applies to the
@@ -225,7 +252,12 @@ export function surgePctForHour(bkkHour?: number | null): number {
   if (bkkHour == null || !Number.isFinite(bkkHour)) return 0;
   const h = ((Math.floor(bkkHour) % 24) + 24) % 24;
   if ((h >= 7 && h < 9) || (h >= 17 && h < 20)) return Math.max(0, RUSH_SURGE_PCT) / 100;
-  if (h >= 21 || h < 2) return Math.max(0, PEAK_SURGE_PCT) / 100;
+  // 🆕 Round 28x.248 — the late band now ENDS at midnight (was 21:00–02:00).
+  //   Founder's spot check: 6.4 km reads ฿180 before midnight but ฿160 after,
+  //   i.e. the after-midnight ride carries no surge at all. It matches the
+  //   road reality she's pricing — the traffic that justifies the bump is gone
+  //   once it's past 00:00, even though that's still prime booking time.
+  if (h >= 21) return Math.max(0, PEAK_SURGE_PCT) / 100;
   return 0;
 }
 
@@ -356,6 +388,28 @@ export function grabCarRoundTripFare(distanceKm: number): number {
  * past the last checkpoint to a manual admin quote before this function
  * would need to extrapolate.
  */
+/**
+ * 🆕 Round 28x.248 — the UNROUNDED interpolation, for calcTaxiFare.
+ *
+ * Rounding twice (once here to ฿10, again after the surge) overshoots: a
+ * 5.2 km ride before midnight computes 108 → 110 → ×1.15 = 126.5 → ฿130,
+ * but the founder's table says ฿120. Rounding ONCE, at the end, on the
+ * surged figure reproduces every number she gave. `motoRoundTripFare`
+ * below keeps its own rounding for the admin preview + any direct caller.
+ */
+function motoRoundTripFareRaw(distanceKm: number): number {
+  const pts = MOTO_FARE_CHECKPOINTS;
+  if (!Number.isFinite(distanceKm) || distanceKm <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    const [x1, y1] = pts[i];
+    if (distanceKm <= x1) {
+      const [x0, y0] = pts[i - 1];
+      return y0 + ((y1 - y0) * (distanceKm - x0)) / (x1 - x0);
+    }
+  }
+  return pts[pts.length - 1][1];
+}
+
 export function motoRoundTripFare(distanceKm: number): number {
   // 🆕 28x.247 — every return path below runs through this floor, so neither an
   //   admin checkpoint override nor an interpolated in-between km can quote
@@ -509,7 +563,9 @@ export function calcTaxiFare(
     bookingFee = Math.round(GRAB_BOOKING_FEE * 2); // one call fee per leg, 2 legs
     base = grabCarRoundTripFare(distanceKm) + bookingFee;
   } else {
-    const roundTrip = motoRoundTripFare(distanceKm);
+    // 🆕 28x.248 — RAW (unrounded) base; the single ฿10 rounding happens
+    //   after the surge below, which is what reproduces the founder's table.
+    const roundTrip = motoRoundTripFareRaw(distanceKm);
     oneWayFare = Math.round(roundTrip / 2); // display/analytics only — the real number is the round-trip quote, not a doubled one-way meter
     bookingFee = 0; // already baked into the spot-checked round-trip figure
     base = roundTrip;
@@ -520,9 +576,11 @@ export function calcTaxiFare(
   //   ในแต่ละเวลา และสภาพอากาศด้วย"): rush 07-09/17-20 +25%, late-night peak
   //   21-02 +15%, rain +15/30% — all still applied here, on top of the new
   //   ฿100 floor. They only ever ADD, so the floor holds.
+  // 🆕 28x.248 — ONE rounding, to the nearest ฿10, on the surged figure, then
+  //   the ฿100 floor. Every founder spot check lands exactly this way.
   const fare = Math.max(
     MOTO_MIN_FARE,
-    Math.round(base * (1 + surgePct + rain.surchargePct)),
+    Math.round((base * (1 + surgePct + rain.surchargePct)) / 10) * 10,
   );
 
   return {
