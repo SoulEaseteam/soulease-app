@@ -75,6 +75,8 @@ import StatusPill from "@/components/therapist/detail/StatusPill";
 // 🆕 Round 28x.177 — heart save-button next to the StatusPill CTA.
 import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
 import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
+// 🆕 28x.249 — admins keep access to a hidden practitioner's public page.
+import { useAuth } from "@/providers/AuthProvider";
 import { useSavedTherapist } from "@/hooks/useSavedTherapist";
 // 🗑️ 28s350 — FeaturesPanel (Rolodex physical-descriptor table) retired
 //   per founder ("Features ไม่ใช้แล้ว ลบ"). Component file kept on disk.
@@ -625,6 +627,7 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
 
 const TherapistDetailPage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const { role } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -793,6 +796,48 @@ const TherapistDetailPage: React.FC = () => {
   const therapistFromReal = rowForBuild
     ? buildFromReal(rowForBuild, i18n.language?.slice(0, 2))
     : null;
+
+  // 🆕 Round 28x.249 (founder: "ตอนนี้คนที่มีลิงก์ ยังหาโปรไฟล์พนักงานที่ระบบ
+  //   หลังบ้านซ่อนได้อยู่") — the admin `hidden` toggle only ever filtered the
+  //   home grid (HomeTherapistGrid), so a hidden practitioner's DIRECT link
+  //   still opened her full public profile — and those links outlive the
+  //   hiding: they sit in old Telegram messages, guest chats and search
+  //   results. Hiding now means hidden everywhere a guest can reach.
+  //
+  //   Admins are exempt so the admin page's "View Public Profile" button and
+  //   any concierge check still work; they see the profile plus the banner
+  //   below. Everyone else gets the standard not-found page.
+  //
+  //   ⚠️ Scope, stated honestly: this is a UI gate. firestore.rules keeps
+  //   `therapists` readable (`read: if true`) because the home grid, booking
+  //   flow and status engine all read the collection anonymously, so someone
+  //   querying the API directly could still fetch the doc. That's not the
+  //   case the founder is closing — she's stopping a shared LINK from
+  //   working for a guest.
+  const viewerIsAdmin = role === "admin";
+  const isHiddenProfile = Boolean(
+    (realRow as { hidden?: boolean } | null)?.hidden,
+  );
+  const blockedByHidden = isHiddenProfile && !viewerIsAdmin;
+
+  // 🆕 28x.249 — a hidden practitioner must also drop OUT of Google. The
+  //   route is prerendered at build time from the static roster, which can't
+  //   know the live `hidden` flag, so the crawlable HTML still exists; this
+  //   runtime robots tag is what tells Google to de-list it. Removed again
+  //   the moment she's unhidden (cleanup on unmount / flag change).
+  //   ⚠️ index.html already ships a site-wide `robots` tag ("index, follow…").
+  //   Appending a second one loses — crawlers read the first — so OVERWRITE
+  //   the existing tag and restore its value on cleanup.
+  useEffect(() => {
+    if (!isHiddenProfile) return;
+    const tag = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (!tag) return;
+    const previous = tag.content;
+    tag.content = "noindex, nofollow";
+    return () => {
+      tag.content = previous;
+    };
+  }, [isHiddenProfile]);
 
   // 🆕 2026-08-14 — the live bookings query is PERMISSION-DENIED for
   //   logged-out guests (rules deliberately hide reservation docs — they
@@ -1234,7 +1279,7 @@ const TherapistDetailPage: React.FC = () => {
       </Box>
     );
   }
-  if (!therapist) {
+  if (!therapist || blockedByHidden) {
     return (
       <Box
         sx={{
