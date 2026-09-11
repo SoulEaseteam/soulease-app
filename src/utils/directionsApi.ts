@@ -15,6 +15,12 @@
 //     simultaneously — useful future-proofing for "show ETA on every
 //     therapist card" feature.
 //
+// Round 28x.250 (founder: "ทำไมแท็กซี่แพงมาก") — the matrix is now asked for a
+//   TWO_WHEELER route, not DRIVING. Driving optimises for time and returns the
+//   expressway on quiet nights, which is longer in km than the road a rider
+//   actually takes — and the fare table charges per km. DRIVING (with live
+//   traffic) remains the fallback.
+//
 // Time-of-day fallback (when API errors / SDK absent):
 //   • 07:00 – 10:59 (Bangkok morning rush)  → 18 km/h
 //   • 17:00 – 20:59 (Bangkok evening rush)  → 16 km/h
@@ -30,7 +36,7 @@
 
 import { haversineKm } from "@/utils/taxiFare";
 
-const CACHE_PREFIX = "sunred_dirCache:";
+const CACHE_PREFIX = "sunred_dirCache2:"; // 🆕 28x.250 — bumped so pre-two-wheeler (car-route) entries expire instantly
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 h
 const SHORT_TRIP_KM = 0.5; // skip API for trips this short
 
@@ -216,7 +222,10 @@ export async function fetchDrivingDistance(
         google?: {
           maps?: {
             DistanceMatrixService?: new () => google.maps.DistanceMatrixService;
-            TravelMode?: { DRIVING: google.maps.TravelMode };
+            TravelMode?: {
+              DRIVING: google.maps.TravelMode;
+              TWO_WHEELER?: google.maps.TravelMode;
+            };
             TrafficModel?: {
               BEST_GUESS: google.maps.TrafficModel;
             };
@@ -228,34 +237,72 @@ export async function fetchDrivingDistance(
         // GoogleMapsContext.loadIfNeeded() ran first.
         return haversineFallback(origin, destination);
       }
-      const service = new w.google.maps.DistanceMatrixService();
-      // 🆕 Round 28b32 — `drivingOptions.departureTime: new Date()`
-      //   tells Google to use real-time traffic data. Returns
-      //   `duration_in_traffic` field which we prefer over the
-      //   non-traffic `duration` for accurate ETAs.
-      const result = await service.getDistanceMatrix({
-        origins: [{ lat: origin.lat, lng: origin.lng }],
-        destinations: [{ lat: destination.lat, lng: destination.lng }],
-        travelMode: w.google.maps.TravelMode.DRIVING,
-        drivingOptions: {
-          departureTime: new Date(),
-          trafficModel: w.google.maps.TrafficModel.BEST_GUESS,
-        },
-      });
-      const row = result.rows[0]?.elements?.[0];
-      if (!row || row.status !== "OK") {
+      const maps = w.google.maps;
+      const service = new maps.DistanceMatrixService();
+      // TWO_WHEELER is region-gated (TH is supported) and absent from older
+      // SDK builds, so read it as optional rather than assuming it's there.
+      const modes = maps.TravelMode as {
+        DRIVING: google.maps.TravelMode;
+        TWO_WHEELER?: google.maps.TravelMode;
+      };
+      const twoWheeler = modes.TWO_WHEELER;
+
+      /** One Distance Matrix call; null when the row isn't usable. */
+      const askGoogle = async (
+        mode: google.maps.TravelMode,
+        withTraffic: boolean
+      ): Promise<{ meters: number; seconds: number } | null> => {
+        // 🆕 Round 28b32 — `drivingOptions.departureTime: new Date()`
+        //   tells Google to use real-time traffic data. Returns
+        //   `duration_in_traffic` field which we prefer over the
+        //   non-traffic `duration` for accurate ETAs.
+        //   ⚠️ drivingOptions is DRIVING-only — sending it with TWO_WHEELER
+        //   makes Google reject the whole request, so it's conditional.
+        const result = await service.getDistanceMatrix({
+          origins: [{ lat: origin.lat, lng: origin.lng }],
+          destinations: [{ lat: destination.lat, lng: destination.lng }],
+          travelMode: mode,
+          ...(withTraffic
+            ? {
+                drivingOptions: {
+                  departureTime: new Date(),
+                  trafficModel: maps.TrafficModel.BEST_GUESS,
+                },
+              }
+            : {}),
+        });
+        const row = result.rows[0]?.elements?.[0];
+        if (!row || row.status !== "OK") return null;
+        const m = row.distance?.value;
+        // Prefer traffic-aware duration when available. 🆕 Round 28s231 —
+        //   guard optional chaining: when Google returns no traffic model,
+        //   `duration_in_traffic` is undefined and `.value` THREW, dropping the
+        //   whole call to the haversine fallback (one cause of cheap fares).
+        const s = row.duration_in_traffic?.value ?? row.duration?.value;
+        if (!m || !s) return null;
+        return { meters: m, seconds: s };
+      };
+
+      // 🆕 Round 28x.250 (founder: "ค่าแท็กซี่ออเดอร์นี้ ทำไม แพงมาก") — route as
+      //   a MOTORBIKE, not a car. DRIVING optimises for TIME, so on a quiet
+      //   late-night road it hands back the expressway loop: Din Daeng → ASAI
+      //   Sathorn came back 13.9 km / ~14 min (≈60 km/h) when Grab quoted the
+      //   same trip at 8.9 km and Google's own bike route at 9.8 km. The fare
+      //   table is priced PER KM, so that padded car route billed the guest
+      //   ฿340 instead of ~฿280 — and the practitioner can't use an expressway
+      //   on a bike anyway (under-400cc bikes are banned on them).
+      //   TWO_WHEELER is supported in Thailand; DRIVING stays the fallback so a
+      //   region/SDK that rejects it still quotes rather than going blank.
+      //   In rain calcTaxiFare switches to the car meter on this same bike
+      //   distance — deliberately the cheaper of the two routes, per her
+      //   "ห้ามแพงเกินจริง" direction.
+      const hit =
+        (twoWheeler ? await askGoogle(twoWheeler, false) : null) ??
+        (await askGoogle(modes.DRIVING, true));
+      if (!hit) {
         return haversineFallback(origin, destination);
       }
-      const meters = row.distance?.value;
-      // Prefer traffic-aware duration when available. 🆕 Round 28s231 —
-      //   guard optional chaining: when Google returns no traffic model,
-      //   `duration_in_traffic` is undefined and `.value` THREW, dropping the
-      //   whole call to the haversine fallback (one cause of cheap fares).
-      const seconds =
-        row.duration_in_traffic?.value ?? row.duration?.value;
-      if (!meters || !seconds) {
-        return haversineFallback(origin, destination);
-      }
+      const { meters, seconds } = hit;
       const kmRoad = meters / 1000;
       const durationMin = seconds / 60;
       writeCache(cacheKey, {

@@ -276,6 +276,14 @@ then unoptimised — deliberate). Full incident detail: CLAUDE-HISTORY.md.
 in CLAUDE-HISTORY.md. Fare is the THERAPIST's money; watch far-job refusals.)
 
 **Open / not done:**
+- ⚠️ **Travel fare 28x.251 is only live if no Firestore override is saved.**
+  The new "real GrabBike round trip + ฿10" table lives in
+  `src/utils/taxiFare.ts` MOTO_FARE_CHECKPOINTS, but a saved
+  `motoFareCheckpoints` doc in Firestore TRUMPS the code (applyLiveFareConfig).
+  If /admin/settings still shows the retired 28x.248 numbers
+  (100 · 180 · 220 · 260 · 340 · 350 · 480), edit the rows to the new table
+  and Save — otherwise guests keep paying the old price with the code looking
+  correct. Check this FIRST if a fare doesn't match after the merge.
 - ⚠️ **FIREBASE_TOKEN secret not yet added → 28x.243-244 (phone redaction)
   merged but NOT deployed.** Functions now auto-deploy via GitHub Actions
   (`firebase-functions-deploy.yml`, 28x.245) on every merge to main that
@@ -545,6 +553,18 @@ You'll have ALL context. No re-explanation needed.
   status enums, etc.), grep the rules file for that list and update it
   in the SAME round — don't trust "it'll show empty until data arrives"
   as proof nothing's wrong.
+- **A distance-based fare must be routed with the vehicle that actually
+  drives it (28x.250).** The travel fare is priced per km off Google Distance
+  Matrix, which was asked for a DRIVING route. Driving optimises for TIME, so
+  on an empty late-night road it returns the expressway: Din Daeng → ASAI
+  Sathorn came back 13.9 km / ~14 min (≈60 km/h) while Grab quoted the same
+  trip at 8.9 km and Google's own bike route at 9.8 km. The guest was billed
+  ฿340 instead of ~฿230 — on a road a practitioner on a bike can't legally
+  use. Caught only by a founder screenshot ("ทำไม แพงมาก"). Fixed by asking
+  for TWO_WHEELER (supported in TH) with DRIVING as the fallback. Lesson: when
+  a number is BILLED off an API estimate, check that the API was asked the
+  same question the money assumes — and spot-check it against the app the
+  therapist actually opens (Grab/Bolt), not against the code's own defaults.
 - **A local-only commit is one GitHub merge away from being erased from
   prod (2026-08-14 incident, §9).** Vercel production builds from GitHub
   main on every push; any session that merges a PR there deploys whatever
