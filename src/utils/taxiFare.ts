@@ -141,6 +141,11 @@ const TIER_4_PER_KM = 10;    // applies to km 40+
 
 // ─── Motorcycle taxi (GrabBike) round-trip fare curve ─────────────────
 //
+// ⚠️ CURRENT MODEL = the 28x.251 block at the BOTTOM of this comment stack
+//   (real GrabBike round trip + ฿10). Everything above it is history: the
+//   ฿140/10km and "flat ฿100 for 0–7 km" anchors quoted in the 28x.166 /
+//   28x.247 notes are NOT live any more.
+//
 // 🆕 Round 28x.99m (founder: "นับตามจริงของมอไซต์ ยกเว้น ฝนตก เป็นรถยน") —
 //   the dispatch fare defaults to a MOTORCYCLE taxi, not a car — this is
 //   how a therapist actually gets sent out for most trips (cheaper,
@@ -185,31 +190,46 @@ const TIER_4_PER_KM = 10;    // applies to km 40+
 // 🆕 Round 28x.248 — founder handed over a full real-world fare table (a
 //   second pass over 28x.247's flat band), quoted as what the GUEST pays:
 //     0–5 km ฿100 · 7 ฿180 · 8 ฿220 · 9 ฿260 · 13 ฿340 · 15 ฿350 · 18+ ฿480
-//   plus four time-stamped spot checks that pin the surge behaviour:
-//     4.3 km after midnight ฿100 · 4.5 km before midnight ฿100
-//     6.4 km before midnight ฿180 · 6.4 km after midnight ฿160
-//     5.2 km ฿120 · 5.5 km ฿140 (both before midnight)
+//   That table was retired in 28x.251 (below) — it was hand-quoted, and once
+//   28x.250 fixed the padded car-route distance it was also pricing the wrong
+//   ride. Kept here only so a future session can see what moved and why.
 //
-//   Reverse-engineering all eight: the guest price = this BASE curve × the
-//   time surge, rounded to ฿10, floored at ฿100. The base therefore keeps
-//   SLOPING below 5 km (≈฿40/km) instead of sitting flat — the ฿100 "first
-//   5 km" is the FLOOR doing the work, which is what makes 4.5 km read ฿100
-//   even before midnight (80 × 1.15 = 92 → floor). A literal flat ฿100 band
-//   would have quoted ฿115 there and missed her number.
+// 🆕 Round 28x.251 (founder: "อิงจาก มอเตอร์ไซค์ และ + 10 บาท") — the guest's
+//   travel fee is now the REAL GrabBike round trip plus a flat ฿10, full stop.
+//   No hand-quoted band, no margin curve.
 //
-//   Slopes that fall out: ฿40/km from 3→9 km, ฿20/km 9→13, then her own
-//   long-haul steps (13→15 nearly flat, 15→18 back up to the taxi rate she
-//   called out with "ต้องคำนวนเป็นค่าแท็กซี่"). Beyond 18 km it holds ฿480
-//   until ADMIN_QUOTE_KM sends it to a concierge quote.
+//   The GrabBike Bangkok one-way meter, fitted to the two live quotes the
+//   founder screenshotted at 01:34 on 2026-09-12 (Din Daeng → ASAI Sathorn):
+//
+//       one-way ฿ = 35 + 6.5 × (km − 2)      [flat ฿35 covers the first 2 km]
+//
+//       8.9 km → ฿80   (Grab Standard Bike charged ฿79 · ฿84 before promo)
+//       9.8 km → ฿86   (Bolt Motorbike quoted ฿83 on the same trip)
+//
+//   Guest pays = one-way × 2 (she rides both ways) + ฿10, floored at
+//   MOTO_MIN_FARE. The checkpoints below ARE that formula, sampled — they stay
+//   a table, not a formula, because the Firestore `motoFareCheckpoints`
+//   override + the Advanced Settings editor both edit this shape, and a real
+//   spot check should be editable on the spot without a deploy.
+//
+//   ⚠️ This hands the practitioner ~฿10 on travel instead of the ฿80–120 the
+//   28x.248 table carried (13 km: ฿340 → ฿230). Founder's call, made with
+//   that trade-off on the table — but if far jobs start getting refused, THIS
+//   is the first thing to look at, not the dispatch flow.
+//
+//   ⚠️ Rain still flips the whole quote to the GrabCar meter (see
+//   calcTaxiFare) — that path is untouched and is much dearer than the bike.
 let MOTO_FARE_CHECKPOINTS: [km: number, roundTripTHB: number][] = [
-  [3, 20],
-  [5, 100],
-  [7, 180],
-  [8, 220],
-  [9, 260],
-  [13, 340],
-  [15, 350],
-  [18, 480],
+  [2, 80],
+  [3, 93],
+  [5, 119],
+  [7, 145],
+  [9, 171],
+  [11, 197],
+  [13, 223],
+  [15, 249],
+  [18, 288],
+  [20, 314],
 ];
 
 /** Absolute minimum travel fare (THB), founder rule 28x.247. Applies to the
