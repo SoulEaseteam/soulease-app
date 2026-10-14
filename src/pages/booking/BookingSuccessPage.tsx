@@ -228,6 +228,56 @@ const BookingSuccessPage: React.FC = () => {
   //   SAME reference the guest sees here, not a second derivation of it.
   const refCode = bookingRef(id);
 
+  // 🆕 28x.252 — one copy path for the Step-1 button AND every channel tile,
+  //   with a 2s confirmed state so the tap visibly does something.
+  const copyRefCode = React.useCallback(() => {
+    if (typeof document === "undefined") return;
+
+    const confirmCopied = () => {
+      setCodeCopied(true);
+      window.setTimeout(() => setCodeCopied(false), 2000);
+    };
+
+    // Legacy execCommand path. Kept as the FALLBACK rather than removed:
+    // navigator.clipboard rejects whenever the document isn't focused
+    // (NotAllowedError) — reproducible in an embedded/preview frame and
+    // reported intermittently on in-app browsers (LINE, Messenger), which is
+    // exactly where this page is opened from. Without it the tap silently did
+    // nothing at all.
+    const legacyCopy = () => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = refCode;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        ta.style.pointerEvents = "none";
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, refCode.length);
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch {
+        return false;
+      }
+    };
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard
+        .writeText(refCode)
+        .then(confirmCopied)
+        .catch(() => {
+          if (legacyCopy()) confirmCopied();
+          // Both paths blocked — the code stays printed on the button, so the
+          // guest can read it off and type it. Deliberately NOT showing a
+          // "Copied" state we can't stand behind.
+        });
+      return;
+    }
+    if (legacyCopy()) confirmCopied();
+  }, [refCode]);
+
   // 🆕 Round 28b21 — Phase 2: 10-min hold window. Field present only on
   //   bookings created after this round; older docs render no countdown.
   // 🆕 28x.65 — the callable returns timestamps as epoch ms (JSON has no
@@ -260,6 +310,13 @@ const BookingSuccessPage: React.FC = () => {
   //   Calendar/Reschedule are unchanged from 28x.151 — chat is the only
   //   tile 28x.140 gave a real answer for.
   const [chatOpen, setChatOpen] = useState(false);
+  // 🆕 28x.252 (founder: "ลูกค้าบางคนจองแล้วไม่รู้ว่าต้องส่งเลขออเดอร์ให้แอดมิน")
+  //   — the copy button used to fire navigator.clipboard and render NOTHING
+  //   back, so a guest could not tell whether the tap had worked and had no
+  //   reason to believe anything was now on their clipboard. Confirmed state
+  //   for 2s, and every concierge-channel tap copies too (belt and braces:
+  //   if a platform drops the prefilled text, the code is still pasteable).
+  const [codeCopied, setCodeCopied] = useState(false);
   const place =
     (booking?.locationName as string | undefined)?.trim() ||
     (booking?.address as string | undefined)?.trim() ||
@@ -407,14 +464,14 @@ const BookingSuccessPage: React.FC = () => {
             {/* Pulsing check disc */}
             <Box
               sx={{
-                width: 96,
-                height: 96,
+                width: 68,
+                height: 68,
                 borderRadius: "50%",
                 background: "#FF9999",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                margin: "16px auto 20px",
+                margin: "10px auto 14px",
                 boxShadow: "0 14px 40px rgba(15, 23, 42, 0.35)",
                 animation: "successPulse 1.6s ease-in-out infinite",
                 "@keyframes successPulse": {
@@ -434,7 +491,7 @@ const BookingSuccessPage: React.FC = () => {
                 },
               }}
             >
-              <CheckRoundedIcon sx={{ color: "#fff", fontSize: 52 }} />
+              <CheckRoundedIcon sx={{ color: "#fff", fontSize: 38 }} />
             </Box>
 
             {/* Title */}
@@ -452,7 +509,7 @@ const BookingSuccessPage: React.FC = () => {
                 lineHeight: 1.05,
               }}
             >
-              {t("success.title", "You're all set.")}
+              {t("success.titleV2", "Reservation received")}
             </Typography>
 
             {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle
@@ -461,15 +518,20 @@ const BookingSuccessPage: React.FC = () => {
             <Typography
               sx={{
                 fontFamily: SANS,
-                fontSize: "11px",
-                fontWeight: 500,
-                color: "var(--sr-muted)",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "var(--sr-cta)",
                 textAlign: "center",
-                letterSpacing: "0.02em",
-                marginTop: "4px",
+                letterSpacing: "0.01em",
+                marginTop: "6px",
+                padding: "0 12px",
+                lineHeight: 1.5,
               }}
             >
-              {t("success.received", "Reservation received")}
+              {t(
+                "success.oneStepLeft",
+                "One step left - send your code to the concierge to confirm.",
+              )}
             </Typography>
 
             {/* Booking ref pill */}
@@ -595,6 +657,208 @@ const BookingSuccessPage: React.FC = () => {
               therapistId={therapistIdForRebook}
             />
 
+              </Box>{/* end hero cluster */}
+
+            {/* 🆕 Round 28s90 (CRO audit) — Multi-channel confirm row.
+                Was a single LINE-only gradient button that dropped
+                WeChat (Chinese tourists) + Telegram-first guests into
+                the wrong app, where they bailed. Now every guest taps
+                their own channel; the booking refCode is pre-filled in
+                the message everywhere the platform allows a body
+                (WhatsApp + Telegram + LINE web; WeChat → QR scan page).
+                Brand-color icons reuse the home concierge grid set.
+                Round 28s??? (founder) — moved to the TOP of the content,
+                immediately after the hero cluster ("ย้ายไปไว้ด้านบน"). */}
+            <Box
+              sx={{
+                minWidth: 0,
+                // 🆕 28x.105 — the confirm cluster (copy code + channels) is
+                //   now a rose-bordered card so the ONE action this page
+                //   exists for reads as a single obvious step instead of
+                //   loose text floating in the void. Channel tiles inside
+                //   stay borderless per 28x.34b.
+                marginTop: "18px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                padding: "16px 16px 12px",
+                borderRadius: "20px",
+                background: "var(--sr-panel)",
+                border: "1px solid rgba(217, 124, 149, 0.35)",
+                boxShadow: "var(--sr-card-shadow)",
+              }}
+            >
+              {/* 🆕 28x.33 (founder "ย้ายไปไว้ด้านบน") — Copy reservation code
+                  moved up here, above the concierge confirm block: copy the
+                  ref, then send it via a channel below. */}
+              <StepLabel
+                n={1}
+                text={t("success.step1", "Copy your reservation code")}
+              />
+              <Button
+                fullWidth
+                onClick={() => {
+                  copyRefCode();
+                }}
+                sx={{
+                  height: 44,
+                  borderRadius: "999px",
+                  background: "var(--sr-panel)",
+                  color: "var(--sr-ink)",
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: "13.5px",
+                  textTransform: "none",
+                  border: "1px solid var(--sr-hairline)",
+                  "&:hover": {
+                    background: "var(--sr-panel)",
+                    borderColor: "var(--sr-hairline)",
+                  },
+                }}
+              >
+                {codeCopied
+                  ? t("success.copied", "Copied - now send it below")
+                  : t("success.copyCodeV2", "Copy code - {{ref}}", {
+                      ref: refCode,
+                    })}
+              </Button>
+              <StepLabel
+                n={2}
+                text={t(
+                  "success.step2",
+                  "Send it to the concierge to confirm",
+                )}
+              />
+              <Box
+                sx={{
+                  display: "grid",
+                  // 🆕 28x.34b (founder "เรียง4ทุกจอ") — 4 in one row on every
+                  //   screen (was 2×2).
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: "6px",
+                }}
+              >
+                {(() => {
+                  const message = encodeURIComponent(
+                    t(
+                      "success.msg.confirm",
+                      "Hi SunRed concierge, I just placed reservation {{ref}}. Please confirm my order. Thanks!",
+                      { ref: refCode }
+                    )
+                  );
+                  // 🆕 28x.34 (founder) — icon-tile style (colored app icon +
+                  //   name on a card) replacing the pill buttons, matching the
+                  //   site's "Reach us" grid. The booking-ref prefill is kept
+                  //   on the WhatsApp/Telegram hrefs.
+                  const channels: Array<{
+                    name: string;
+                    src: string;
+                    href: string;
+                    external: boolean;
+                  }> = [
+                    {
+                      name: t("success.channel.whatsapp", "WhatsApp"),
+                      src: "/images/profli/whatsapp.png",
+                      href: `${CONCIERGE.whatsappUrl}?text=${message}`,
+                      external: true,
+                    },
+                    {
+                      name: t("success.channel.line", "LINE"),
+                      src: "/images/profli/line.png",
+                      href: "https://line.me/R/ti/p/@sunred.bkk",
+                      external: true,
+                    },
+                    {
+                      name: t("success.channel.telegram", "Telegram"),
+                      src: "/images/profli/telegram.png",
+                      href: `https://t.me/SunRedvip_bkk?text=${message}`,
+                      external: true,
+                    },
+                    {
+                      name: t("success.channel.wechat", "WeChat"),
+                      src: "/images/profli/wechat_2626283.png",
+                      href: "/wechat-scan",
+                      external: false,
+                    },
+                  ];
+                  return channels.map((c) => (
+                    <Box
+                      key={c.name}
+                      component="a"
+                      href={c.href}
+                      target={c.external ? "_blank" : undefined}
+                      rel={c.external ? "noopener noreferrer" : undefined}
+                      onClick={(e: React.MouseEvent) => {
+                        // Copy on the way out too — some apps drop a
+                        // prefilled body, and then the code is still on the
+                        // clipboard ready to paste.
+                        copyRefCode();
+                        if (!c.external) {
+                          e.preventDefault();
+                          void navigate(c.href);
+                        }
+                      }}
+                      aria-label={`Confirm via ${c.name}`}
+                      sx={{
+                        // 🆕 28x.34b (founder "เอาขอบออกให้เหลือแค่ไอคอน") —
+                        //   borderless: just the app icon + name, no card.
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 0.75,
+                        py: 1,
+                        px: 0.25,
+                        textDecoration: "none",
+                        cursor: "pointer",
+                        transition: "transform 0.15s ease",
+                        "&:hover": { transform: "translateY(-2px)" },
+                      }}
+                    >
+                      {/* 🆕 28x.105c (founder "ขยายขึ้นอีกนิด ไอคอน") — 26→36px */}
+                      <Box
+                        component="img"
+                        src={c.src}
+                        alt=""
+                        width={36}
+                        height={36}
+                        loading="lazy"
+                        sx={{ width: 36, height: 36, objectFit: "contain" }}
+                      />
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "var(--sr-body)",
+                        }}
+                      >
+                        {c.name}
+                      </Typography>
+                    </Box>
+                  ));
+                })()}
+              </Box>
+              {/* 🆕 Round 28s90 — reassurance line near the contact CTAs. */}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11.5px",
+                  color: "var(--sr-muted)",
+                  textAlign: "center",
+                  marginTop: "-2px",
+                  lineHeight: 1.4,
+                }}
+              >
+                {t(
+                  "success.replyFast",
+                  "Concierge typically replies in minutes · 24/7"
+                )}
+              </Typography>
+            </Box>
+
+            {/* 🆕 28x.252 — live-status reassurance moved BELOW the confirm
+                card. It is information, not an action, and at ~200px tall it
+                was pushing Step 1 off the first screen on shorter phones. */}
             {/* 🆕 Round 28r9 — Live status banner. Previously a
                 JSX-corruption left this section's outer <Box> empty
                 with the green dot + therapist-name typography
@@ -669,7 +933,6 @@ const BookingSuccessPage: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-              </Box>{/* end hero cluster */}
 
             {/* 🆕 28x.151/153 (founder reference screenshot, sent twice —
                 "แบบนี้") — 2×2 quick-action grid. Chat opens the real
@@ -733,201 +996,6 @@ const BookingSuccessPage: React.FC = () => {
               </Box>
             )}
 
-            {/* 🆕 Round 28s90 (CRO audit) — Multi-channel confirm row.
-                Was a single LINE-only gradient button that dropped
-                WeChat (Chinese tourists) + Telegram-first guests into
-                the wrong app, where they bailed. Now every guest taps
-                their own channel; the booking refCode is pre-filled in
-                the message everywhere the platform allows a body
-                (WhatsApp + Telegram + LINE web; WeChat → QR scan page).
-                Brand-color icons reuse the home concierge grid set.
-                Round 28s??? (founder) — moved to the TOP of the content,
-                immediately after the hero cluster ("ย้ายไปไว้ด้านบน"). */}
-            <Box
-              sx={{
-                minWidth: 0,
-                // 🆕 28x.105 — the confirm cluster (copy code + channels) is
-                //   now a rose-bordered card so the ONE action this page
-                //   exists for reads as a single obvious step instead of
-                //   loose text floating in the void. Channel tiles inside
-                //   stay borderless per 28x.34b.
-                marginTop: "18px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                padding: "16px 16px 12px",
-                borderRadius: "20px",
-                background: "var(--sr-panel)",
-                border: "1px solid rgba(217, 124, 149, 0.35)",
-                boxShadow: "var(--sr-card-shadow)",
-              }}
-            >
-              {/* 🆕 28x.33 (founder "ย้ายไปไว้ด้านบน") — Copy reservation code
-                  moved up here, above the concierge confirm block: copy the
-                  ref, then send it via a channel below. */}
-              <Button
-                fullWidth
-                onClick={() => {
-                  if (typeof navigator !== "undefined" && navigator.clipboard) {
-                    void navigator.clipboard.writeText(refCode).catch(() => {});
-                  }
-                }}
-                sx={{
-                  height: 44,
-                  borderRadius: "999px",
-                  background: "var(--sr-panel)",
-                  color: "var(--sr-ink)",
-                  fontFamily: SANS,
-                  fontWeight: 700,
-                  fontSize: "13.5px",
-                  textTransform: "none",
-                  border: "1px solid var(--sr-hairline)",
-                  "&:hover": {
-                    background: "var(--sr-panel)",
-                    borderColor: "var(--sr-hairline)",
-                  },
-                }}
-              >
-                {t("success.copyCode", "Copy reservation code · {{ref}}", {
-                  ref: refCode,
-                })}
-              </Button>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  color: "var(--sr-muted)",
-                  textAlign: "center",
-                  marginBottom: "-2px",
-                }}
-              >
-                {t("success.confirmHeading", "Confirm with concierge")}
-              </Typography>
-              <Box
-                sx={{
-                  display: "grid",
-                  // 🆕 28x.34b (founder "เรียง4ทุกจอ") — 4 in one row on every
-                  //   screen (was 2×2).
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: "6px",
-                }}
-              >
-                {(() => {
-                  const message = encodeURIComponent(
-                    t(
-                      "success.msg.confirm",
-                      "Hi SunRed concierge, I just placed reservation {{ref}}. Please confirm my order. Thanks!",
-                      { ref: refCode }
-                    )
-                  );
-                  // 🆕 28x.34 (founder) — icon-tile style (colored app icon +
-                  //   name on a card) replacing the pill buttons, matching the
-                  //   site's "Reach us" grid. The booking-ref prefill is kept
-                  //   on the WhatsApp/Telegram hrefs.
-                  const channels: Array<{
-                    name: string;
-                    src: string;
-                    href: string;
-                    external: boolean;
-                  }> = [
-                    {
-                      name: t("success.channel.whatsapp", "WhatsApp"),
-                      src: "/images/profli/whatsapp.png",
-                      href: `${CONCIERGE.whatsappUrl}?text=${message}`,
-                      external: true,
-                    },
-                    {
-                      name: t("success.channel.line", "LINE"),
-                      src: "/images/profli/line.png",
-                      href: "https://line.me/R/ti/p/@sunred.bkk",
-                      external: true,
-                    },
-                    {
-                      name: t("success.channel.telegram", "Telegram"),
-                      src: "/images/profli/telegram.png",
-                      href: `https://t.me/SunRedvip_bkk?text=${message}`,
-                      external: true,
-                    },
-                    {
-                      name: t("success.channel.wechat", "WeChat"),
-                      src: "/images/profli/wechat_2626283.png",
-                      href: "/wechat-scan",
-                      external: false,
-                    },
-                  ];
-                  return channels.map((c) => (
-                    <Box
-                      key={c.name}
-                      component="a"
-                      href={c.href}
-                      target={c.external ? "_blank" : undefined}
-                      rel={c.external ? "noopener noreferrer" : undefined}
-                      onClick={(e: React.MouseEvent) => {
-                        if (!c.external) {
-                          e.preventDefault();
-                          void navigate(c.href);
-                        }
-                      }}
-                      aria-label={`Confirm via ${c.name}`}
-                      sx={{
-                        // 🆕 28x.34b (founder "เอาขอบออกให้เหลือแค่ไอคอน") —
-                        //   borderless: just the app icon + name, no card.
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 0.75,
-                        py: 1,
-                        px: 0.25,
-                        textDecoration: "none",
-                        cursor: "pointer",
-                        transition: "transform 0.15s ease",
-                        "&:hover": { transform: "translateY(-2px)" },
-                      }}
-                    >
-                      {/* 🆕 28x.105c (founder "ขยายขึ้นอีกนิด ไอคอน") — 26→36px */}
-                      <Box
-                        component="img"
-                        src={c.src}
-                        alt=""
-                        width={36}
-                        height={36}
-                        loading="lazy"
-                        sx={{ width: 36, height: 36, objectFit: "contain" }}
-                      />
-                      <Typography
-                        sx={{
-                          fontFamily: SANS,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "var(--sr-body)",
-                        }}
-                      >
-                        {c.name}
-                      </Typography>
-                    </Box>
-                  ));
-                })()}
-              </Box>
-              {/* 🆕 Round 28s90 — reassurance line near the contact CTAs. */}
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "11.5px",
-                  color: "var(--sr-muted)",
-                  textAlign: "center",
-                  marginTop: "-2px",
-                  lineHeight: 1.4,
-                }}
-              >
-                {t(
-                  "success.replyFast",
-                  "Concierge typically replies in minutes · 24/7"
-                )}
-              </Typography>
-            </Box>
             </Box>{/* end top-cluster 2-col grid */}
 
             {/* Your booking summary */}
@@ -1263,6 +1331,50 @@ const BookingSuccessPage: React.FC = () => {
 };
 
 // ─── Summary row ─────────────────────────────────────────────────────────
+/**
+ * 🆕 28x.252 — numbered step row for the confirm card.
+ *
+ * The page used to present "copy the code" and "pick a channel" as two
+ * unrelated controls, so a guest who had just been told "You're all set"
+ * read both as optional extras. Numbering them makes the card a sequence
+ * with an obvious end state.
+ */
+const StepLabel: React.FC<{ n: number; text: string }> = ({ n, text }) => (
+  <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <Box
+      aria-hidden
+      sx={{
+        width: 20,
+        height: 20,
+        flexShrink: 0,
+        borderRadius: "50%",
+        background: "var(--sr-cta)",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: SANS,
+        fontSize: "11px",
+        fontWeight: 800,
+        lineHeight: 1,
+      }}
+    >
+      {n}
+    </Box>
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: "12.5px",
+        fontWeight: 700,
+        color: "var(--sr-ink)",
+        letterSpacing: "0.01em",
+      }}
+    >
+      {text}
+    </Typography>
+  </Box>
+);
+
 const SummaryLine: React.FC<{
   label: string;
   value: React.ReactNode;

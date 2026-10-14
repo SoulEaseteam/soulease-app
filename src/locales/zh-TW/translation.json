@@ -996,5 +996,11 @@
   "pricing.teaser.SR-Aroma": "在您房間私密空間裡的靜謐精油儀式 · 頂級香氛，助您深度安眠",
   "pricing.teaser.xSR-Thai": "傳承古法的伸展與指壓 · 找回柔軟，舒解旅途疲勞",
   "pricing.teaser.SR-HJ2200": "為男士打造的溫暖香氛精油儀式 · 細緻舒壓，以專屬收尾儀式結束",
-  "pricing.teaser.SR-B2B3200": "我們最精緻的儀式 · 流動的全身精油儀式，僅由專精理療師提供"
+  "pricing.teaser.SR-B2B3200": "我們最精緻的儀式 · 流動的全身精油儀式，僅由專精理療師提供",
+  "success.titleV2": "已收到您的預訂",
+  "success.oneStepLeft": "還差一步 — 請將預訂碼傳送給客服以確認",
+  "success.step1": "複製預訂碼",
+  "success.step2": "傳送給客服確認",
+  "success.copyCodeV2": "複製預訂碼 · {{ref}}",
+  "success.copied": "已複製 — 請在下方傳送"
 }

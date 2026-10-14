@@ -904,5 +904,11 @@
   "pricing.teaser.SR-Aroma": "お部屋のプライベート空間で行う静かなオイルの儀式 · 上質なアロマで深い眠りへ",
   "pricing.teaser.xSR-Thai": "伝統のストレッチと指圧 · 柔軟性を取り戻し、旅の疲れをほぐす",
   "pricing.teaser.SR-HJ2200": "男性のための温かなアロマオイルの儀式 · 丁寧なテンションリリースとパーソナルな仕上げの儀式",
-  "pricing.teaser.SR-B2B3200": "最も洗練された儀式 · 全身を流れるオイルセレモニー、専門プラクティショナー限定"
+  "pricing.teaser.SR-B2B3200": "最も洗練された儀式 · 全身を流れるオイルセレモニー、専門プラクティショナー限定",
+  "success.titleV2": "ご予約を受け付けました",
+  "success.oneStepLeft": "あと1ステップ — 予約番号をコンシェルジュに送って確定してください",
+  "success.step1": "予約番号をコピー",
+  "success.step2": "コンシェルジュに送って確定",
+  "success.copyCodeV2": "番号をコピー · {{ref}}",
+  "success.copied": "コピーしました — 下から送信してください"
 }

@@ -904,5 +904,11 @@
   "pricing.teaser.SR-Aroma": "객실의 프라이빗한 공간에서 즐기는 고요한 오일 리추얼 · 프리미엄 아로마와 깊은 잠",
   "pricing.teaser.xSR-Thai": "전통 스트레칭과 지압 · 유연성을 되찾고 여행 피로를 풀다",
   "pricing.teaser.SR-HJ2200": "남성을 위한 따뜻한 아로마 오일 리추얼 · 세심한 텐션 릴리스와 개인 맞춤 마무리",
-  "pricing.teaser.SR-B2B3200": "가장 정제된 리추얼 · 흐르듯 이어지는 전신 오일 세리머니, 전문 프랙티셔너 전담"
+  "pricing.teaser.SR-B2B3200": "가장 정제된 리추얼 · 흐르듯 이어지는 전신 오일 세리머니, 전문 프랙티셔너 전담",
+  "success.titleV2": "예약이 접수되었습니다",
+  "success.oneStepLeft": "한 단계 남았습니다 — 예약 코드를 컨시어지에게 보내 확정하세요",
+  "success.step1": "예약 코드 복사",
+  "success.step2": "컨시어지에게 보내 확정",
+  "success.copyCodeV2": "코드 복사 · {{ref}}",
+  "success.copied": "복사됨 — 아래에서 보내주세요"
 }
