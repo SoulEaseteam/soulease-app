@@ -741,9 +741,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
               textAlign: "center",
               padding: { xs: "9px 12px", sm: "10px 20px" },
               fontSize: { xs: "12px", sm: "13px" },
-              // 🆕 Editorial pass — squarer corners: the 999px candy pill is
-              //   the signature AI-site button; 11px reads considered.
-              borderRadius: "11px",
+              // 🆕 28x.258 — same pill as the bottom-nav HOME button
+              //   (BottomNavGlass): radius, gradient and glow all match.
+              borderRadius: "999px",
               // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #ff9999
               //   ตอนกด จะเปลี่ยนเป็นชื่อ BOOK NOW สี #13bda6") — idle state
               //   is the 28x.118b coral-pink; pressed state flashes teal.
@@ -765,8 +765,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 : isBookNowActive
                   ? "#13bda6"
                   : isBusyNow
-                    ? "#E8A23D"
-                    : "var(--sr-cta)",
+                    ? "linear-gradient(135deg, #FFCB80 0%, #E8A23D 100%)"
+                    : "linear-gradient(135deg, #FFADAD 0%, #FF8484 100%)",
               color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -775,7 +775,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
               letterSpacing: "0.08em",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
-              boxShadow: isOffDuty ? "none" : "0 2px 8px rgba(0,0,0,0.10)",
+              boxShadow: isOffDuty
+                ? "none"
+                : isBookNowActive
+                  ? "0 4px 16px rgba(19,189,166,0.45)"
+                  : isBusyNow
+                    ? "0 4px 16px rgba(232,162,61,0.45)"
+                    : "0 4px 16px rgba(255,153,153,0.55), 0 2px 6px rgba(255,132,132,0.35)",
               transition: "transform 0.15s ease, background 0.15s ease",
               // 🆕 (founder: "ปุ่มจอง เพิ่มลูกเล่นด้วย") — the same glossy
               //   "แวววาว" glint as the NEW badge/anniversary banner sweeps

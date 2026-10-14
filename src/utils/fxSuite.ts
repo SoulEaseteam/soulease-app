@@ -35,6 +35,23 @@ const BLUSH = "240,80,160";
 // so a future re-gate is a one-line change.
 const isCustomerPath = (_p: string) => true;
 
+/**
+ * 🆕 28x.258 (founder: "เอาพรุ้งพริ้งออก") — the canvas PARTICLE layer is off:
+ * the ambient twinkle starfield (34 gold/magenta dots, 28x.224), the pointer
+ * stardust trail, and the click bursts. This continues the trim the founder
+ * started in 28x.225 ("4 แฉกวิบวับ ออก"), which cut the ✦ sparkles and kept
+ * the dots — now the dots go too.
+ *
+ * Deliberately NOT touched: the rest of the suite (magnetic CTAs, 3D card
+ * tilt, floating hearts, heart cursor) and the CSS shimmer sweeps on the
+ * badges/buttons/tab pill — a gloss pass over a still element is not glitter,
+ * and the founder asked for those in 28x.209-211.
+ *
+ * Switching this off also stops a permanent requestAnimationFrame loop that
+ * was repainting a full-screen canvas on every frame, for nothing.
+ */
+const PARTICLES = false;
+
 type Spark = {
   x: number;
   y: number;
@@ -90,6 +107,7 @@ export function initFxSuite(): void {
   const stars: Star[] = [];
   const seedStars = () => {
     stars.length = 0;
+    if (!PARTICLES) return;
     for (let i = 0; i < 34; i++) {
       stars.push({
         x: Math.random() * W, y: Math.random() * H,
@@ -107,7 +125,7 @@ export function initFxSuite(): void {
 
   const sparks: Spark[] = [];
   const spawnTrail = (x: number, y: number) => {
-    if (!customer || sparks.length > 90) return;
+    if (!PARTICLES || !customer || sparks.length > 90) return;
     sparks.push({
       x: x + (Math.random() - 0.5) * 6,
       y: y + (Math.random() - 0.5) * 6,
@@ -120,7 +138,7 @@ export function initFxSuite(): void {
     });
   };
   const burst = (x: number, y: number, n: number) => {
-    if (!customer) return;
+    if (!PARTICLES || !customer) return;
     for (let i = 0; i < n; i++) {
       const a = (Math.PI * 2 * i) / n + Math.random() * 0.6;
       sparks.push({
@@ -199,8 +217,9 @@ export function initFxSuite(): void {
     }
     requestAnimationFrame(tick);
   };
-  requestAnimationFrame(tick);
+  if (PARTICLES) requestAnimationFrame(tick);
   document.addEventListener("visibilitychange", () => {
+    if (!PARTICLES) return;
     const wasRunning = running;
     running = !document.hidden;
     if (running && !wasRunning) requestAnimationFrame(tick);
@@ -283,9 +302,9 @@ export function initFxSuite(): void {
      page changes keep only RouteFx's soft 220ms opacity fade. ── */
   window.addEventListener("sr:route", ((e: CustomEvent<string>) => {
     customer = isCustomerPath(e.detail || location.pathname);
-    canvas.style.display = customer ? "" : "none";
+    canvas.style.display = PARTICLES && customer ? "" : "none";
   }) as EventListener);
-  canvas.style.display = customer ? "" : "none";
+  canvas.style.display = PARTICLES && customer ? "" : "none";
 
   /* ── floating hearts from the concierge FAB ── */
   const FAB_SEL = '[aria-label="Concierge contact options"]';
