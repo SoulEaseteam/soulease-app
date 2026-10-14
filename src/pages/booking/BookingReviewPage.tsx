@@ -142,7 +142,7 @@ const BookingReviewPage: React.FC = () => {
           <StatusCard
             text={t(
               "review.notDoneYet",
-              "This reservation hasn't been completed yet — the review link opens up right after."
+              "This reservation hasn't been completed yet · the review link opens up right after."
             )}
           />
         )}
@@ -161,7 +161,7 @@ const BookingReviewPage: React.FC = () => {
             <CheckCircleRoundedIcon sx={{ fontSize: 40, color: "#57B88B" }} />
             <Typography sx={{ fontFamily: SANS, fontSize: "14px", color: "var(--sr-body)" }}>
               {state.kind === "submitted"
-                ? t("review.thanksSubmitted", "Thank you — your review has been sent for approval.")
+                ? t("review.thanksSubmitted", "Thank you · your review has been sent for approval.")
                 : t("review.thanksAlready", "You've already reviewed this session. Thank you!")}
             </Typography>
             <Box

@@ -294,7 +294,7 @@ const PricingPage: React.FC = () => {
     ),
     description: t(
       "meta.pricing.description",
-      "SunRed Core Experiences — full pricing for our Bangkok outcall massage menu (Traditional Thai, Aromatherapy, Gentleman's Signature, Therapeutic). Verified practitioners, delivered to your hotel. 24/7 concierge in EN/中文/日本語/한국어."
+      "SunRed Core Experiences · full pricing for our Bangkok outcall massage menu (Traditional Thai, Aromatherapy, Gentleman's Signature, Therapeutic). Verified practitioners, delivered to your hotel. 24/7 concierge in EN/中文/日本語/한국어."
     ),
     url: "https://sunred.vip/pricing",
     type: "website",
@@ -404,7 +404,7 @@ const PricingPage: React.FC = () => {
         >
           {t(
             "pricing.intro",
-            "Each ritual delivered to your hotel or residence in Bangkok. Choose your duration; the concierge handles the rest. Rates in Thai Baht (THB) reflect the base session — travel, extensions, and add-ons are quoted separately.",
+            "Each ritual delivered to your hotel or residence in Bangkok. Choose your duration; the concierge handles the rest. Rates in Thai Baht (THB) reflect the base session · travel, extensions, and add-ons are quoted separately.",
           )}
         </Box>
       </Box>
@@ -465,7 +465,7 @@ const PricingPage: React.FC = () => {
                 gap: "18px",
               }}
             >
-              {/* 🆕 28w.68 (founder "สีทองวิบวับ") — the corner ribbon is now a
+              {/* 🆕 28w.68 (founder "สีทองวิบวับ") · the corner ribbon is now a
                   shimmering metallic gold sweep instead of flat rose. */}
               {/* 🆕 28w.87 — the ribbon markup moved to a shared component so
                   /services can show the SAME badge (founder). Same output. */}
@@ -579,7 +579,7 @@ const PricingPage: React.FC = () => {
               </Box>
 
               {/* 🆕 28w.25 (founder: "ลิ้งไปตามเมนูนั้นๆ … Unlock Executive
-                  Benefits") — was a WhatsApp "Reserve" deep link; now opens
+                  Benefits") · was a WhatsApp "Reserve" deep link; now opens
                   THIS service's own detail page (/services/{id}) under a
                   premium "Unlock Executive Benefits" label. */}
               <Box
@@ -619,9 +619,9 @@ const PricingPage: React.FC = () => {
                   },
                 }}
               >
-                {/* 🆕 28w.27 (founder: "เอาลูกศรออก") — arrow removed.
+                {/* 🆕 28w.27 (founder: "เอาลูกศรออก") · arrow removed.
                     🆕 28w.70 → 28w.72 (founder: "Unlock Executive Benefits
-                    เฉพาะ Gentleman's กับ SunRed Therapeutic") — the premium
+                    เฉพาะ Gentleman's กับ SunRed Therapeutic") · the premium
                     framing is reserved for those two; the rest read "Benefits". */}
                 {benefitsLabel}
               </Box>
@@ -704,7 +704,7 @@ const PricingPage: React.FC = () => {
       </Box>
 
       {/* ── 4. Areas & Timing ── 🆕 28w.28 (founder: "เอาอันแรกเหมือนหน้า
-             services มาใส") — replaced the pill row + single prime-hours line
+             services มาใส") · replaced the pill row + single prime-hours line
              with the richer Services-page card (service-area prose + arrival
              window) and the Reach us concierge grid + Telegram subscribe. */}
       <Box component="section" sx={{ marginBottom: { xs: 5, md: 7 } }}>
@@ -730,7 +730,7 @@ const PricingPage: React.FC = () => {
             <Box sx={{ fontFamily: fonts.body, fontSize: 12.5, lineHeight: 1.6, color: "var(--sr-body)" }}>
               {t(
                 "services.serviceAreaBody",
-                "Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong · Ari · Chidlom · Ploenchit. Beyond the centre — our concierge provides a private quotation.",
+                "Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong · Ari · Chidlom · Ploenchit. Beyond the centre · our concierge provides a private quotation.",
               )}
             </Box>
           </Box>
@@ -917,7 +917,7 @@ const PricingPage: React.FC = () => {
             "Message the concierge with your preferred time and room number · we confirm your booking in minutes.",
           )}
         </Box>
-        {/* 🆕 28w.30 (founder: "Reach us ย้ายไปแทนปุ่ม") — replaced the
+        {/* 🆕 28w.30 (founder: "Reach us ย้ายไปแทนปุ่ม") · replaced the
             Contact Concierge / Back to Home buttons with the concierge tiles
             (WhatsApp covers the old Contact CTA) + Telegram subscribe. */}
         <Box sx={{ display: "flex", gap: 1, marginTop: "28px" }}>

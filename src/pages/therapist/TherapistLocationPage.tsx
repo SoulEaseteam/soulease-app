@@ -233,7 +233,7 @@ const TherapistLocationPage: React.FC = () => {
     if (!homeCoords) {
       setSnackbar({
         open: true,
-        msg: "ยังไม่ได้ตั้งจุดสแตนด์บาย — กดปุ่มด้านล่างที่จุดประจำของคุณก่อน",
+        msg: "ยังไม่ได้ตั้งจุดสแตนด์บาย · กดปุ่มด้านล่างที่จุดประจำของคุณก่อน",
         severity: "error",
       });
       return;

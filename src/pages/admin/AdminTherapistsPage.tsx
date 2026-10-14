@@ -891,7 +891,7 @@ const AdminTherapistsPage: React.FC = () => {
           <ToggleButton value="holiday">Holiday</ToggleButton>
         </ToggleButtonGroup>
 
-        {/* 🆕 Round 28s270 (founder: "ปุ่มเพิ่มพนักงาน") — the
+        {/* 🆕 Round 28s270 (founder: "ปุ่มเพิ่มพนักงาน") · the
             /admin/add-therapist route already existed (AddTherapistPage)
             but had no entry point from the roster page itself. */}
         <Button
@@ -910,7 +910,7 @@ const AdminTherapistsPage: React.FC = () => {
       </Box>
 
       {/* 🆕 28x.88 (founder: "สร้างเมนู SunRed bot ... เอาทุกอย่างที่เชื่อมต่อ
-          เกี่ยวกับ Telegram ไป Settings หน้านั้น") — sync/job-channel-code/
+          เกี่ยวกับ Telegram ไป Settings หน้านั้น") · sync/job-channel-code/
           admin-link-code buttons (+ job-board display, +code reveal boxes)
           moved to SunRed Bot → Telegram Bot, alongside every other Telegram
           control instead of scattered across this page. */}

@@ -522,8 +522,8 @@ const AdminMembersPage: React.FC = () => {
             {saving ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "+ สมัคร (รหัส SRD-)"}
           </Button>
         </Box>
-        {/* 🆕 28x.58 (founder: "สมัครสมาชิก / สร้างบัญชี มันไม่ซ้ำกันหรอ") — the old
-            line ("อีเมล — ให้ลูกค้าสมัคร/ล็อกอินใส่เอง") predated 28x.55 and read
+        {/* 🆕 28x.58 (founder: "สมัครสมาชิก / สร้างบัญชี มันไม่ซ้ำกันหรอ") · the old
+            line ("อีเมล · ให้ลูกค้าสมัคร/ล็อกอินใส่เอง") predated 28x.55 and read
             as if this button already handed the guest a login. Spell out that
             these are two steps, not two ways of doing the same thing. */}
         <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 1, lineHeight: 1.7 }}>
@@ -576,7 +576,7 @@ const AdminMembersPage: React.FC = () => {
         <Box sx={{ textAlign: "center", py: 5 }}><CircularProgress size={22} sx={{ color: adminColor.accent }} /></Box>
       ) : rows.length === 0 ? (
         <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim, textAlign: "center", py: 5 }}>
-          {Object.keys(members).length === 0 ? "ยังไม่มีสมาชิก — สมัครให้ลูกค้าคนแรกได้เลย" : "ไม่พบสมาชิกที่ค้นหา"}
+          {Object.keys(members).length === 0 ? "ยังไม่มีสมาชิก · สมัครให้ลูกค้าคนแรกได้เลย" : "ไม่พบสมาชิกที่ค้นหา"}
         </Typography>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -756,7 +756,7 @@ const AdminMembersPage: React.FC = () => {
                 )}
 
                 {/* 🆕 28w.96 (founder: "admin/members กดดูประวัติการจองได้ ยอดสะสม
-                    เครดิตได้") — the reservations behind the numbers. Shown from the
+                    เครดิตได้") · the reservations behind the numbers. Shown from the
                     SAME per-phone aggregation the credit is computed from, so the
                     history and the points can never tell different stories. Rows the
                     shop did NOT deliver are greyed and marked "ไม่นับ", because those

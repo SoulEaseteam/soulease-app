@@ -288,7 +288,7 @@ const TherapistServicesPage: React.FC = () => {
             </Typography>
             <ServiceSplitTable />
             {/* 🆕 Round 28x.115 (founder: "อธิบายเรื่องการจัดโปร ว่าไม่กระทบต่อ
-                ส่วนแบ่งรายได้ต่อเมนู") — every duration on this page's catalog
+                ส่วนแบ่งรายได้ต่อเมนู") · every duration on this page's catalog
                 has a FIXED therapist amount (SERVICE_SPLIT_DEFAULTS), which a
                 discount never touches; the shop's own share absorbs the full
                 difference (commission.ts shopShareFor = base − therapistShare,

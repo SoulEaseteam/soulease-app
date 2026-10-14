@@ -142,9 +142,9 @@ void i18n
           // same category as the fake "4.8★ 1,200+" removed in 28s108).
           // New title puts the exact-match phrase first.
           "meta.home.title":
-            "Outcall Massage Bangkok — Delivered to Your Hotel 24/7 | SunRed",
+            "Outcall Massage Bangkok · Delivered to Your Hotel 24/7 | SunRed",
           "meta.home.description":
-            "Premium outcall massage in Bangkok delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor. Verified Thai practitioners, 24/7 live availability. Book in English, 中文, 日本語, 한국어.",
+            "Premium outcall massage in Bangkok delivered to your hotel · Sukhumvit, Silom, Asok, Thonglor. Verified Thai practitioners, 24/7 live availability. Book in English, 中文, 日本語, 한국어.",
           // 🆕 Round 28x.99h (audit finding: ServicesPage/PricingPage's
           // useDocumentMeta hardcoded an English-only, weaker title —
           // after hydration it overwrote the localized, keyword-rich
@@ -155,11 +155,11 @@ void i18n
           "meta.services.title":
             "Outcall Massage Services in Bangkok · Thai, Aromatherapy & More | SunRed",
           "meta.services.description":
-            "Browse SunRed's outcall massage menu delivered to your Bangkok hotel — Traditional Thai (฿1,200), Aromatherapy (฿1,600), Gentleman's Signature (฿2,200) and the premium Therapeutic Experience (฿3,200). 60/90/120 min. EN/中文/日本語/한국어, 24/7.",
+            "Browse SunRed's outcall massage menu delivered to your Bangkok hotel · Traditional Thai (฿1,200), Aromatherapy (฿1,600), Gentleman's Signature (฿2,200) and the premium Therapeutic Experience (฿3,200). 60/90/120 min. EN/中文/日本語/한국어, 24/7.",
           "meta.pricing.title":
             "Core Experiences · Outcall Massage Pricing in Bangkok | SunRed",
           "meta.pricing.description":
-            "SunRed Core Experiences — full pricing for our Bangkok outcall massage menu (Traditional Thai, Aromatherapy, Gentleman's Signature, Therapeutic). Verified practitioners, delivered to your hotel. 24/7 concierge in EN/中文/日本語/한국어.",
+            "SunRed Core Experiences · full pricing for our Bangkok outcall massage menu (Traditional Thai, Aromatherapy, Gentleman's Signature, Therapeutic). Verified practitioners, delivered to your hotel. 24/7 concierge in EN/中文/日本語/한국어.",
         },
       },
 
@@ -195,9 +195,9 @@ void i18n
           "home.subtitle": "นวดถึงที่ในกรุงเทพ",
           "home.noResults": "ไม่พบ practitioner ที่ตรงกับการค้นหา",
           "meta.home.title":
-            "บริการนวดถึงที่กรุงเทพ — ส่งถึงโรงแรม 24 ชม. | SunRed",
+            "บริการนวดถึงที่กรุงเทพ · ส่งถึงโรงแรม 24 ชม. | SunRed",
           "meta.home.description":
-            "บริการนวดถึงที่ระดับหรูในกรุงเทพ ส่งถึงโรงแรม — สุขุมวิท สีลม อโศก ทองหล่อ Practitioner ยืนยันตัวตน เวลาว่างสดตลอด 24 ชั่วโมง รองรับ ไทย/EN/中文/日本語/한국어",
+            "บริการนวดถึงที่ระดับหรูในกรุงเทพ ส่งถึงโรงแรม · สุขุมวิท สีลม อโศก ทองหล่อ Practitioner ยืนยันตัวตน เวลาว่างสดตลอด 24 ชั่วโมง รองรับ ไทย/EN/中文/日本語/한국어",
         },
       },
 
@@ -233,16 +233,16 @@ void i18n
           "home.subtitle": "曼谷上门按摩",
           "home.noResults": "没有符合条件的技师。",
           "meta.home.title":
-            "曼谷上门按摩 24小时 · 送达酒店 — 泰式 / 精油 / 尊享理疗 | SunRed",
+            "曼谷上门按摩 24小时 · 送达酒店 · 泰式 / 精油 / 尊享理疗 | SunRed",
           "meta.home.description":
-            "SunRed 曼谷上门按摩，认证女性技师送达酒店 — 苏坤蔚、是隆、阿索克、通罗等核心地段。泰式、芳香精油、尊享理疗。实时空闲、24小时可订、支持微信支付与支付宝。",
+            "SunRed 曼谷上门按摩，认证女性技师送达酒店 · 苏坤蔚、是隆、阿索克、通罗等核心地段。泰式、芳香精油、尊享理疗。实时空闲、24小时可订、支持微信支付与支付宝。",
           "meta.services.title":
-            "曼谷上门按摩服务与价格 — 泰式 / 芳疗 / 尊享理疗 | SunRed",
+            "曼谷上门按摩服务与价格 · 泰式 / 芳疗 / 尊享理疗 | SunRed",
           "meta.services.description":
             "SunRed 曼谷上门按摩菜单，送达您的酒店：泰式按摩（฿1,200）、芳香精油按摩（฿1,600）、尊享男士理疗（฿2,200）及尊享理疗体验（฿3,200）。60/90/120 分钟，全天候24小时，支持微信支付与支付宝。",
           "meta.pricing.title": "尊享体验 · 曼谷上门按摩价格 | SunRed",
           "meta.pricing.description":
-            "SunRed 尊享体验 — 曼谷上门按摩全套服务与价格（泰式、芳疗、尊享男士理疗、尊享理疗体验）。认证技师、上门送达酒店、全天候24小时多语言客服。",
+            "SunRed 尊享体验 · 曼谷上门按摩全套服务与价格（泰式、芳疗、尊享男士理疗、尊享理疗体验）。认证技师、上门送达酒店、全天候24小时多语言客服。",
         },
       },
 
@@ -282,16 +282,16 @@ void i18n
           "home.subtitle": "曼谷到府按摩",
           "home.noResults": "沒有符合條件的技師。",
           "meta.home.title":
-            "曼谷到府按摩 24小時 · 送達飯店 — 泰式 / 精油 / 尊榮理療 | SunRed",
+            "曼谷到府按摩 24小時 · 送達飯店 · 泰式 / 精油 / 尊榮理療 | SunRed",
           "meta.home.description":
-            "SunRed 曼谷到府按摩，認證女性技師送達飯店 — 蘇坤蔚、是隆、阿索克、通羅等核心地段。泰式、芳香精油、尊榮理療。即時空閒、24小時可訂、支援現金、PromptPay、微信支付與支付寶。",
+            "SunRed 曼谷到府按摩，認證女性技師送達飯店 · 蘇坤蔚、是隆、阿索克、通羅等核心地段。泰式、芳香精油、尊榮理療。即時空閒、24小時可訂、支援現金、PromptPay、微信支付與支付寶。",
           "meta.services.title":
-            "曼谷到府按摩服務與價格 — 泰式 / 芳療 / 尊榮理療 | SunRed",
+            "曼谷到府按摩服務與價格 · 泰式 / 芳療 / 尊榮理療 | SunRed",
           "meta.services.description":
             "SunRed 曼谷到府按摩菜單，送達您的飯店：泰式按摩（฿1,200）、芳香精油按摩（฿1,600）、尊榮男士理療（฿2,200）及尊榮理療體驗（฿3,200）。60/90/120 分鐘，全天候24小時，支援現金、PromptPay、微信支付與支付寶。",
           "meta.pricing.title": "尊榮體驗 · 曼谷到府按摩價格 | SunRed",
           "meta.pricing.description":
-            "SunRed 尊榮體驗 — 曼谷到府按摩全套服務與價格（泰式、芳療、尊榮男士理療、尊榮理療體驗）。認證技師、到府送達飯店、全天候24小時多語言客服。",
+            "SunRed 尊榮體驗 · 曼谷到府按摩全套服務與價格（泰式、芳療、尊榮男士理療、尊榮理療體驗）。認證技師、到府送達飯店、全天候24小時多語言客服。",
         },
       },
 
@@ -327,17 +327,17 @@ void i18n
           "home.subtitle": "バンコク出張マッサージ",
           "home.noResults": "条件に合うセラピストが見つかりません。",
           "meta.home.title":
-            "バンコク出張マッサージ 24時間 · ホテルへお届け — タイ古式 / アロマ / メンズ | SunRed",
+            "バンコク出張マッサージ 24時間 · ホテルへお届け · タイ古式 / アロマ / メンズ | SunRed",
           "meta.home.description":
-            "SunRed バンコク高級出張マッサージ。認定セラピストがホテルへ訪問 — スクンビット、シーロム、アソーク、トンロー。タイ古式、アロマ、メンズシグネチャー。日本語OK、リアルタイム予約、24時間対応。",
+            "SunRed バンコク高級出張マッサージ。認定セラピストがホテルへ訪問 · スクンビット、シーロム、アソーク、トンロー。タイ古式、アロマ、メンズシグネチャー。日本語OK、リアルタイム予約、24時間対応。",
           "meta.services.title":
-            "バンコク出張マッサージ メニュー＆料金 — タイ古式 / アロマ / メンズ | SunRed",
+            "バンコク出張マッサージ メニュー＆料金 · タイ古式 / アロマ / メンズ | SunRed",
           "meta.services.description":
             "SunRed バンコク出張マッサージのメニュー。ホテルへお届け：タイ古式（฿1,200）、アロマ（฿1,600）、メンズ・シグネチャー（฿2,200）、セラピー・エクスペリエンス（฿3,200）。60/90/120分、24時間対応。",
           "meta.pricing.title":
             "コア・エクスペリエンス · バンコク出張マッサージ料金 | SunRed",
           "meta.pricing.description":
-            "SunRed コア・エクスペリエンス — バンコク出張マッサージ全メニューの料金（タイ古式・アロマ・メンズ シグネチャー・セラピー）。認定セラピスト、ホテルへ出張、24 時間多言語コンシェルジュ。",
+            "SunRed コア・エクスペリエンス · バンコク出張マッサージ全メニューの料金（タイ古式・アロマ・メンズ シグネチャー・セラピー）。認定セラピスト、ホテルへ出張、24 時間多言語コンシェルジュ。",
         },
       },
 
@@ -373,16 +373,16 @@ void i18n
           "home.subtitle": "방콕 출장 마사지",
           "home.noResults": "조건에 맞는 테라피스트가 없습니다.",
           "meta.home.title":
-            "방콕 출장 마사지 24시간 · 호텔로 방문 — 타이 / 아로마 / 시그니처 | SunRed",
+            "방콕 출장 마사지 24시간 · 호텔로 방문 · 타이 / 아로마 / 시그니처 | SunRed",
           "meta.home.description":
-            "SunRed 방콕 프리미엄 출장 마사지. 인증 테라피스트가 호텔·레지던스로 방문 — 수쿰빗, 실롬, 아속, 통러. 타이·아로마·젠틀맨 시그니처. 한국어 가능, 실시간 예약, 24시간 운영.",
+            "SunRed 방콕 프리미엄 출장 마사지. 인증 테라피스트가 호텔·레지던스로 방문 · 수쿰빗, 실롬, 아속, 통러. 타이·아로마·젠틀맨 시그니처. 한국어 가능, 실시간 예약, 24시간 운영.",
           "meta.services.title":
-            "방콕 출장 마사지 서비스 & 가격 — 타이 / 아로마 / 시그니처 | SunRed",
+            "방콕 출장 마사지 서비스 & 가격 · 타이 / 아로마 / 시그니처 | SunRed",
           "meta.services.description":
             "SunRed 방콕 출장 마사지 메뉴, 호텔로 방문: 타이 마사지(฿1,200), 아로마(฿1,600), 젠틀맨 시그니처(฿2,200), 테라퓨틱 익스피리언스(฿3,200). 60/90/120분, 24시간 운영.",
           "meta.pricing.title": "코어 익스피리언스 · 방콕 출장 마사지 가격 | SunRed",
           "meta.pricing.description":
-            "SunRed 코어 익스피리언스 — 방콕 출장 마사지 전체 메뉴 가격 (타이, 아로마, 젠틀맨 시그니처, 테라퓨틱). 인증 테라피스트, 호텔로 방문, 24시간 다국어 컨시어지.",
+            "SunRed 코어 익스피리언스 · 방콕 출장 마사지 전체 메뉴 가격 (타이, 아로마, 젠틀맨 시그니처, 테라퓨틱). 인증 테라피스트, 호텔로 방문, 24시간 다국어 컨시어지.",
         },
       },
     },

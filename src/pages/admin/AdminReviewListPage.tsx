@@ -571,8 +571,8 @@ const AdminReviewListPage: React.FC = () => {
               aria-label={params.row.checked ? "Uncheck" : "Mark checked"}
               title={
                 params.row.checked
-                  ? "ตรวจสอบแล้ว — คลิกเพื่อยกเลิก"
-                  : "ยังไม่ได้ตรวจสอบ — คลิกเพื่อ mark"
+                  ? "ตรวจสอบแล้ว · คลิกเพื่อยกเลิก"
+                  : "ยังไม่ได้ตรวจสอบ · คลิกเพื่อ mark"
               }
             >
               {params.row.checked ? (
@@ -668,7 +668,7 @@ const AdminReviewListPage: React.FC = () => {
             รีวิวทุกอันในระบบ ดึงจาก booking ที่มี reviewText — แก้ไข/ซ่อนได้ที่นี่
           </Typography>
 
-          {/* 🆕 28x.1 (founder: "รีวิวไม่ตรงกันสักที่") — the browse cards read
+          {/* 🆕 28x.1 (founder: "รีวิวไม่ตรงกันสักที่") · the browse cards read
               therapists.rating / .reviews, which were TYPED by hand on
               /admin/therapists and never derived from real reviews. Recompute
               them from the actual reviews so every screen finally agrees. */}

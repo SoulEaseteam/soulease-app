@@ -95,7 +95,7 @@ const TherapistPerformancePage: React.FC = () => {
             }}
           />
           {/* 🆕 Round 28x.133 (founder: "CC still Show เรา ไม่โชว์ให้พนักงานเห็น
-              ในหน้าหลังบ้าน") — was "ตัวเลขเดียวกับที่ลูกค้าเห็นในหน้าโปรไฟล์
+              ในหน้าหลังบ้าน") · was "ตัวเลขเดียวกับที่ลูกค้าเห็นในหน้าโปรไฟล์
               สาธารณะของคุณ". That claim of equality is the one thing that must
               NOT be said here: the public session count can be boosted for
               social proof (credited cancellations today, an admin bonus soon),

@@ -46,7 +46,7 @@ export const adminColor = {
   /** Main text — the darkest official swatch, now used as ink. */
   text: "#1F2933",
   muted: "#3E4F58",   // blend toward dim, for secondary text
-  dim: "#5C6F7B",     // exact swatch — least-prominent text/icons
+  dim: "#5C6F7B",     // exact swatch · least-prominent text/icons
 
   /** Primary accent — Ocean Study's muted teal-blue (unchanged in either mode). */
   accent: "#4E7E8C",

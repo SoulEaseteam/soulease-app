@@ -83,7 +83,7 @@ function vercelImageUrl(url: string, variant: ImageVariant): string | null {
   if (VERCEL_IMAGE_DISABLED || isVercelImageDown()) return null;
   if (url.startsWith("data:") || url.startsWith("blob:")) return null;
   if (url.includes("/_vercel/image")) return url; // already wrapped
-  if (url.includes("res.cloudinary.com/")) return null; // legacy — that path owns it
+  if (url.includes("res.cloudinary.com/")) return null; // legacy · that path owns it
   // Same-origin statics ride as relative paths; remote hosts must be listed
   // in vercel.json remotePatterns (currently: the Firebase bucket only).
   let target: string | null = null;

@@ -36,7 +36,7 @@
 
 import { haversineKm } from "@/utils/taxiFare";
 
-const CACHE_PREFIX = "sunred_dirCache2:"; // 🆕 28x.250 — bumped so pre-two-wheeler (car-route) entries expire instantly
+const CACHE_PREFIX = "sunred_dirCache2:"; // 🆕 28x.250 · bumped so pre-two-wheeler (car-route) entries expire instantly
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 h
 const SHORT_TRIP_KM = 0.5; // skip API for trips this short
 

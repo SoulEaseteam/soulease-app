@@ -31,7 +31,7 @@ const AdminBotComingSoonPage: React.FC<{ platform: string; note?: string }> = ({
         ยังไม่เชื่อมต่อ · Not connected yet
       </Typography>
       <Typography sx={{ fontFamily: adminFont.sans, fontSize: 12.5, color: adminColor.muted, mt: 0.75, maxWidth: 420, mx: "auto" }}>
-        {note ?? `${platform} ยังไม่มีบอทจริงในระบบ — หน้านี้จองที่ไว้สำหรับตอนที่เชื่อมต่อ ${platform} API`}
+        {note ?? `${platform} ยังไม่มีบอทจริงในระบบ · หน้านี้จองที่ไว้สำหรับตอนที่เชื่อมต่อ ${platform} API`}
       </Typography>
     </Box>
   </Box>

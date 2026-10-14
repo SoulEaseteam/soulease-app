@@ -1194,7 +1194,7 @@ const AdminEarningsPage: React.FC = () => {
                   จากเงินที่เก็บได้ {formatTHB(stats.totalCollected)} · {stats.countCompleted} งาน
                   {stats.totalDiscountAbsorbed > 0 && ` · หักโปรฯ ${formatTHB(stats.totalDiscountAbsorbed)} (แชร์กัน)`}
                 </Typography>
-                {/* net after the founder's per-booking costs — the deeper figure */}
+                {/* net after the founder's per-booking costs · the deeper figure */}
                 <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim, mt: 0.25 }}>
                   หักต้นทุน {formatTHB(stats.totalCosts)} → กำไรสุทธิ{" "}
                   <Box component="span" sx={{ fontWeight: 700, color: adminColor.green }}>{formatTHB(stats.shopNet)}</Box>

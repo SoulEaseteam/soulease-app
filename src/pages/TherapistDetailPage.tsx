@@ -1547,7 +1547,7 @@ const TherapistDetailPage: React.FC = () => {
               panel in GRID CHILD 4. */}
 
           {/* 🆕 Round 28s366 — About bio + Languages.
-              🆕 Round 28x.179 (founder: "รวมกัน และกดดูที่ซ่อนไว้") — was its
+              🆕 Round 28x.179 (founder: "รวมกัน และกดดูที่ซ่อนไว้") · was its
               own sibling section sitting directly on the page background
               (About already had no card chrome of its own, per 28s52); now
               a second child of IdentityCard so it's inside the SAME white
@@ -1722,7 +1722,7 @@ const TherapistDetailPage: React.FC = () => {
 
         {/* 🆕 Round 28x.177 (founder reference screenshot, a pet-adoption
             app's heart + big-CTA footer row: "ปุ่มนี้ล่าา ช่วยออกแบบ ให้เข้ากับ
-            ที่เรามี") — StatusPill already IS this app's big-pill CTA
+            ที่เรามี") · StatusPill already IS this app's big-pill CTA
             (28x.169/172 restyled it to exactly that button language); this
             adds the heart on its left, in-palette (rose, not the
             reference's teal) and actually wired to a real save toggle
@@ -2113,7 +2113,7 @@ const TherapistDetailPage: React.FC = () => {
       </Box>
       {/* ── END GRID CHILD 2 ────────────────────────────────────── */}
 
-      {/* 🆕 28t.15 (founder "Photos ขยับขึ้น ให้บาลานซ์") — the old
+      {/* 🆕 28t.15 (founder "Photos ขยับขึ้น ให้บาลานซ์") · the old
           GRID CHILD 4 (About panel) is GONE. Its content (bio +
           Languages + Credentials) moved into the collapsible About box
           above the tab bar (GRID CHILD 2, round 28t.13), so this panel
@@ -2478,7 +2478,7 @@ const TherapistDetailPage: React.FC = () => {
           detail hero, InfoSheet). Only mounted while `galleryIdx`
           is a number.
           🆕 Round 28x.185 (founder: "เลื่อนดูรูปได้ผ่านการปัดด้วยมือ
-          แบบลื่นไหล") — the single centered image/video is now a
+          แบบลื่นไหล") · the single centered image/video is now a
           horizontal scroll-snap track of every item, same mechanic
           DetailHero's own fullscreen viewer already uses: the swipe
           gesture IS the browser's native scroll, so it's fluid for

@@ -43,18 +43,18 @@ const SAGE_400 = "#57B88B"; // success / online / "available" → green (founder
 // ── Dusty-rose primary CTA (was WARM_TAUPE) ────────────────────────
 // Founder spec: Dusty Rose #FF8484 primary, Dusty Rose Brown #FF8484
 // ribbon/hover. Names kept as WARM_TAUPE* so all CTA call-sites re-skin.
-const WARM_TAUPE       = "#FF8484"; // primary CTA fill — Vintage Rose
-const WARM_TAUPE_HOVER = "#FF8484"; // primary CTA hover — Dusty Rose Brown
+const WARM_TAUPE       = "#FF8484"; // primary CTA fill · Vintage Rose
+const WARM_TAUPE_HOVER = "#FF8484"; // primary CTA hover · Dusty Rose Brown
 
 // ── Signal-highlight accents (dark-luxury values) ──────────────────
 // Soft-gold is the single signature "embroidery" accent — NEW badges,
 // stars, price, availability, key highlights. Favorite = dusty rose.
 const TEAL_MINT           = "var(--sr-gold-text)"; // NEW badge / highlights → gold (per mode)
-const AVAILABLE_GREEN     = "rgba(87,184,139,0.14)"; // "Available" pill bg — green tint
-const AVAILABLE_GREEN_TEXT = "#57B88B"; // "Available" text — green
-const FAVORITE_PINK       = "rgba(255, 132, 132,0.16)"; // heart / favorite bg — rose tint (fixed)
-const FAVORITE_PINK_TEXT  = "#FF8484"; // heart glyph — Vintage Rose (fixed)
-const AMBER_STAR          = "#F4C542"; // star rating — bright gold-yellow (founder)
+const AVAILABLE_GREEN     = "rgba(87,184,139,0.14)"; // "Available" pill bg · green tint
+const AVAILABLE_GREEN_TEXT = "#57B88B"; // "Available" text · green
+const FAVORITE_PINK       = "rgba(255, 132, 132,0.16)"; // heart / favorite bg · rose tint (fixed)
+const FAVORITE_PINK_TEXT  = "#FF8484"; // heart glyph · Vintage Rose (fixed)
+const AMBER_STAR          = "#F4C542"; // star rating · bright gold-yellow (founder)
 
 // ── New named token trees (preferred going forward) ────────────────
 export const neutrals = {
@@ -117,7 +117,7 @@ export const brand = {
   green: SAGE_400,             // online dot / success (was #16A34A)
 
   // ── Small accent palette — dark-luxury signature is Soft Gold
-  amber: "#F4C542", // ★ star ratings — bright fresh gold-yellow
+  amber: "#F4C542", // ★ star ratings · bright fresh gold-yellow
   pink: "rgba(255, 132, 132,0.16)", // favourite bg · soft rose highlight
   tagBlue: NEUTRAL_100,        // tag chip bg
   tagPeach: NEUTRAL_200,       // tag chip bg (warmer variant)
@@ -134,7 +134,7 @@ export const brand = {
   bg2Legacy: NEUTRAL_100,
   bg1Warm: NEUTRAL_50,
   bg2Warm: NEUTRAL_100,
-  greenSoft: "rgba(210,182,124,0.16)", // available pill bg — soft gold tint
+  greenSoft: "rgba(210,182,124,0.16)", // available pill bg · soft gold tint
   ink: GRAY_900,               // deepest ink — hero headlines only
 } as const;
 
@@ -269,7 +269,7 @@ const theme = createTheme({
       contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#FF8484",           // rose (gold retired — read dated)
+      main: "#FF8484",           // rose (gold retired · read dated)
       light: "#FF8484",
       dark: "#FF8484",
       contrastText: "#FFFFFF",

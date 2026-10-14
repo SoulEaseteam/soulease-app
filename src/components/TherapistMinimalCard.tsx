@@ -424,7 +424,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
           </Box>
         )}
 
-        {/* 🆕 28x.123 (founder: selected the status pill, "เอาออก") — the
+        {/* 🆕 28x.123 (founder: selected the status pill, "เอาออก") · the
             on-photo status pill (and its STATUS_DOT/statusMeta/statusLabel
             plumbing, 28s138) is removed entirely. Status/availability
             communication now lives on the CTA button below (28x.122's
@@ -434,7 +434,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
             badge's `!isOnHoliday` guard, and the CTA button. */}
 
         {/* 🆕 28x.143 (founder reference screenshots + "ว่าง โชว์ now
-            ไม่ว่างโชว์ เวลาถัดไป") — small live-status chip, bottom-left of
+            ไม่ว่างโชว์ เวลาถัดไป") · small live-status chip, bottom-left of
             the photo (mirrors the price badge's bottom-right). `nextFreeAt`
             (the engine's "Now" / "HH:mm" string) has been computed and
             passed into this component since 28x.102 but was never
@@ -534,7 +534,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
       >
         <Box sx={{ minWidth: 0 }}>
           {/* 🆕 28x.119 (founder reference screenshot: "ลองเปลี่ยนการ์ด
-              สไตล์นี้ แต่สีเดิม") — name + star rating on ONE line, tighter
+              สไตล์นี้ แต่สีเดิม") · name + star rating on ONE line, tighter
               and closer to the reference's compact header. The PHOTOS pill
               is dropped (tapping the card already opens the detail page,
               gallery included) — pure simplification, no functional loss. */}
@@ -606,7 +606,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               already tracked (reviews + sessions), just restyled to read
               as one quiet dot-separated line instead of two chip rows.
               🆕 28x.147 (founder side-by-side vs. cbody.vip: "ทำไมไม่เด่น
-              เท่าเขา") — cbody's "700+ การจอง" trust stat is bold and dark,
+              เท่าเขา") · cbody's "700+ การจอง" trust stat is bold and dark,
               ours was small and muted; bumped weight/size/color so the
               real numbers actually land instead of reading as fine print. */}
           {(therapist.reviews && therapist.reviews > 0) || sessionCount > 0 ? (
@@ -641,7 +641,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
             the reference's rule between the tag line and the CTA row. */}
         <Box sx={{ borderTop: "1px solid var(--sr-hairline)" }} />
 
-        {/* 🆕 28x.146 (founder arrow: "สลับ กัน") — footer row: price LEFT
+        {/* 🆕 28x.146 (founder arrow: "สลับ กัน") · footer row: price LEFT
             (swapped in from the floating photo badge) + Book button
             RIGHT. Distance swapped the other way, onto the photo — see
             the badge above. */}
@@ -668,7 +668,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
             //   distance now sits in the SAME box as price, stacked
             //   just below it, instead of floating on the photo.
             <Box sx={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
-              {/* 🆕 tiny "from" eyebrow above the price — reads as an intentional
+              {/* 🆕 tiny "from" eyebrow above the price · reads as an intentional
                   starting-price, not a flat number. */}
               <Typography
                 sx={{

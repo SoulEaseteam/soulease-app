@@ -1,7 +1,7 @@
 {
   "name": "SunRed Staff",
   "short_name": "SunRed Staff",
-  "description": "แอปสำหรับพนักงาน SunRed — ดูงาน จัดการตารางเวลา และโปรไฟล์ของคุณ",
+  "description": "แอปสำหรับพนักงาน SunRed · ดูงาน จัดการตารางเวลา และโปรไฟล์ของคุณ",
   "start_url": "/staff",
   "scope": "/",
   "display": "standalone",

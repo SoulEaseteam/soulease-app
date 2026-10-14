@@ -362,7 +362,7 @@ const TherapistGalleryPage: React.FC = () => {
         </Box>
       ) : (
         <Box sx={{ px: 2 }}>
-          {/* 🆕 Round 28x.104 (founder: "ปรับหน้าแกลเลอรีให้สวยขึ้น") — a
+          {/* 🆕 Round 28x.104 (founder: "ปรับหน้าแกลเลอรีให้สวยขึ้น") · a
               vivid rose counter card instead of a plain caption line. */}
           <Box
             sx={{
@@ -524,7 +524,7 @@ const TherapistGalleryPage: React.FC = () => {
             </>
           )}
 
-          {/* 🆕 Round 28x.104 (founder: "เอาปุ่มอัปโหลดไว้ข้างล่าง") — moved
+          {/* 🆕 Round 28x.104 (founder: "เอาปุ่มอัปโหลดไว้ข้างล่าง") · moved
               from above both grids to below them. Hidden while reordering
               (28x.112) — nothing to upload mid-drag. */}
           {!reordering && (
@@ -556,7 +556,7 @@ const TherapistGalleryPage: React.FC = () => {
           )}
 
           {/* 🆕 Round 28x.174 (founder: "โปรไฟล์พนักงาน มีแค่รูป ให้เพิ่ม
-              วิดีโอได้") — same moderation-queue pattern as photos above,
+              วิดีโอได้") · same moderation-queue pattern as photos above,
               deliberately simpler UI (no reorder, small cap). */}
           {!reordering && (
             <Box sx={{ mt: 4 }}>

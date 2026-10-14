@@ -2050,7 +2050,7 @@ const BookingFlowPage: React.FC = () => {
         </Box>{/* end orderDetails grid area */}
 
         {/* 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม
-            เอาออกจากทุกที่ที่มี") — the add-ons customer picker (28s302)
+            เอาออกจากทุกที่ที่มี") · the add-ons customer picker (28s302)
             has been removed. addonsTotal is hardcoded to 0 above and the
             booking doc still writes `addons: []` for backward compat. */}
 
@@ -2369,7 +2369,7 @@ const BookingFlowPage: React.FC = () => {
                 discount as "SunRed Smart Routing". We no longer compare
                 to Grab anywhere — it's all our brand. */}
             <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-              {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") — the
+              {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") · the
                   28x.47 struck band fare removed with the rest. The routing
                   saving itself still applies; only the crossed-out number
                   is gone. */}
@@ -2427,7 +2427,7 @@ const BookingFlowPage: React.FC = () => {
               <FareChip color="amber" icon={<SupportAgentRoundedIcon />}>
                 {t(
                   "booking.longDistance",
-                  "Long trip · contact the concierge — a deposit may apply"
+                  "Long trip · contact the concierge · a deposit may apply"
                 )}
               </FareChip>
             )}
@@ -2530,7 +2530,7 @@ const BookingFlowPage: React.FC = () => {
                       >
                         {t(
                           "booking.discountTravelNote",
-                          "Travel fee ({{fare}}) is at cost — not included in promo.",
+                          "Travel fee ({{fare}}) is at cost · not included in promo.",
                           { fare: formatTHB(taxiFare) }
                         )}
                       </Typography>
@@ -2573,7 +2573,7 @@ const BookingFlowPage: React.FC = () => {
                     >
                       {t(
                         "booking.discountUnknown",
-                        "Code not recognised — the concierge can apply custom codes manually after seeing your reservation."
+                        "Code not recognised · the concierge can apply custom codes manually after seeing your reservation."
                       )}
                     </Typography>
                   );
@@ -2796,7 +2796,7 @@ const BookingFlowPage: React.FC = () => {
                 justifyContent: "flex-end",
               }}
             >
-              {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") — the
+              {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") · the
                   28b46 pre-surcharge struck total removed; the fee still
                   shows as its own line item above, so nothing is hidden. */}
               {/* 🆕 Round 28r29 — Strikethrough "Original price"

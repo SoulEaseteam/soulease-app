@@ -162,7 +162,7 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("[splitTable] backfill failed", e);
-      setBackfillMsg("ล้มเหลว — ลองใหม่อีกครั้ง");
+      setBackfillMsg("ล้มเหลว · ลองใหม่อีกครั้ง");
     } finally {
       setBackfilling(false);
     }

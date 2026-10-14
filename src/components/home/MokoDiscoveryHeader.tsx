@@ -21,8 +21,8 @@ import { useTranslation } from "react-i18next";
 export type RosterFilter = "all" | "available_now" | "express";
 
 // 🕯️ 28t dark-luxury day/night — rose + gold accents fixed; text follows mode.
-const MAGENTA = "#FF8484"; // primary — Vintage Rose (active / selected / icons) — fixed
-const GREEN = "#57B88B"; // available / on-standby dot — green (founder semantic)
+const MAGENTA = "#FF8484"; // primary · Vintage Rose (active / selected / icons) · fixed
+const GREEN = "#57B88B"; // available / on-standby dot · green (founder semantic)
 const TEXT = "var(--sr-ink)"; // primary text
 const MUTED = "var(--sr-muted)"; // muted text
 
@@ -117,7 +117,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
       {/* 🆕 28x.129 (founder selected the scrolling notice bar, "เอาออก") —
           removed entirely. */}
 
-      {/* 🆕 28x.140 (founder: "เอาออก") — category filter tabs
+      {/* 🆕 28x.140 (founder: "เอาออก") · category filter tabs
           (All / Available now / Near me) removed entirely. */}
     </Box>
   );

@@ -239,7 +239,7 @@ const ServiceDetailPage: React.FC = () => {
     title: service
       ? t(
           "meta.serviceDetail.title",
-          "{{name}} (Outcall) in Bangkok — from ฿{{price}} | SunRed",
+          "{{name}} (Outcall) in Bangkok · from ฿{{price}} | SunRed",
           { name: service.name, price: priceForDuration(service, 60).toLocaleString("en-US") }
         )
       : t("meta.serviceDetail.fallback", "SunRed Services"),
@@ -870,7 +870,7 @@ const ServiceDetailPage: React.FC = () => {
 
       {/* ── End-of-page CTA (inline, all breakpoints) ──────────────
           🆕 28r110 (founder 2026-07-13 · "ปุ่ม ไม่ต้องลอย · ให้อยู่
-          ท้ายสุด") — the r54 sticky-bottom CTA + r54 desktop rail CTA
+          ท้ายสุด") · the r54 sticky-bottom CTA + r54 desktop rail CTA
           were both removed and replaced with this single inline
           button that lives at the true end of the scrollable page,
           after reviews.  No fixed positioning, no z-index wars with

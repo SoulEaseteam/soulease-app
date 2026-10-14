@@ -186,7 +186,7 @@ const PromoStrip: React.FC<PromoStripProps> = ({
           setSnackMsg(
             t(
               "promoStrip.codeCopied",
-              "Code {{code}} copied — apply at checkout",
+              "Code {{code}} copied · apply at checkout",
               { code }
             )
           );
@@ -195,7 +195,7 @@ const PromoStrip: React.FC<PromoStripProps> = ({
           setSnackMsg(
             t(
               "promoStrip.codeCopyFailed",
-              "Copy failed — the code is {{code}}",
+              "Copy failed · the code is {{code}}",
               { code }
             )
           );

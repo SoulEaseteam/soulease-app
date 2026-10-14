@@ -186,7 +186,7 @@ const ServicesPage: React.FC = () => {
     ),
     description: t(
       "meta.services.description",
-      "Browse SunRed's outcall massage menu delivered to your Bangkok hotel — Traditional Thai (฿1,200), Aromatherapy (฿1,600), Gentleman's Signature (฿2,200) and the premium Therapeutic Experience (฿3,200). 60/90/120 min. EN/中文/日本語/한국어, 24/7."
+      "Browse SunRed's outcall massage menu delivered to your Bangkok hotel · Traditional Thai (฿1,200), Aromatherapy (฿1,600), Gentleman's Signature (฿2,200) and the premium Therapeutic Experience (฿3,200). 60/90/120 min. EN/中文/日本語/한국어, 24/7."
     ),
     url: "https://sunred.vip/services",
     type: "website",
@@ -476,7 +476,7 @@ const ServicesPage: React.FC = () => {
                 <React.Fragment>
                 {/* ── Editorial per-item eyebrow · ━━ BESTSELLER pill ━━
                     🆕 28r113 (founder "ปรับแต่งเหมือนกันทุกป้าย · More
-                    Rituals ไม่เอา · เอา ตามที่สั่ง") — every ritual now
+                    Rituals ไม่เอา · เอา ตามที่สั่ง") · every ritual now
                     gets its own line-flanked eyebrow.  BESTSELLER slot
                     holds an amber pill; RITUAL · 02/03/04 use text.
                     Floating pills on the images have been removed. */}
@@ -746,7 +746,7 @@ const ServicesPage: React.FC = () => {
 
                     {/* ── Card · full-size, unified with featured layout ──
                         🆕 28r114 (founder "ให้ทุกเมนูนวด เหมือน Gentleman's
-                        เลย · ไม่ต้องย่อเล็ก") — replaced horizontal mini
+                        เลย · ไม่ต้องย่อเล็ก") · replaced horizontal mini
                         card (image-left / text-right) with the same
                         4:3 hero image + name + Thai/type + description
                         layout as the featured card.  Featured keeps its

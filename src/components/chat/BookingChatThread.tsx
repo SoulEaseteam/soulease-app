@@ -323,7 +323,7 @@ const BookingChatThread: React.FC<Props> = ({
             }}
           >
             {mode === "staff"
-              ? "ยังไม่มีข้อความ — ทักลูกค้าเพื่อยืนยันออเดอร์ได้เลย"
+              ? "ยังไม่มีข้อความ · ทักลูกค้าเพื่อยืนยันออเดอร์ได้เลย"
               : t(
                   "bookingChat.empty",
                   "Your reservation is confirmed with the concierge. Send a message here if you'd like to adjust the time, the address, or anything else before arrival."

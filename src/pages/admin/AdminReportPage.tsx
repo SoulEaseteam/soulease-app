@@ -928,7 +928,7 @@ const AdminReportPage: React.FC = () => {
                 );
               })()}
 
-              {/* 🆕 28s305 (founder: "ดูสลิป บอกรายละเอียดบริการ") — the slip
+              {/* 🆕 28s305 (founder: "ดูสลิป บอกรายละเอียดบริการ") · the slip
                    only showed aggregate totals; therapists couldn't see WHICH
                    jobs made up the pay. Per-job list from preview.bookings
                    (same data the Excel export already itemises), payout per
@@ -953,7 +953,7 @@ const AdminReportPage: React.FC = () => {
                     return (
                       <Box key={b.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1.5, py: 0.85, borderBottom: `1px solid ${adminColor.line}`, opacity: excluded ? 0.5 : 1 }}>
                         <Box sx={{ minWidth: 0 }}>
-                          {/* 🆕 28x.114b (founder: "ใส่นาทีลงไปด้วย งง") — the job
+                          {/* 🆕 28x.114b (founder: "ใส่นาทีลงไปด้วย งง") · the job
                               line hid the duration, so two Gentleman's jobs at
                               different minutes looked identical. Show it inline
                               and let the name wrap so nothing truncates. */}

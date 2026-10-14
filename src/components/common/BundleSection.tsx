@@ -266,10 +266,10 @@ const BundleSection: React.FC = () => {
                 position: "relative",
                 display: "flex",
                 flexDirection: "column",
-                overflow: "hidden", // 🆕 Round 28r60 — clip the hero image to the rounded corners.
+                overflow: "hidden", // 🆕 Round 28r60 · clip the hero image to the rounded corners.
                 background: "#FFFFFF",
                 border: "1px solid rgba(15, 23, 42, 0.08)",
-                borderRadius: "20px", // 🆕 Round 28r60 — slightly rounder (18→20).
+                borderRadius: "20px", // 🆕 Round 28r60 · slightly rounder (18→20).
                 boxShadow:
                   "0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.05)",
                 transition:

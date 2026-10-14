@@ -23,7 +23,7 @@ const SUBS_DOC = "adminSettings/webPushSubs";
 
 export type AdminPushStatus =
   | "unsupported" // browser has no Push API (or iOS Safari not installed)
-  | "blocked" // permission previously denied — only browser settings can undo
+  | "blocked" // permission previously denied · only browser settings can undo
   | "off"
   | "on";
 

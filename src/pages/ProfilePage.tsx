@@ -302,10 +302,10 @@ const ProfilePage: React.FC = () => {
         code.includes("wrong-password") || code.includes("invalid-credential")
           ? "รหัสผ่านปัจจุบันไม่ถูกต้อง"
           : code.includes("weak-password")
-          ? "รหัสใหม่อ่อนเกินไป — ใช้อย่างน้อย 6 ตัว"
+          ? "รหัสใหม่อ่อนเกินไป · ใช้อย่างน้อย 6 ตัว"
           : code.includes("too-many-requests")
-          ? "ลองผิดหลายครั้งเกินไป — รอสักครู่แล้วลองใหม่"
-          : "เปลี่ยนรหัสไม่สำเร็จ — ลองใหม่อีกครั้ง"
+          ? "ลองผิดหลายครั้งเกินไป · รอสักครู่แล้วลองใหม่"
+          : "เปลี่ยนรหัสไม่สำเร็จ · ลองใหม่อีกครั้ง"
       );
     } finally {
       setPwBusy(false);
@@ -389,7 +389,7 @@ const ProfilePage: React.FC = () => {
     >
       {/* ── Hero (r128 · Approach 8 · Split ID Badge · Wallet-style) ──
           🆕 28r128 (founder pick: "Split ID Badge · Wallet-style ·
-          sectioned") — landscape hero row (avatar left + name/email/tier
+          sectioned") · landscape hero row (avatar left + name/email/tier
           right), a compact 3-cell stats strip with vertical dividers,
           a "◆ Member Card" section label above the tier PNG artwork,
           then a "◆ Member Perks" section label + 3 icon-tile perks.
@@ -743,7 +743,7 @@ const ProfilePage: React.FC = () => {
               Practitioner
             </Typography>
             <Section>
-              {/* 🆕 28x.74 (founder: "My Bookings ก็ไม่ใช่งานของตัวเอง") — her
+              {/* 🆕 28x.74 (founder: "My Bookings ก็ไม่ใช่งานของตัวเอง") · her
                   work, first. The rows below this are the customer product. */}
               <Row
                 icon={<ClockCounterClockwise size={18} weight="duotone" />}

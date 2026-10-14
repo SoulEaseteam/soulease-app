@@ -502,7 +502,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
       {/* Round 28s2 — area chip strip removed (Sukhumvit/Asok/Thonglor
           chronically read "0", actively driving bounces). */}
 
-      {/* 🆕 28x.132 (founder: "โลโก้ → search bar → แฮมเบอร์เกอร์") — search
+      {/* 🆕 28x.132 (founder: "โลโก้ → search bar → แฮมเบอร์เกอร์") · search
           input moved out of the grid and into TopNav (site-wide nav bar);
           this grid now only reads the shared query via useHomeSearch(). */}
 
@@ -519,7 +519,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
         }}
       />
 
-      {/* 🆕 (founder: "ย้าย ลงมาข้างล่าง") — practitioner search, moved down
+      {/* 🆕 (founder: "ย้าย ลงมาข้างล่าง") · practitioner search, moved down
           from TopNav (28x.132 had moved it up there). Full-width under the
           location line, right above the cards it filters. */}
       <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />
@@ -571,12 +571,12 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
               marginTop: "4px",
             }}
           >
-            {"Please refresh — or message the concierge and we'll arrange everything directly."}
+            {"Please refresh · or message the concierge and we'll arrange everything directly."}
           </Typography>
           <Box
             component="a"
             href={whatsappDeepLink(
-              "Hi SunRed concierge, I'd like to book an outcall massage tonight — who's available?",
+              "Hi SunRed concierge, I'd like to book an outcall massage tonight · who's available?",
             )}
             target="_blank"
             rel="noopener noreferrer"
@@ -645,7 +645,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
           <Box
             component="a"
             href={whatsappDeepLink(
-              "Hi SunRed concierge, I'd like to book an outcall massage tonight — who's available?",
+              "Hi SunRed concierge, I'd like to book an outcall massage tonight · who's available?",
             )}
             target="_blank"
             rel="noopener noreferrer"

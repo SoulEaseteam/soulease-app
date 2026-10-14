@@ -191,7 +191,7 @@ const MyCodesPage: React.FC = () => {
 
         {user && !loading && (
           <>
-            {/* 🆕 28x.84 (founder: "ย้ายไปประกาศที่ Rewards โค้ดส่วนลดของฉัน") — her
+            {/* 🆕 28x.84 (founder: "ย้ายไปประกาศที่ Rewards โค้ดส่วนลดของฉัน") · her
                 membership card, first thing on the page: this IS the "my
                 codes" page, and the tier card is the clearest single fact
                 about what she's entitled to. Hidden entirely for a
@@ -204,7 +204,7 @@ const MyCodesPage: React.FC = () => {
             )}
 
             {/* 🆕 28w.95 (founder: "กันลูกค้าเก่าน้อยใจ · ยอดสะสมจากการจองครั้งก่อนหน้า
-                จะถูกเก็บเป็นเครดิตให้อัตโนมัติ หากยืนยันได้ว่ามีประวัติจริง") — SunPoints
+                จะถูกเก็บเป็นเครดิตให้อัตโนมัติ หากยืนยันได้ว่ามีประวัติจริง") · SunPoints
                 back-credited from sessions we ACTUALLY delivered (status
                 completed/done on their phone), so the balance is always backed by
                 real history. Shown first: a loyal guest should see what their past

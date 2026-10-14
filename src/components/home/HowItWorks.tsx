@@ -67,7 +67,7 @@ const STEPS: StepDef[] = [
     titleFallback: "Schedule the appointment",
     bodyKey: "home.howItWorks.step2.body",
     bodyFallback:
-      "Hotel suite, residence, or villa anywhere in central Bangkok — sessions of 60 to 120 minutes.",
+      "Hotel suite, residence, or villa anywhere in central Bangkok · sessions of 60 to 120 minutes.",
   },
   {
     num: 3,

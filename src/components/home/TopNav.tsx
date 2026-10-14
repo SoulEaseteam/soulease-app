@@ -383,7 +383,7 @@ const TopNav: React.FC = () => {
             isHome && !scrolled ? "none" : "blur(10px) saturate(140%)",
         }}
       >
-        {/* 🆕 28x.132 (founder: "โลโก้ → search bar → แฮมเบอร์เกอร์") — brand
+        {/* 🆕 28x.132 (founder: "โลโก้ → search bar → แฮมเบอร์เกอร์") · brand
             wordmark is now FIRST on mobile (was after the hamburger).
             Clickable, routes to "/". Desktop keeps its existing left-aligned
             position (marginRight:auto pushes the centered nav + CTA right). */}
@@ -412,7 +412,7 @@ const TopNav: React.FC = () => {
           {/* 🆕 28x.132 swapped this to the italic SunRedWordmark; 🆕 28x.139
               (founder selected the italic nav wordmark + sent a reference
               screenshot of the old two-tone caps treatment, "เปลี่ยน เอาโลโก้
-              นี้") — restored, #FF8484 instead of the old #FF8484 to match
+              นี้") · restored, #FF8484 instead of the old #FF8484 to match
               the sitewide 28x.134 color unification. 🆕 28x.142 (founder:
               "ปรับหน่อย" → spacing / font size / letter-spacing / overall
               alignment) — 0.22em read as too wide next to the compact search
@@ -443,7 +443,7 @@ const TopNav: React.FC = () => {
             HomeTherapistGrid. Mobile + home-route only: it's meaningless
             chrome on pages with no filterable list, and desktop already has
             its own horizontal nav + concierge CTA filling this row. */}
-        {/* 🆕 (founder selected the search bar: "ย้าย ลงมาข้างล่าง") — the
+        {/* 🆕 (founder selected the search bar: "ย้าย ลงมาข้างล่าง") · the
             practitioner search moved OUT of this bar, down into
             HomeTherapistGrid (below the location line, right above the
             cards). The top bar is now just wordmark · language · menu. */}
@@ -453,10 +453,10 @@ const TopNav: React.FC = () => {
             next to the practitioner search on the mobile home bar. Reuses the
             shared LanguageSwitcher (already imported); its menu still carries
             "Auto (device)" so auto-detect is one tap away. */}
-        {/* 🆕 (founder: "แปลภาษาได้ทั้งเว็บ") — was isHome-only; now renders on
+        {/* 🆕 (founder: "แปลภาษาได้ทั้งเว็บ") · was isHome-only; now renders on
             EVERY customer page's mobile bar. TopNav is site-wide via MainLayout,
             so this one line makes the switcher reachable everywhere. */}
-        {/* 🆕 (founder selected the flag pill: "ให้ขึ้นเป็นตัวย่อ") — back to
+        {/* 🆕 (founder selected the flag pill: "ให้ขึ้นเป็นตัวย่อ") · back to
             flag + short code (🇹🇭 TH) so the current language is readable. */}
         <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", flexShrink: 0, mr: 0.5, ml: "auto" }}>
           <LanguageSwitcher size="sm" />
@@ -562,7 +562,7 @@ const TopNav: React.FC = () => {
           })}
         </Box>
 
-        {/* 🆕 (founder: "แปลภาษาได้ทั้งเว็บ") — desktop gets the same switcher,
+        {/* 🆕 (founder: "แปลภาษาได้ทั้งเว็บ") · desktop gets the same switcher,
             tucked between the nav links and the concierge CTA. */}
         <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", mr: 1.25 }}>
           <LanguageSwitcher size="sm" />
@@ -640,7 +640,7 @@ const TopNav: React.FC = () => {
         }}
       >
         {/* Header — close button only now.
-            🆕 28x.132 (founder selected this wordmark, "ลบ") — the
+            🆕 28x.132 (founder selected this wordmark, "ลบ") · the
             drawer's own SunRedWordmark is gone; it's now the TopNav bar's
             wordmark instead (moved, not duplicated). */}
         <Box

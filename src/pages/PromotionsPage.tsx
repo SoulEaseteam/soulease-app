@@ -454,7 +454,7 @@ const EmptyOffers: React.FC = () => {
       {t("promos.empty.title", "No promotions running right now")}
     </Typography>
     <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)", mt: 0.5, lineHeight: 1.5 }}>
-      {t("promos.empty.body", "Follow our channels below — new offers drop there first.")}
+      {t("promos.empty.body", "Follow our channels below · new offers drop there first.")}
     </Typography>
   </Box>
   );

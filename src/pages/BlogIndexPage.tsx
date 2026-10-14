@@ -32,9 +32,9 @@ const BlogIndexPage: React.FC = () => {
 
   useDocumentMeta({
     title:
-      "The SunRed Journal — Outcall Massage Guides for Bangkok Travellers | SunRed",
+      "The SunRed Journal · Outcall Massage Guides for Bangkok Travellers | SunRed",
     description:
-      "Practical, no-nonsense guides to outcall massage in Bangkok — how to choose a service, late-night options, after-flight recovery, and travel-specific advice. Written for international visitors by SunRed.",
+      "Practical, no-nonsense guides to outcall massage in Bangkok · how to choose a service, late-night options, after-flight recovery, and travel-specific advice. Written for international visitors by SunRed.",
     url: `${ORIGIN}/blog`,
     type: "website",
     jsonLd: {

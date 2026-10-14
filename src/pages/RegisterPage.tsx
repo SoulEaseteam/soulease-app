@@ -122,7 +122,7 @@ const RegisterPage: React.FC = () => {
         ...(resolved.kind === 'phone' ? { phone: resolved.canonical } : {}),
         ...(resolved.kind === 'username' ? { username: resolved.canonical } : {}),
         loginKind: resolved.kind,
-        role: 'user', // normalized — เลิกใช้ "customer" ที่ไม่ตรงกับ Role type
+        role: 'user', // normalized · เลิกใช้ "customer" ที่ไม่ตรงกับ Role type
         createdAt: serverTimestamp(),
       });
 

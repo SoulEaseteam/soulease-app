@@ -344,7 +344,7 @@ const AdminTonightPage: React.FC = () => {
                 {inSession && exp && (
                   <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, mt: 0.5, color: overdue ? adminColor.red : adminColor.muted }}>
                     {overdue
-                      ? `⚠️ Overdue · เกินเวลา (expected ${dayjs(exp).format("HH:mm")}) — เช็กความปลอดภัยหมอนวด`
+                      ? `⚠️ Overdue · เกินเวลา (expected ${dayjs(exp).format("HH:mm")}) · เช็กความปลอดภัยหมอนวด`
                       : `⏱️ Ends ${dayjs(exp).format("HH:mm")} · คาดจบ`}
                   </Typography>
                 )}

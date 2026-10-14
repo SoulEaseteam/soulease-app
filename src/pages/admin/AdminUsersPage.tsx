@@ -651,7 +651,7 @@ const AdminUsersPage: React.FC = () => {
     },
     {
       field: "served", headerName: "Visits", flex: 0.6, type: "number",
-      description: "จำนวนครั้งที่มารับบริการจริง (completed) — เกณฑ์ VIP",
+      description: "จำนวนครั้งที่มารับบริการจริง (completed) · เกณฑ์ VIP",
       renderCell: (p) => <span style={{ ...(adminFigureSx as object), fontWeight: 700 }}>{p.row.served}</span>,
     },
     {
@@ -769,7 +769,7 @@ const AdminUsersPage: React.FC = () => {
             style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: adminColor.text, width: "100%", fontFamily: SANS }}
           />
         </Box>
-        {/* 🆕 Round 28s287c (founder: "ทำเป็นดรอปดาว ดีกว่า") — country filter
+        {/* 🆕 Round 28s287c (founder: "ทำเป็นดรอปดาว ดีกว่า") · country filter
             as a dropdown; each option shows flag + name + guest count.
             🆕 Round 28r45 — filter label English-only (r43). */}
         <TextField
@@ -943,7 +943,7 @@ const AdminUsersPage: React.FC = () => {
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                 <a href={`tel:${selectedGuest.phone}`} style={{ color: adminColor.accent, textDecoration: "none", fontWeight: 600, fontSize: 13 }}>{selectedGuest.phone}</a>
-                {/* 🆕 28x.41 (founder: "โชว์สัญชาติ") — nationality chip, always shown
+                {/* 🆕 28x.41 (founder: "โชว์สัญชาติ") · nationality chip, always shown
                     (falls back to Unknown when the phone has no resolvable dial code). */}
                 <Box sx={{ display: "inline-flex", alignItems: "center", gap: "5px", px: "8px", py: "2px", borderRadius: 999, background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
                   <span style={{ fontSize: 14 }}>{selectedGuest.country?.flag ?? "🌐"}</span>
@@ -1040,7 +1040,7 @@ const AdminUsersPage: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          {/* 🆕 28x.41 (founder: "กดคัดลอกได้") — tap the SRD code to copy it. */}
+                          {/* 🆕 28x.41 (founder: "กดคัดลอกได้") · tap the SRD code to copy it. */}
                           <Box
                             role="button"
                             tabIndex={0}
@@ -1256,7 +1256,7 @@ const AdminUsersPage: React.FC = () => {
 
           {/* ❗ ถ้าเป็น admin ตัวเอง => ปิดการแก้ role */}
           {/* 🆕 Round 28s265 (audit: dropdowns app-wide inheriting the
-              global theme's translucent Paper background) — SelectProps
+              global theme's translucent Paper background) · SelectProps
               forces an opaque menu; was missing here. */}
           <TextField
             select

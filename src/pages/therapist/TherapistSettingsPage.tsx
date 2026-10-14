@@ -208,9 +208,9 @@ const TherapistSettingsPage: React.FC = () => {
         </Button>
       </Box>
 
-      {/* 🆕 28x.82 (founder reference screenshot: "⚠ ลบบัญชี") — REQUEST, not
+      {/* 🆕 28x.82 (founder reference screenshot: "⚠ ลบบัญชี") · REQUEST, not
           self-service. The reference app deletes instantly and irreversibly;
-          that's the wrong default here — a therapist's account carries
+          that's the wrong default here · a therapist's account carries
           booking history, reviews and payout records that are business
           records, not just hers to erase. Same pattern this codebase already
           uses for "ลืมรหัสผ่าน" (28w.77): no self-serve flow, straight to the

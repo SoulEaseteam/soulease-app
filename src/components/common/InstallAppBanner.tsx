@@ -168,7 +168,7 @@ const InstallAppBanner: React.FC = () => {
           </Typography>
         ) : (
           <Typography sx={{ fontSize: 12, color: "var(--sr-muted)", lineHeight: 1.4 }}>
-            {t("installApp.body", "One tap from your home screen — no app store needed.")}
+            {t("installApp.body", "One tap from your home screen · no app store needed.")}
           </Typography>
         )}
       </Box>

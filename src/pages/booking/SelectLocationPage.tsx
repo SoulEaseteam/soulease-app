@@ -1310,7 +1310,7 @@ const SelectLocationPage: React.FC = () => {
             Form fields wrapped in a clean white card so they group as
             'Your details' instead of floating on the gradient bg. */}
 
-        {/* "Your details" form card — wraps Contact / Phone / Note + chips */}
+        {/* "Your details" form card · wraps Contact / Phone / Note + chips */}
         <Box
           sx={{
             gridArea: "form",
@@ -1523,7 +1523,7 @@ const SelectLocationPage: React.FC = () => {
             {form.meetingPoint === "direct"
               ? t(
                   "loc.noteHelp.direct",
-                  "Required — please include your reservation name + room number"
+                  "Required · please include your reservation name + room number"
                 )
               : t(
                   "loc.noteHelp.default",
@@ -1671,7 +1671,7 @@ const SelectLocationPage: React.FC = () => {
         </FieldLabel>
 
         {/* 🆕 Founder 2026-05-01 round 13: helper info card explaining
-            the 'Direct Room Access' policy. 28x.20 — soft ROSE notice tile
+            the 'Direct Room Access' policy. 28x.20 · soft ROSE notice tile
             (was a washed pink-white that read as flat gray on the dark
             theme), with a rose left-accent bar + rose title. */}
         <Box

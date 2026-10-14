@@ -62,7 +62,7 @@ const AdminPushToggle: React.FC = () => {
       setStatus(await adminPushStatus());
       window.alert(
         (err as Error)?.message === "webpush-keys-missing"
-          ? "Push keys not set up yet — run scripts/setWebPushKeys.mjs first."
+          ? "Push keys not set up yet · run scripts/setWebPushKeys.mjs first."
           : "Could not enable notifications on this device.",
       );
     }
@@ -70,9 +70,9 @@ const AdminPushToggle: React.FC = () => {
 
   const tip =
     status === "on"
-      ? "Booking alerts ON on this device — tap to turn off"
+      ? "Booking alerts ON on this device · tap to turn off"
       : status === "blocked"
-        ? "Notifications blocked — allow them in browser site settings first"
+        ? "Notifications blocked · allow them in browser site settings first"
         : "Get new-booking alerts on this device";
 
   return (

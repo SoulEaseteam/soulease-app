@@ -199,7 +199,7 @@ const BottomNavGlass: React.FC = () => {
                 pointerEvents: "none",
               }}
             >
-              {/* 🆕 (founder: "เมนูข้างล่าง เพิ่มลูกเล่นด้วย") — the same glossy
+              {/* 🆕 (founder: "เมนูข้างล่าง เพิ่มลูกเล่นด้วย") · the same glossy
                   "แวววาว" glint as the banner/NEW badge/book button, sweeping
                   the active pill every ~4.2s (offset from the others so nothing
                   blinks in sync). Pill itself stays still (28x.133 rule). */}

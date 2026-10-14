@@ -60,7 +60,7 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
         }}
         aria-label={t(
           "home.anniversary.aria",
-          "SunRed 1st Anniversary — view your reward",
+          "SunRed 1st Anniversary · view your reward",
         )}
         sx={{
           position: "relative",

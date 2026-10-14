@@ -92,14 +92,14 @@ export function modeForHourBKK(hour: number): ConciergeModeInfo {
       promoMessages: [
         {
           title: "Concierge live · slots filling fast",
-          sub: "Tap to chat — practitioner dispatched in <40 min",
+          sub: "Tap to chat · practitioner dispatched in <40 min",
         },
         {
           title: "Tonight's window is the most-requested",
           sub: "Late-night specialists on standby · Sukhumvit & Silom",
         },
         {
-          title: "Skip the wait — concierge replies in <2 min",
+          title: "Skip the wait · concierge replies in <2 min",
           sub: "Tap once · we'll confirm before you finish your drink",
         },
       ],
@@ -128,7 +128,7 @@ export function modeForHourBKK(hour: number): ConciergeModeInfo {
       promoMessages: [
         {
           title: "Slots opening for late-night",
-          sub: "Tap to lock a 22:00 — 02:00 window with the concierge",
+          sub: "Tap to lock a 22:00 · 02:00 window with the concierge",
         },
         {
           title: "Tonight's roster is being set",
@@ -136,7 +136,7 @@ export function modeForHourBKK(hour: number): ConciergeModeInfo {
         },
         {
           title: "Reserve before 21:00 · keep your top pick",
-          sub: "Concierge live now — tap to chat in your language",
+          sub: "Concierge live now · tap to chat in your language",
         },
       ],
       gridHeadline: "Tonight's standby · Bangkok",
@@ -155,7 +155,7 @@ export function modeForHourBKK(hour: number): ConciergeModeInfo {
     promoMessages: [
       {
         title: "Book tonight before the prime rush",
-        sub: "Tap to chat — 22:00 onward fills fastest",
+        sub: "Tap to chat · 22:00 onward fills fastest",
       },
       {
         title: "Daytime rates · from ฿1,200 / 60 min",

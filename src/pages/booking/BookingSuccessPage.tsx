@@ -648,7 +648,7 @@ const BookingSuccessPage: React.FC = () => {
                 boxShadow: "var(--sr-card-shadow)",
               }}
             >
-              {/* 🆕 28x.33 (founder "ย้ายไปไว้ด้านบน") — Copy reservation code
+              {/* 🆕 28x.33 (founder "ย้ายไปไว้ด้านบน") · Copy reservation code
                   moved up here, above the concierge confirm block: copy the
                   ref, then send it via a channel below. */}
               <StepLabel
@@ -774,7 +774,7 @@ const BookingSuccessPage: React.FC = () => {
                         "&:hover": { transform: "translateY(-2px)" },
                       }}
                     >
-                      {/* 🆕 28x.105c (founder "ขยายขึ้นอีกนิด ไอคอน") — 26→36px */}
+                      {/* 🆕 28x.105c (founder "ขยายขึ้นอีกนิด ไอคอน") · 26→36px */}
                       <Box
                         component="img"
                         src={c.src}
@@ -899,7 +899,7 @@ const BookingSuccessPage: React.FC = () => {
             </Box>
 
             {/* 🆕 28x.151/153 (founder reference screenshot, sent twice —
-                "แบบนี้") — 2×2 quick-action grid. Chat opens the real
+                "แบบนี้") · 2×2 quick-action grid. Chat opens the real
                 BookingChatThread (28x.140) inline right below; the other
                 three are unchanged from 28x.151. */}
             <Box

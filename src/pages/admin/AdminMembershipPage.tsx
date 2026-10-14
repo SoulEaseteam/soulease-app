@@ -307,7 +307,7 @@ const AdminMembershipPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* 🆕 28w.96 (founder: "admin/membership ตั้งค่า SunPoints และ อื่นๆ") — the two
+      {/* 🆕 28w.96 (founder: "admin/membership ตั้งค่า SunPoints และ อื่นๆ") · the two
           loyalty rates. Deliberately TWO fields, not one "points rate": earning
           (฿ per point) and redeeming (฿ per point) are different numbers and are
           very easy to conflate — swapping them turns a 1% programme into a 100%

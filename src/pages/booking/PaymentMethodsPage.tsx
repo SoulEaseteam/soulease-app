@@ -728,7 +728,7 @@ const PaymentRow: React.FC<{
           {methodSub(t, option)}
         </Typography>
       )}
-      {/* 🆕 Round 28s79 (founder "ที่การ์ดตัวเอง") — service-charge note
+      {/* 🆕 Round 28s79 (founder "ที่การ์ดตัวเอง") · service-charge note
           on the WeChat / Alipay card itself, so the fee is disclosed
           right where it's chosen. */}
       {hasPaymentSurcharge(option.id) && (

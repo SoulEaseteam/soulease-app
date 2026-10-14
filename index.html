@@ -9,21 +9,21 @@
     <!-- 🆕 Round 28s273 (founder: admin console showing up mangled by
          Chrome's auto-translate — "Seed Reviews" → "รีวิวเมล็ดพันธุ์",
          "SunRed Control" transliterated, etc). Root cause: <html lang>
-         is "en" (kept for the customer site's English-first SEO — see
+         is "en" (kept for the customer site's English-first SEO · see
          2026-06-02 round), but /admin/* is heavily Thai, so Chrome's
          language-mismatch heuristic offers/auto-applies translation on
          top of already-Thai text. `notranslate` doesn't affect SEO or
-         crawling (Google documents this) — it only tells the Translate
+         crawling (Google documents this) · it only tells the Translate
          feature to leave the page alone. Customers don't rely on this
          either; the site has its own real i18n system (5 languages). -->
     <meta name="google" content="notranslate" />
     <!-- 🆕 Round 28x.99c (founder: Google Search Console setup, for real
-         organic search-query data — see CLAUDE.md §9) — site ownership
+         organic search-query data · see CLAUDE.md §9) · site ownership
          verification tag. Never remove; Search Console re-checks this on
          every visit to stay verified. -->
     <meta name="google-site-verification" content="QceYh_Fgr05RtOiorJ0U7BawF5rOhsHNar-AmdAr0IE" />
 
-    <title>Outcall Massage Bangkok — Delivered to Your Hotel 24/7 | SunRed</title>
+    <title>Outcall Massage Bangkok · Delivered to Your Hotel 24/7 | SunRed</title>
 
     <!-- Performance: เปิด connection ล่วงหน้าให้ origin ที่แอปคุยด้วยจริงๆ
          🆕 Round 28b30 (perf #66) — PageSpeed flagged 3 unused preconnects
@@ -34,11 +34,11 @@
     <!-- 🆕 Round 28x.187 (founder: "หน้า services แสดงผลช้าไป") — measured via
          Resource Timing (not guessed): the /services page's hero photos load
          straight from firebasestorage.googleapis.com (admin-uploaded overrides,
-         no local default) and took 1.6–3.9s EACH on a cold connection — this is
+         no local default) and took 1.6–3.9s EACH on a cold connection · this is
          the real bottleneck, not app code. Re-enabling the Cloudinary proxy
          (28x.158) is off the table on purpose: that's the same dependency that
          caused a full site-wide image outage (28x.156). A preconnect here can't
-         cause that failure mode — worst case it's a wasted handshake — and it's
+         cause that failure mode · worst case it's a wasted handshake · and it's
          the same fix already applied to firestore.googleapis.com below. This
          origin is hit on every page with therapist/service/review photos, not
          a "may never fire" case, so it earns a real preconnect, not dns-prefetch. -->
@@ -84,7 +84,7 @@
          with the exact-match phrase. -->
     <meta
       name="description"
-      content="Premium outcall massage in Bangkok delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor. Verified Thai practitioners, 24/7 live availability. Book in English, 中文, 日本語, 한국어."
+      content="Premium outcall massage in Bangkok delivered to your hotel · Sukhumvit, Silom, Asok, Thonglor. Verified Thai practitioners, 24/7 live availability. Book in English, 中文, 日本語, 한국어."
     />
     <meta
       name="keywords"
@@ -99,7 +99,7 @@
 
     <!-- Icons -->
     <!-- 🚨 HOTFIX (Round 28x.166) — was pointing at "sunred-logo.png", which
-         despite its name is a staff portrait JPEG, not a logo — the tab icon
+         despite its name is a staff portrait JPEG, not a logo · the tab icon
          and iOS home-screen icon were literally a random practitioner's face.
          sunred-mark.svg (the real sun-glyph brand mark) already existed in
          the repo, just never wired in anywhere. Rasterized to real PNGs
@@ -108,7 +108,7 @@
     <link rel="apple-touch-icon" href="/images/icon/apple-touch-icon.png" />
     <!-- 🆕 Round 28x.166 — PWA manifest, so "Add to Home Screen" launches in
          standalone mode (no browser chrome) with the real brand icon, and
-         Android/Chrome can offer its native "Install App" prompt — neither
+         Android/Chrome can offer its native "Install App" prompt · neither
          worked before; there was no manifest at all. -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -122,10 +122,10 @@
     <meta property="og:site_name" content="SUNRED" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://sunred.vip/" />
-    <meta property="og:title" content="Outcall Massage Bangkok — Delivered to Your Hotel | SunRed" />
+    <meta property="og:title" content="Outcall Massage Bangkok · Delivered to Your Hotel | SunRed" />
     <meta
       property="og:description"
-      content="Premium outcall massage delivered to your Bangkok hotel — verified Thai practitioners, live 24/7 availability, multilingual concierge. Sukhumvit · Silom · Asok · Thonglor."
+      content="Premium outcall massage delivered to your Bangkok hotel · verified Thai practitioners, live 24/7 availability, multilingual concierge. Sukhumvit · Silom · Asok · Thonglor."
     />
     <!-- 🖼️ OG image 1200x630 (Round 28x.99e, founder: sun-glyph share
          card "ปกขึ้นรูปนี้ละ เปลี่ยนได้ไหม" — link previews looked like a
@@ -135,7 +135,7 @@
          🔴 Round 28x.158 — was a Cloudinary fetch URL that smart-cropped this
          to 1200x630. That made every Telegram / LINE / FB / WhatsApp link
          preview depend on the same metered CDN that took the whole site's
-         images down in 28x.156 — and a dead preview image on @SunRed_BKK costs
+         images down in 28x.156 · and a dead preview image on @SunRed_BKK costs
          more than a non-ideal crop, because that channel IS the acquisition
          funnel. Now points straight at the origin file. Its native 1792x878 is
          2.04:1 against OG's nominal 1.91:1, so preview renderers trim a sliver
@@ -152,7 +152,7 @@
     <meta property="og:image:height" content="878" />
     <meta
       property="og:image:alt"
-      content="SUNRED Bangkok — Luxury outcall massage delivered to your hotel"
+      content="SUNRED Bangkok · Luxury outcall massage delivered to your hotel"
     />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="th_TH" />
@@ -163,10 +163,10 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Outcall Massage Bangkok — Delivered to Your Hotel | SunRed" />
+    <meta name="twitter:title" content="Outcall Massage Bangkok · Delivered to Your Hotel | SunRed" />
     <meta
       name="twitter:description"
-      content="Premium outcall massage delivered to your Bangkok hotel — verified practitioners, live 24/7 availability, EN/中文/日本語/한국어."
+      content="Premium outcall massage delivered to your Bangkok hotel · verified practitioners, live 24/7 availability, EN/中文/日本語/한국어."
     />
     <meta
       name="twitter:image"
@@ -183,7 +183,7 @@
          /near-me, /profile, any client-only page) ships this block
          byte-for-byte. Fixing prerender-routes.mjs's hreflangBlock()/
          homeHreflang() generator functions for zh-TW (28x.99f) did NOT
-         fix this file — it's a separate, hand-maintained copy that has to
+         fix this file · it's a separate, hand-maintained copy that has to
          be updated in the SAME round every time the cluster shape changes. -->
     <link rel="alternate" hreflang="en" href="https://sunred.vip/" />
     <link rel="alternate" hreflang="zh" href="https://sunred.vip/zh" />
@@ -331,7 +331,7 @@
               "itemOffered": {
                 "@type": "Service",
                 "name": "SunRed Therapeutic Experience (Outcall)",
-                "description": "Our most refined signature ritual — a flowing whole-body oil ceremony of continuous-contact technique, premium aromatic blends, and gentle Thai-style stretching. 60, 90, or 120 minute sessions. By appointment only.",
+                "description": "Our most refined signature ritual · a flowing whole-body oil ceremony of continuous-contact technique, premium aromatic blends, and gentle Thai-style stretching. 60, 90, or 120 minute sessions. By appointment only.",
                 "serviceType": "Therapeutic Massage",
                 "areaServed": "Bangkok",
                 "provider": { "@id": "https://sunred.vip/#business" }
@@ -401,7 +401,7 @@
             "name": "What payment methods do you accept?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "We accept cash (THB), international credit cards, PromptPay, WeChat Pay, and AliPay — convenient for travelers from China, Japan, Korea, and other countries."
+              "text": "We accept cash (THB), international credit cards, PromptPay, WeChat Pay, and AliPay · convenient for travelers from China, Japan, Korea, and other countries."
             }
           },
           {
@@ -427,10 +427,10 @@
          moment JS runs (the SPA renders into #root above). -->
     <noscript>
       <main style="max-width:680px;margin:0 auto;padding:24px;font-family:Georgia,serif;color:#2a1a14;line-height:1.6">
-        <h1>SunRed — Luxury Outcall Massage in Bangkok, Delivered to Your Hotel</h1>
+        <h1>SunRed · Luxury Outcall Massage in Bangkok, Delivered to Your Hotel</h1>
         <p>
           SunRed delivers premium outcall (in-room) massage to your hotel,
-          residence or villa across central Bangkok — Sukhumvit, Silom, Asok,
+          residence or villa across central Bangkok · Sukhumvit, Silom, Asok,
           Thonglor, Sathorn, Phrom Phong, Ekkamai and Ratchada. Verified
           practitioners, discreet arrival, multilingual concierge in English,
           中文, 日本語 and 한국어, available 24/7.
@@ -440,19 +440,19 @@
         <ul>
           <li>
             <a href="https://sunred.vip/services/xSR-Thai">Traditional Thai Massage</a>
-            — from ฿1,200 (60 / 90 / 120 min). Deep muscle tension relief.
+            · from ฿1,200 (60 / 90 / 120 min). Deep muscle tension relief.
           </li>
           <li>
             <a href="https://sunred.vip/services/SR-Aroma">Aromatherapy Oil Massage</a>
-            — from ฿1,600 (60 / 90 / 120 min). Aromatic oil for deep relaxation.
+            · from ฿1,600 (60 / 90 / 120 min). Aromatic oil for deep relaxation.
           </li>
           <li>
             <a href="https://sunred.vip/services/SR-HJ2200">Gentleman's Signature Therapy</a>
-            — from ฿2,200 (60 / 90 / 120 min). Deep-tissue therapy for active men.
+            · from ฿2,200 (60 / 90 / 120 min). Deep-tissue therapy for active men.
           </li>
           <li>
             <a href="https://sunred.vip/services/SR-B2B3200">SunRed Therapeutic Experience</a>
-            — from ฿3,200 (60 / 90 / 120 min). Our premium signature ritual.
+            · from ฿3,200 (60 / 90 / 120 min). Our premium signature ritual.
           </li>
         </ul>
 

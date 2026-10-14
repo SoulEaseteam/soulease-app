@@ -882,7 +882,7 @@ const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; div
     <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--sr-body)" }}>
       {label}
     </Typography>
-    {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") — the 28x.47
+    {/* 🆕 28x.99z (founder "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด") · the 28x.47
         Grab-style struck "before" fare is gone. `strike` prop kept so
         callers don't break, but it renders nothing now. */}
     <Typography
@@ -995,7 +995,7 @@ const NearMePage: React.FC = () => {
             border: "1px solid var(--sr-hairline)",
           }}
         >
-        {/* 🆕 28x.53 (founder: "ปรับฟอนต์ให้อ่านง่ายขึ้น") — was Playfair serif at a
+        {/* 🆕 28x.53 (founder: "ปรับฟอนต์ให้อ่านง่ายขึ้น") · was Playfair serif at a
             loose 1.9 line-height, which reads heavy for a plain list of areas.
             Now sans, medium-weight area names, and readable (not muted) separators. */}
         <Typography
@@ -1041,7 +1041,7 @@ const NearMePage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* 🆕 28x.54 (founder: "จัดเรียงให้ดีหน่อย") — the concierge nudge was a
+      {/* 🆕 28x.54 (founder: "จัดเรียงให้ดีหน่อย") · the concierge nudge was a
           plain centred paragraph floating between coverage and the Reach-us
           grid. Wrapped it in a soft callout with a concierge icon so it reads
           as an intentional lead-in to the channels right below it. */}

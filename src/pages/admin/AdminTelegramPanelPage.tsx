@@ -506,7 +506,7 @@ const AdminTelegramPanelPage: React.FC = () => {
     try {
       const res = await postToChannel({ kind, lang });
       if (res.ok) notify("success", `ส่งเข้า ${channelForLang(lang)} แล้ว · message #${res.messageId}`);
-      else notify("error", "ส่งไม่สำเร็จ — เช็ค Firestore telegramPosts");
+      else notify("error", "ส่งไม่สำเร็จ · เช็ค Firestore telegramPosts");
     } catch (err) {
       notify("error", `ผิดพลาด: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
@@ -679,7 +679,7 @@ const AdminTelegramPanelPage: React.FC = () => {
 
         {/* ── Report Channel ── */}
         {/* 🆕 Round 28x.94 (founder: "ให้รายงานทุกอย่างไปไว้ SunRed Report ·
-            SunRed Booking มี แค่ Booking จากลูกค้า ก็พอ") — a second group so
+            SunRed Booking มี แค่ Booking จากลูกค้า ก็พอ") · a second group so
             SunRed Booking only ever carries the raw new-booking announcement.
             Everything else (this Daily Digest, review alerts, overdue-session
             alerts, abandoned-booking nudges, and accept/decline/claim/status
@@ -700,7 +700,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap", mb: reportChanCode ? 1.5 : 0 }}>
             <Typography sx={{ fontSize: 12, color: adminColor.dim }}>ช่อง Report ปัจจุบัน:</Typography>
             <Typography sx={{ fontSize: 12.5, fontWeight: 800, color: reportChan ? adminColor.green : adminColor.amber }}>
-              {reportChan ? `${reportChan.title ?? "(ไม่มีชื่อ)"} · ${reportChan.id}` : "ยังไม่ได้ตั้ง — รายงานจะเข้ากลุ่ม SunRed Booking ไปก่อน"}
+              {reportChan ? `${reportChan.title ?? "(ไม่มีชื่อ)"} · ${reportChan.id}` : "ยังไม่ได้ตั้ง · รายงานจะเข้ากลุ่ม SunRed Booking ไปก่อน"}
             </Typography>
             {reportChan && (
               <Button size="small" onClick={() => void clearReportChannel()} sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.red, px: 0.5 }}>
@@ -741,7 +741,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap", mb: chanCode || adminCode ? 1.5 : 0 }}>
             <Typography sx={{ fontSize: 12, color: adminColor.dim }}>ช่องงานปัจจุบัน:</Typography>
             <Typography sx={{ fontSize: 12.5, fontWeight: 800, color: jobChan ? adminColor.green : adminColor.amber }}>
-              {jobChan ? `${jobChan.title ?? "(ไม่มีชื่อ)"} · ${jobChan.id}` : "ยังไม่ได้ตั้ง — งานว่างจะไม่ถูกโพสต์ที่ไหน"}
+              {jobChan ? `${jobChan.title ?? "(ไม่มีชื่อ)"} · ${jobChan.id}` : "ยังไม่ได้ตั้ง · งานว่างจะไม่ถูกโพสต์ที่ไหน"}
             </Typography>
             {jobChan && (
               <Button size="small" onClick={() => void clearJobChannel()} sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.red, px: 0.5 }}>

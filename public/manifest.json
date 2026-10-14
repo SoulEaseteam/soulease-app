@@ -1,7 +1,7 @@
 {
-  "name": "SunRed — Outcall Massage Bangkok",
+  "name": "SunRed · Outcall Massage Bangkok",
   "short_name": "SunRed",
-  "description": "Premium outcall massage delivered to your Bangkok hotel — verified Thai practitioners, live 24/7 availability.",
+  "description": "Premium outcall massage delivered to your Bangkok hotel · verified Thai practitioners, live 24/7 availability.",
   "start_url": "/?src=pwa",
   "scope": "/",
   "display": "standalone",

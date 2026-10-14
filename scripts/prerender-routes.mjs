@@ -60,17 +60,17 @@ const SERVICES = [
     en: {
       name: "Traditional Thai Massage",
       blurb:
-        "Authentic Traditional Thai massage delivered to your Bangkok hotel, residence or villa. A licensed female practitioner blends acupressure, deep stretches and rhythmic techniques to ease travel fatigue and restore mobility — in the privacy of your own room.",
+        "Authentic Traditional Thai massage delivered to your Bangkok hotel, residence or villa. A licensed female practitioner blends acupressure, deep stretches and rhythmic techniques to ease travel fatigue and restore mobility · in the privacy of your own room.",
     },
     zh: {
       name: "泰式按摩",
       blurb:
-        "正宗泰式按摩上门服务，送达您在曼谷的酒店、公寓或别墅。专业持证女性技师融合指压、深度伸展与节奏手法，缓解旅途疲劳、舒缓肌肉、恢复身体平衡——在您私密的房间内进行。",
+        "正宗泰式按摩上门服务，送达您在曼谷的酒店、公寓或别墅。专业持证女性技师融合指压、深度伸展与节奏手法，缓解旅途疲劳、舒缓肌肉、恢复身体平衡 · 在您私密的房间内进行。",
     },
     "zh-TW": {
       name: "泰式按摩",
       blurb:
-        "正宗泰式按摩到府服務，送達您在曼谷的飯店、公寓或別墅。專業持證女性技師融合指壓、深度伸展與節奏手法，緩解旅途疲勞、舒緩肌肉、恢復身體平衡——在您私密的房間內進行。",
+        "正宗泰式按摩到府服務，送達您在曼谷的飯店、公寓或別墅。專業持證女性技師融合指壓、深度伸展與節奏手法，緩解旅途疲勞、舒緩肌肉、恢復身體平衡 · 在您私密的房間內進行。",
     },
     ja: {
       name: "タイ古式マッサージ",
@@ -89,7 +89,7 @@ const SERVICES = [
     en: {
       name: "Aromatherapy Oil Massage",
       blurb:
-        "A calming aromatherapy oil massage delivered to your room in Bangkok. Premium blends — lavender, neroli or sandalwood — paired with steady, soothing strokes that quiet the nervous system and prepare you for deep, restorative sleep.",
+        "A calming aromatherapy oil massage delivered to your room in Bangkok. Premium blends · lavender, neroli or sandalwood · paired with steady, soothing strokes that quiet the nervous system and prepare you for deep, restorative sleep.",
     },
     zh: {
       name: "芳香精油按摩",
@@ -118,7 +118,7 @@ const SERVICES = [
     en: {
       name: "Gentleman's Signature Therapy",
       blurb:
-        "A focused aromatic-oil session crafted for men — warming aromatherapy with attentive tension-release work, performed by a trained female practitioner in your residence. Unhurried, attentive and entirely paced to your preference.",
+        "A focused aromatic-oil session crafted for men · warming aromatherapy with attentive tension-release work, performed by a trained female practitioner in your residence. Unhurried, attentive and entirely paced to your preference.",
     },
     zh: {
       name: "尊享男士理疗",
@@ -147,27 +147,27 @@ const SERVICES = [
     en: {
       name: "SunRed Therapeutic Experience",
       blurb:
-        "SunRed's most refined ritual — a flowing whole-body oil ceremony with premium aromatic blends and gentle Thai-style stretching, reserved for specialised practitioners. A private, unhurried experience delivered to your Bangkok residence.",
+        "SunRed's most refined ritual · a flowing whole-body oil ceremony with premium aromatic blends and gentle Thai-style stretching, reserved for specialised practitioners. A private, unhurried experience delivered to your Bangkok residence.",
     },
     zh: {
       name: "SunRed 尊享理疗体验",
       blurb:
-        "SunRed 最精致的理疗仪式——流畅的全身精油护理，融合高级芳香精油与轻柔的泰式伸展，仅由资深专属技师呈现。私密、从容，上门送达您在曼谷的住所。",
+        "SunRed 最精致的理疗仪式 · 流畅的全身精油护理，融合高级芳香精油与轻柔的泰式伸展，仅由资深专属技师呈现。私密、从容，上门送达您在曼谷的住所。",
     },
     "zh-TW": {
       name: "SunRed 尊榮理療體驗",
       blurb:
-        "SunRed 最精緻的理療儀式——流暢的全身精油護理，融合高級芳香精油與輕柔的泰式伸展，僅由資深專屬技師呈現。私密、從容，到府送達您在曼谷的住所。",
+        "SunRed 最精緻的理療儀式 · 流暢的全身精油護理，融合高級芳香精油與輕柔的泰式伸展，僅由資深專屬技師呈現。私密、從容，到府送達您在曼谷的住所。",
     },
     ja: {
       name: "SunRed セラピー・エクスペリエンス",
       blurb:
-        "SunRed の最も洗練された施術——上質なアロマと優しいタイ式ストレッチを組み合わせた全身オイルケア。専門のセラピストのみが担当する、プライベートで贅沢なひとときを出張でお届けします。",
+        "SunRed の最も洗練された施術 · 上質なアロマと優しいタイ式ストレッチを組み合わせた全身オイルケア。専門のセラピストのみが担当する、プライベートで贅沢なひとときを出張でお届けします。",
     },
     ko: {
       name: "SunRed 테라퓨틱 익스피리언스",
       blurb:
-        "SunRed의 가장 섬세한 케어 — 프리미엄 아로마와 부드러운 타이식 스트레칭을 결합한 전신 오일 케어. 전문 테라피스트가 담당하는 프라이빗한 경험을 출장으로 제공합니다.",
+        "SunRed의 가장 섬세한 케어 · 프리미엄 아로마와 부드러운 타이식 스트레칭을 결합한 전신 오일 케어. 전문 테라피스트가 담당하는 프라이빗한 경험을 출장으로 제공합니다.",
     },
   },
 ];
@@ -183,24 +183,24 @@ const LOC = {
     servicesTitle:
       "Outcall Massage Services in Bangkok · Thai, Aromatherapy & More | SunRed",
     servicesDesc:
-      "Browse SunRed's outcall massage menu delivered to your Bangkok hotel — Traditional Thai (฿1,200), Aromatherapy (฿1,600), Gentleman's Signature (฿2,200) and the premium Therapeutic Experience (฿3,200). 60/90/120 min. EN/中文/日本語/한국어, 24/7.",
-    servicesOgTitle: "SunRed Bangkok — Outcall Massage Services & Pricing",
+      "Browse SunRed's outcall massage menu delivered to your Bangkok hotel · Traditional Thai (฿1,200), Aromatherapy (฿1,600), Gentleman's Signature (฿2,200) and the premium Therapeutic Experience (฿3,200). 60/90/120 min. EN/中文/日本語/한국어, 24/7.",
+    servicesOgTitle: "SunRed Bangkok · Outcall Massage Services & Pricing",
     servicesOgDesc:
-      "Thai, Aromatherapy, Gentleman's Signature and Therapeutic Experience — delivered to your Bangkok hotel. Verified practitioners, live availability, 24/7.",
+      "Thai, Aromatherapy, Gentleman's Signature and Therapeutic Experience · delivered to your Bangkok hotel. Verified practitioners, live availability, 24/7.",
     serviceTitle: (n, p) =>
-      `${n} (Outcall) in Bangkok — from ฿${fmt(p)} | SunRed`,
-    serviceOgTitle: (n) => `${n} — Outcall Massage in Bangkok | SunRed`,
+      `${n} (Outcall) in Bangkok · from ฿${fmt(p)} | SunRed`,
+    serviceOgTitle: (n) => `${n} · Outcall Massage in Bangkok | SunRed`,
     serviceOgDesc: (n, p) =>
       `${n} from ฿${fmt(p)}, delivered to your hotel. Verified, discreet, 24/7.`,
     descTail: (p) =>
       ` 60/90/120 min, from ฿${fmt(p)}. EN/中文/日本語/한국어, 24/7 concierge.`,
-    servicesH1: "Outcall Massage Services in Bangkok — SunRed",
+    servicesH1: "Outcall Massage Services in Bangkok · SunRed",
     servicesIntro:
-      "Every SunRed service is delivered to your hotel, residence or villa across central Bangkok — Sukhumvit, Silom, Asok, Thonglor, Sathorn, Phrom Phong, Ekkamai and Ratchada. Verified practitioners, discreet arrival, multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
+      "Every SunRed service is delivered to your hotel, residence or villa across central Bangkok · Sukhumvit, Silom, Asok, Thonglor, Sathorn, Phrom Phong, Ekkamai and Ratchada. Verified practitioners, discreet arrival, multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
     menuHeading: "Service menu & pricing",
     reserveHeading: "Reserve or ask the concierge",
     allServices: "All services",
-    homeLink: "Home — live availability",
+    homeLink: "Home · live availability",
     deliveredLine: (p) =>
       `From ฿${fmt(p)} · 60/90/120 min · delivered to your hotel, residence or villa across central Bangkok (${AREAS_EN}). Verified practitioners, discreet arrival, multilingual concierge, 24/7.`,
   },
@@ -210,25 +210,25 @@ const LOC = {
     durations: "60 / 90 / 120 分钟",
     fromPrice: (p) => `฿${fmt(p)} 起`,
     brand: "SunRed",
-    servicesTitle: "曼谷上门按摩服务与价格 — 泰式 / 芳疗 / 尊享理疗 | SunRed",
+    servicesTitle: "曼谷上门按摩服务与价格 · 泰式 / 芳疗 / 尊享理疗 | SunRed",
     servicesDesc:
       "SunRed 曼谷上门按摩菜单，送达您的酒店：泰式按摩（฿1,200）、芳香精油按摩（฿1,600）、尊享男士理疗（฿2,200）及尊享理疗体验（฿3,200）。60/90/120 分钟，全天候24小时，支持微信支付与支付宝。",
-    servicesOgTitle: "SunRed 曼谷 — 上门按摩服务与价格",
+    servicesOgTitle: "SunRed 曼谷 · 上门按摩服务与价格",
     servicesOgDesc:
       "泰式、芳疗、男士理疗与尊享体验，上门送达您的曼谷酒店。已认证技师、实时空闲、全天候24小时。",
-    serviceTitle: (n, p) => `${n}（上门）曼谷 — ฿${fmt(p)} 起 | SunRed`,
-    serviceOgTitle: (n) => `${n} — 曼谷上门按摩 | SunRed`,
+    serviceTitle: (n, p) => `${n}（上门）曼谷 · ฿${fmt(p)} 起 | SunRed`,
+    serviceOgTitle: (n) => `${n} · 曼谷上门按摩 | SunRed`,
     serviceOgDesc: (n, p) =>
       `${n}，฿${fmt(p)} 起，上门送达酒店。已认证、私密、全天候24小时。`,
     descTail: (p) =>
       ` 60/90/120 分钟，฿${fmt(p)} 起。支持微信/支付宝，全天候24小时礼宾服务。`,
-    servicesH1: "曼谷上门按摩服务 — SunRed",
+    servicesH1: "曼谷上门按摩服务 · SunRed",
     servicesIntro:
-      "SunRed 所有服务均上门送达您在曼谷市中心的酒店、公寓或别墅——Sukhumvit、Silom、Asok、Thonglor、Sathorn、Phrom Phong、Ekkamai、Ratchada 等区域。已认证技师、私密上门、多语言礼宾（English、中文、日本語、한국어），全天候24小时。",
+      "SunRed 所有服务均上门送达您在曼谷市中心的酒店、公寓或别墅 · Sukhumvit、Silom、Asok、Thonglor、Sathorn、Phrom Phong、Ekkamai、Ratchada 等区域。已认证技师、私密上门、多语言礼宾（English、中文、日本語、한국어），全天候24小时。",
     menuHeading: "服务菜单与价格",
     reserveHeading: "预订或咨询礼宾",
     allServices: "全部服务",
-    homeLink: "首页 — 实时空闲",
+    homeLink: "首页 · 实时空闲",
     deliveredLine: (p) =>
       `฿${fmt(p)} 起 · 60/90/120 分钟 · 上门送达您在曼谷市中心的酒店、公寓或别墅（Sukhumvit、Silom、Asok、Thonglor 等）。已认证技师、私密上门、多语言礼宾、全天候24小时。`,
   },
@@ -238,25 +238,25 @@ const LOC = {
     durations: "60 / 90 / 120 分鐘",
     fromPrice: (p) => `฿${fmt(p)} 起`,
     brand: "SunRed",
-    servicesTitle: "曼谷到府按摩服務與價格 — 泰式 / 芳療 / 尊榮理療 | SunRed",
+    servicesTitle: "曼谷到府按摩服務與價格 · 泰式 / 芳療 / 尊榮理療 | SunRed",
     servicesDesc:
       "SunRed 曼谷到府按摩菜單，送達您的飯店：泰式按摩（฿1,200）、芳香精油按摩（฿1,600）、尊榮男士理療（฿2,200）及尊榮理療體驗（฿3,200）。60/90/120 分鐘，全天候24小時，支援現金、PromptPay、微信支付與支付寶。",
-    servicesOgTitle: "SunRed 曼谷 — 到府按摩服務與價格",
+    servicesOgTitle: "SunRed 曼谷 · 到府按摩服務與價格",
     servicesOgDesc:
       "泰式、芳療、男士理療與尊榮體驗，到府送達您的曼谷飯店。已認證技師、即時空閒、全天候24小時。",
-    serviceTitle: (n, p) => `${n}（到府）曼谷 — ฿${fmt(p)} 起 | SunRed`,
-    serviceOgTitle: (n) => `${n} — 曼谷到府按摩 | SunRed`,
+    serviceTitle: (n, p) => `${n}（到府）曼谷 · ฿${fmt(p)} 起 | SunRed`,
+    serviceOgTitle: (n) => `${n} · 曼谷到府按摩 | SunRed`,
     serviceOgDesc: (n, p) =>
       `${n}，฿${fmt(p)} 起，到府送達飯店。已認證、私密、全天候24小時。`,
     descTail: (p) =>
       ` 60/90/120 分鐘，฿${fmt(p)} 起。支援現金/PromptPay/微信/支付寶，全天候24小時禮賓服務。`,
-    servicesH1: "曼谷到府按摩服務 — SunRed",
+    servicesH1: "曼谷到府按摩服務 · SunRed",
     servicesIntro:
-      "SunRed 所有服務均到府送達您在曼谷市中心的飯店、公寓或別墅——Sukhumvit、Silom、Asok、Thonglor、Sathorn、Phrom Phong、Ekkamai、Ratchada 等區域。已認證技師、私密到府、多語言禮賓（English、中文、日本語、한국어），全天候24小時。",
+      "SunRed 所有服務均到府送達您在曼谷市中心的飯店、公寓或別墅 · Sukhumvit、Silom、Asok、Thonglor、Sathorn、Phrom Phong、Ekkamai、Ratchada 等區域。已認證技師、私密到府、多語言禮賓（English、中文、日本語、한국어），全天候24小時。",
     menuHeading: "服務菜單與價格",
     reserveHeading: "預訂或諮詢禮賓",
     allServices: "全部服務",
-    homeLink: "首頁 — 即時空閒",
+    homeLink: "首頁 · 即時空閒",
     deliveredLine: (p) =>
       `฿${fmt(p)} 起 · 60/90/120 分鐘 · 到府送達您在曼谷市中心的飯店、公寓或別墅（Sukhumvit、Silom、Asok、Thonglor 等）。已認證技師、私密到府、多語言禮賓、全天候24小時。`,
   },
@@ -267,25 +267,25 @@ const LOC = {
     fromPrice: (p) => `฿${fmt(p)}〜`,
     brand: "SunRed",
     servicesTitle:
-      "バンコク出張マッサージ メニュー＆料金 — タイ古式 / アロマ / メンズ | SunRed",
+      "バンコク出張マッサージ メニュー＆料金 · タイ古式 / アロマ / メンズ | SunRed",
     servicesDesc:
       "SunRed バンコク出張マッサージのメニュー。ホテルへお届け：タイ古式（฿1,200）、アロマ（฿1,600）、メンズ・シグネチャー（฿2,200）、セラピー・エクスペリエンス（฿3,200）。60/90/120分、24時間対応。",
-    servicesOgTitle: "SunRed バンコク — 出張マッサージ メニュー＆料金",
+    servicesOgTitle: "SunRed バンコク · 出張マッサージ メニュー＆料金",
     servicesOgDesc:
       "タイ古式・アロマ・メンズ・セラピーをバンコクのホテルへ出張。認定セラピスト、リアルタイム予約、24時間対応。",
-    serviceTitle: (n, p) => `${n}（出張）バンコク — ฿${fmt(p)}〜 | SunRed`,
-    serviceOgTitle: (n) => `${n} — バンコク出張マッサージ | SunRed`,
+    serviceTitle: (n, p) => `${n}（出張）バンコク · ฿${fmt(p)}〜 | SunRed`,
+    serviceOgTitle: (n) => `${n} · バンコク出張マッサージ | SunRed`,
     serviceOgDesc: (n, p) =>
       `${n} ฿${fmt(p)}〜、ホテルへ出張。認定済・プライベート・24時間対応。`,
     descTail: (p) =>
       ` 60/90/120分、฿${fmt(p)}〜。EN/中文/日本語/한국어、24時間コンシェルジュ対応。`,
-    servicesH1: "バンコク出張マッサージ — SunRed",
+    servicesH1: "バンコク出張マッサージ · SunRed",
     servicesIntro:
       "SunRed の全サービスは、バンコク中心部のホテル・ご滞在先へ出張でお届けします（Sukhumvit、Silom、Asok、Thonglor、Sathorn、Phrom Phong、Ekkamai、Ratchada など）。認定セラピスト、プライベートな訪問、多言語コンシェルジュ（English、中文、日本語、한국어）、24時間対応。",
     menuHeading: "サービスメニューと料金",
     reserveHeading: "予約・コンシェルジュへ相談",
     allServices: "すべてのサービス",
-    homeLink: "ホーム — リアルタイム空き状況",
+    homeLink: "ホーム · リアルタイム空き状況",
     deliveredLine: (p) =>
       `฿${fmt(p)}〜 · 60/90/120分 · バンコク中心部のホテル・ご滞在先へ出張（Sukhumvit、Silom、Asok、Thonglor など）。認定セラピスト、プライベートな訪問、多言語コンシェルジュ、24時間対応。`,
   },
@@ -295,25 +295,25 @@ const LOC = {
     durations: "60 / 90 / 120분",
     fromPrice: (p) => `฿${fmt(p)}부터`,
     brand: "SunRed",
-    servicesTitle: "방콕 출장 마사지 서비스 & 가격 — 타이 / 아로마 / 시그니처 | SunRed",
+    servicesTitle: "방콕 출장 마사지 서비스 & 가격 · 타이 / 아로마 / 시그니처 | SunRed",
     servicesDesc:
       "SunRed 방콕 출장 마사지 메뉴, 호텔로 방문: 타이 마사지(฿1,200), 아로마(฿1,600), 젠틀맨 시그니처(฿2,200), 테라퓨틱 익스피리언스(฿3,200). 60/90/120분, 24시간 운영.",
-    servicesOgTitle: "SunRed 방콕 — 출장 마사지 서비스 & 가격",
+    servicesOgTitle: "SunRed 방콕 · 출장 마사지 서비스 & 가격",
     servicesOgDesc:
       "타이·아로마·시그니처·테라퓨틱을 방콕 호텔로 출장. 인증 테라피스트, 실시간 예약, 24시간.",
-    serviceTitle: (n, p) => `${n} (출장) 방콕 — ฿${fmt(p)}부터 | SunRed`,
-    serviceOgTitle: (n) => `${n} — 방콕 출장 마사지 | SunRed`,
+    serviceTitle: (n, p) => `${n} (출장) 방콕 · ฿${fmt(p)}부터 | SunRed`,
+    serviceOgTitle: (n) => `${n} · 방콕 출장 마사지 | SunRed`,
     serviceOgDesc: (n, p) =>
       `${n} ฿${fmt(p)}부터, 호텔로 방문. 인증·프라이빗·24시간.`,
     descTail: (p) =>
       ` 60/90/120분, ฿${fmt(p)}부터. EN/中文/日本語/한국어, 24시간 컨시어지.`,
-    servicesH1: "방콕 출장 마사지 서비스 — SunRed",
+    servicesH1: "방콕 출장 마사지 서비스 · SunRed",
     servicesIntro:
-      "SunRed의 모든 서비스는 방콕 시내 호텔·레지던스로 방문합니다 — Sukhumvit, Silom, Asok, Thonglor, Sathorn, Phrom Phong, Ekkamai, Ratchada 등. 인증 테라피스트, 프라이빗한 방문, 다국어 컨시어지(English, 中文, 日本語, 한국어), 24시간.",
+      "SunRed의 모든 서비스는 방콕 시내 호텔·레지던스로 방문합니다 · Sukhumvit, Silom, Asok, Thonglor, Sathorn, Phrom Phong, Ekkamai, Ratchada 등. 인증 테라피스트, 프라이빗한 방문, 다국어 컨시어지(English, 中文, 日本語, 한국어), 24시간.",
     menuHeading: "서비스 메뉴 & 가격",
     reserveHeading: "예약 또는 컨시어지 문의",
     allServices: "전체 서비스",
-    homeLink: "홈 — 실시간 예약 가능",
+    homeLink: "홈 · 실시간 예약 가능",
     deliveredLine: (p) =>
       `฿${fmt(p)}부터 · 60/90/120분 · 방콕 시내 호텔·레지던스로 방문(Sukhumvit, Silom, Asok, Thonglor 등). 인증 테라피스트, 프라이빗한 방문, 다국어 컨시어지, 24시간.`,
   },
@@ -510,8 +510,8 @@ function therapistRoutes() {
     // compliant and under Google's snippet length), so each page's snippet is
     // distinct. Fall back to the generic line only if a bio wasn't parsed.
     const description = bio
-      ? `${bio.bioEn} A verified SunRed outcall massage practitioner delivered to your Bangkok hotel or residence — discreet, 24/7.`
-      : `Book ${t.name}, a verified SunRed outcall massage practitioner serving ${t.area} and central Bangkok. Thai, aromatherapy & signature therapies delivered to your hotel or residence — discreet, verified, available 24/7. EN/中文/日本語/한국어.`;
+      ? `${bio.bioEn} A verified SunRed outcall massage practitioner delivered to your Bangkok hotel or residence · discreet, 24/7.`
+      : `Book ${t.name}, a verified SunRed outcall massage practitioner serving ${t.area} and central Bangkok. Thai, aromatherapy & signature therapies delivered to your hotel or residence · discreet, verified, available 24/7. EN/中文/日本語/한국어.`;
     const roleLine = bio?.role
       ? `<p>${t.name} is a ${bio.role.toLowerCase()} with SunRed.</p>`
       : "";
@@ -525,9 +525,9 @@ function therapistRoutes() {
     hreflangBase: null, // en-only; no localized cluster
     htmlLang: "en",
     ogLocale: "en_US",
-    title: `${t.name} — Outcall Massage Practitioner in Bangkok | SunRed`,
+    title: `${t.name} · Outcall Massage Practitioner in Bangkok | SunRed`,
     description,
-    ogTitle: `${t.name} — Verified Outcall Massage Practitioner, Bangkok`,
+    ogTitle: `${t.name} · Verified Outcall Massage Practitioner, Bangkok`,
     ogDescription: bio
       ? bio.bioEn
       : `Verified SunRed practitioner serving ${t.area} & central Bangkok. Delivered to your hotel, discreet, 24/7.`,
@@ -539,15 +539,15 @@ function therapistRoutes() {
       ]),
     ],
     noscript: `
-        <h1>${t.name} — Outcall Massage Practitioner in Bangkok</h1>
+        <h1>${t.name} · Outcall Massage Practitioner in Bangkok</h1>
         ${bioBody}
         <p>Sessions are delivered to your hotel, residence or villa across
-          ${t.area} and central Bangkok — discreet arrival, verified identity,
+          ${t.area} and central Bangkok · discreet arrival, verified identity,
           multilingual concierge (English, 中文, 日本語, 한국어), available 24/7.</p>
         <h2>Reserve or ask the concierge</h2>
         <ul>
           <li><a href="${ORIGIN}/services">Browse all services &amp; pricing</a></li>
-          <li><a href="${ORIGIN}/">Home — live availability</a></li>
+          <li><a href="${ORIGIN}/">Home · live availability</a></li>
           <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
           <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
           <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
@@ -576,41 +576,41 @@ function therapistRoutes() {
 // path-based hreflang cluster consistent with the localized /services pages.
 const HOME_COPY = {
   zh: {
-    title: "曼谷上门按摩 24小时 · 送达酒店 — 泰式 / 精油 / 尊享理疗 | SunRed",
-    desc: "SunRed 曼谷高端上门按摩，认证女性技师送达您的酒店、公寓或别墅 — Sukhumvit、Silom、Asok、Thonglor 等核心地段。泰式、芳香精油、尊享男士理疗。实时空闲、全天候24小时、支持微信支付与支付宝。",
-    ogTitle: "SunRed 曼谷 — 24小时上门按摩",
+    title: "曼谷上门按摩 24小时 · 送达酒店 · 泰式 / 精油 / 尊享理疗 | SunRed",
+    desc: "SunRed 曼谷高端上门按摩，认证女性技师送达您的酒店、公寓或别墅 · Sukhumvit、Silom、Asok、Thonglor 等核心地段。泰式、芳香精油、尊享男士理疗。实时空闲、全天候24小时、支持微信支付与支付宝。",
+    ogTitle: "SunRed 曼谷 · 24小时上门按摩",
     ogDesc:
       "认证技师送达您的曼谷酒店、公寓或别墅。泰式·精油·尊享理疗。实时空闲、全天候24小时。",
-    h1: "曼谷上门按摩 — 送达您的酒店、公寓或别墅",
+    h1: "曼谷上门按摩 · 送达您的酒店、公寓或别墅",
     crumb: "首页",
   },
   "zh-TW": {
-    title: "曼谷到府按摩 24小時 · 送達飯店 — 泰式 / 精油 / 尊榮理療 | SunRed",
-    desc: "SunRed 曼谷高端到府按摩，認證女性技師送達您的飯店、公寓或別墅 — Sukhumvit、Silom、Asok、Thonglor 等核心地段。泰式、芳香精油、尊榮男士理療。即時空閒、全天候24小時、支援現金、PromptPay、微信支付與支付寶。",
-    ogTitle: "SunRed 曼谷 — 24小時到府按摩",
+    title: "曼谷到府按摩 24小時 · 送達飯店 · 泰式 / 精油 / 尊榮理療 | SunRed",
+    desc: "SunRed 曼谷高端到府按摩，認證女性技師送達您的飯店、公寓或別墅 · Sukhumvit、Silom、Asok、Thonglor 等核心地段。泰式、芳香精油、尊榮男士理療。即時空閒、全天候24小時、支援現金、PromptPay、微信支付與支付寶。",
+    ogTitle: "SunRed 曼谷 · 24小時到府按摩",
     ogDesc:
       "認證技師送達您的曼谷飯店、公寓或別墅。泰式·精油·尊榮理療。即時空閒、全天候24小時。",
-    h1: "曼谷到府按摩 — 送達您的飯店、公寓或別墅",
+    h1: "曼谷到府按摩 · 送達您的飯店、公寓或別墅",
     crumb: "首頁",
   },
   ja: {
     title:
-      "バンコク出張マッサージ 24時間 · ホテルへお届け — タイ古式 / アロマ / メンズ | SunRed",
+      "バンコク出張マッサージ 24時間 · ホテルへお届け · タイ古式 / アロマ / メンズ | SunRed",
     desc: "SunRed バンコクの高級出張マッサージ。認定女性セラピストがホテル・ご滞在先へ訪問（Sukhumvit、Silom、Asok、Thonglor など）。タイ古式・アロマ・メンズシグネチャー。リアルタイム予約、24時間対応。",
-    ogTitle: "SunRed バンコク — 24時間出張マッサージ",
+    ogTitle: "SunRed バンコク · 24時間出張マッサージ",
     ogDesc:
       "認定セラピストがバンコクのホテルへ出張。タイ古式・アロマ・メンズ。リアルタイム予約、24時間対応。",
-    h1: "バンコク出張マッサージ — ホテル・ご滞在先へお届け",
+    h1: "バンコク出張マッサージ · ホテル・ご滞在先へお届け",
     crumb: "ホーム",
   },
   ko: {
     title:
-      "방콕 출장 마사지 24시간 · 호텔로 방문 — 타이 / 아로마 / 시그니처 | SunRed",
+      "방콕 출장 마사지 24시간 · 호텔로 방문 · 타이 / 아로마 / 시그니처 | SunRed",
     desc: "SunRed 방콕 프리미엄 출장 마사지. 인증 여성 테라피스트가 호텔·레지던스로 방문 (Sukhumvit, Silom, Asok, Thonglor 등). 타이·아로마·젠틀맨 시그니처. 실시간 예약, 24시간 운영.",
-    ogTitle: "SunRed 방콕 — 24시간 출장 마사지",
+    ogTitle: "SunRed 방콕 · 24시간 출장 마사지",
     ogDesc:
       "인증 테라피스트가 방콕 호텔·레지던스로 방문. 타이·아로마·시그니처. 실시간 예약, 24시간.",
-    h1: "방콕 출장 마사지 — 호텔·레지던스로 방문",
+    h1: "방콕 출장 마사지 · 호텔·레지던스로 방문",
     crumb: "홈",
   },
 };
@@ -683,7 +683,7 @@ const DISTRICTS = [
       name: "Sukhumvit",
       nearby: "Asok, Phrom Phong, Thonglor and Ekkamai",
       intro:
-        "Premium outcall massage delivered to your Sukhumvit hotel, residence or villa — including the BTS belt from Nana, Asok and Phrom Phong through Thonglor and Ekkamai.",
+        "Premium outcall massage delivered to your Sukhumvit hotel, residence or villa · including the BTS belt from Nana, Asok and Phrom Phong through Thonglor and Ekkamai.",
       extra:
         "Verified Thai practitioners typically arrive within 30–45 minutes anywhere along the Sukhumvit corridor; the closest practitioner is selected automatically based on your hotel.",
     },
@@ -691,7 +691,7 @@ const DISTRICTS = [
       name: "素坤逸",
       nearby: "阿索克、彭蓬、通罗、伊卡迈",
       intro:
-        "高端上门按摩送达您在素坤逸的酒店、公寓或别墅——覆盖 BTS 沿线的 Nana、阿索克、彭蓬、通罗、伊卡迈整条走廊。",
+        "高端上门按摩送达您在素坤逸的酒店、公寓或别墅 · 覆盖 BTS 沿线的 Nana、阿索克、彭蓬、通罗、伊卡迈整条走廊。",
       extra:
         "认证泰国女性技师通常在 30–45 分钟内抵达素坤逸任何位置，系统会自动为您匹配距离最近的技师。",
     },
@@ -699,7 +699,7 @@ const DISTRICTS = [
       name: "蘇坤蔚",
       nearby: "阿索克、彭蓬、通羅、伊卡邁",
       intro:
-        "高端到府按摩送達您在蘇坤蔚的飯店、公寓或別墅——涵蓋 BTS 沿線的 Nana、阿索克、彭蓬、通羅、伊卡邁整條走廊。",
+        "高端到府按摩送達您在蘇坤蔚的飯店、公寓或別墅 · 涵蓋 BTS 沿線的 Nana、阿索克、彭蓬、通羅、伊卡邁整條走廊。",
       extra:
         "認證泰國女性技師通常在 30–45 分鐘內抵達蘇坤蔚任何位置，系統會自動為您配對距離最近的技師。",
     },
@@ -715,7 +715,7 @@ const DISTRICTS = [
       name: "수쿰빗",
       nearby: "아속, 프롬퐁, 통러, 에까마이",
       intro:
-        "수쿰빗 호텔·레지던스·빌라로 프리미엄 출장 마사지를 제공합니다 — BTS 라인의 나나, 아속, 프롬퐁, 통러, 에까마이 전 구간 커버.",
+        "수쿰빗 호텔·레지던스·빌라로 프리미엄 출장 마사지를 제공합니다 · BTS 라인의 나나, 아속, 프롬퐁, 통러, 에까마이 전 구간 커버.",
       extra:
         "인증된 태국 여성 테라피스트가 수쿰빗 어디든 보통 30~45분 내 도착합니다. 가까운 테라피스트가 자동 배정됩니다.",
     },
@@ -726,7 +726,7 @@ const DISTRICTS = [
       name: "Silom",
       nearby: "Sathorn, Sala Daeng, Surasak and Chong Nonsi",
       intro:
-        "Premium outcall massage delivered to your Silom or Sathorn hotel — including the MRT/BTS interchange at Sala Daeng, Surasak and the riverside Chong Nonsi corridor.",
+        "Premium outcall massage delivered to your Silom or Sathorn hotel · including the MRT/BTS interchange at Sala Daeng, Surasak and the riverside Chong Nonsi corridor.",
       extra:
         "Verified Thai practitioners typically arrive within 30–45 minutes anywhere in the Silom–Sathorn CBD; payment by cash, PromptPay, WeChat Pay or AliPay.",
     },
@@ -734,17 +734,17 @@ const DISTRICTS = [
       name: "是隆",
       nearby: "沙吞、莎拉当、苏拉萨、崇农席",
       intro:
-        "高端上门按摩送达您在是隆或沙吞的酒店——覆盖 MRT/BTS 莎拉当交汇点、苏拉萨与沿河崇农席整条 CBD 走廊。",
+        "高端上门按摩送达您在是隆或沙吞的酒店 · 覆盖 MRT/BTS 莎拉当交汇点、苏拉萨与沿河崇农席整条 CBD 走廊。",
       extra:
-        "认证泰国女性技师通常在 30–45 分钟内抵达是隆—沙吞 CBD 任何位置，支持现金、PromptPay、微信支付与支付宝。",
+        "认证泰国女性技师通常在 30–45 分钟内抵达是隆 · 沙吞 CBD 任何位置，支持现金、PromptPay、微信支付与支付宝。",
     },
     "zh-TW": {
       name: "是隆",
       nearby: "沙吞、莎拉當、蘇拉薩、崇農席",
       intro:
-        "高端到府按摩送達您在是隆或沙吞的飯店——涵蓋 MRT/BTS 莎拉當轉乘站、蘇拉薩與沿河崇農席整條 CBD 走廊。",
+        "高端到府按摩送達您在是隆或沙吞的飯店 · 涵蓋 MRT/BTS 莎拉當轉乘站、蘇拉薩與沿河崇農席整條 CBD 走廊。",
       extra:
-        "認證泰國女性技師通常在 30–45 分鐘內抵達是隆—沙吞 CBD 任何位置，支援現金、PromptPay、微信支付與支付寶。",
+        "認證泰國女性技師通常在 30–45 分鐘內抵達是隆 · 沙吞 CBD 任何位置，支援現金、PromptPay、微信支付與支付寶。",
     },
     ja: {
       name: "シーロム",
@@ -758,7 +758,7 @@ const DISTRICTS = [
       name: "실롬",
       nearby: "사톤, 살라댕, 수라삭, 총논시",
       intro:
-        "실롬 또는 사톤의 호텔로 프리미엄 출장 마사지를 제공합니다 — MRT/BTS 살라댕 환승역, 수라삭, 강변의 총논시까지 CBD 전체 커버.",
+        "실롬 또는 사톤의 호텔로 프리미엄 출장 마사지를 제공합니다 · MRT/BTS 살라댕 환승역, 수라삭, 강변의 총논시까지 CBD 전체 커버.",
       extra:
         "인증 태국 여성 테라피스트가 실롬-사톤 CBD 어디든 보통 30~45분 내 도착. 현금, PromptPay, WeChat Pay, AliPay 결제 지원.",
     },
@@ -769,7 +769,7 @@ const DISTRICTS = [
       name: "Asok",
       nearby: "Nana, Phrom Phong, Sukhumvit and Ratchada",
       intro:
-        "Premium outcall massage delivered to your Asok hotel or residence — the BTS/MRT interchange and the surrounding Sukhumvit blocks from Nana through Phrom Phong.",
+        "Premium outcall massage delivered to your Asok hotel or residence · the BTS/MRT interchange and the surrounding Sukhumvit blocks from Nana through Phrom Phong.",
       extra:
         "Verified Thai practitioners typically arrive within 20–40 minutes anywhere around Asok; multilingual concierge available 24/7.",
     },
@@ -777,7 +777,7 @@ const DISTRICTS = [
       name: "阿索克",
       nearby: "Nana、彭蓬、素坤逸、拉差达",
       intro:
-        "高端上门按摩送达您在阿索克的酒店或公寓——BTS/MRT 交汇点及周边素坤逸区，从 Nana 至彭蓬。",
+        "高端上门按摩送达您在阿索克的酒店或公寓 · BTS/MRT 交汇点及周边素坤逸区，从 Nana 至彭蓬。",
       extra:
         "认证泰国女性技师通常在 20–40 分钟内抵达阿索克周边，全天候 24 小时多语言客服。",
     },
@@ -785,7 +785,7 @@ const DISTRICTS = [
       name: "阿索克",
       nearby: "Nana、彭蓬、蘇坤蔚、拉差達",
       intro:
-        "高端到府按摩送達您在阿索克的飯店或公寓——BTS/MRT 交會點及周邊蘇坤蔚區，從 Nana 至彭蓬。",
+        "高端到府按摩送達您在阿索克的飯店或公寓 · BTS/MRT 交會點及周邊蘇坤蔚區，從 Nana 至彭蓬。",
       extra:
         "認證泰國女性技師通常在 20–40 分鐘內抵達阿索克周邊，全天候 24 小時多語言客服。",
     },
@@ -801,7 +801,7 @@ const DISTRICTS = [
       name: "아속",
       nearby: "나나, 프롬퐁, 수쿰빗, 라차다",
       intro:
-        "아속의 호텔이나 레지던스로 프리미엄 출장 마사지를 제공합니다 — BTS/MRT 환승역 및 주변 수쿰빗(나나~프롬퐁) 커버.",
+        "아속의 호텔이나 레지던스로 프리미엄 출장 마사지를 제공합니다 · BTS/MRT 환승역 및 주변 수쿰빗(나나~프롬퐁) 커버.",
       extra:
         "인증 태국 여성 테라피스트가 아속 인근에 보통 20~40분 내 도착. 다국어 컨시어지 24시간.",
     },
@@ -812,7 +812,7 @@ const DISTRICTS = [
       name: "Thonglor",
       nearby: "Ekkamai, Phrom Phong, Sukhumvit and Phra Khanong",
       intro:
-        "Premium outcall massage delivered to your Thonglor hotel, residence or condominium — including Soi 38 dining row, Ekkamai and the upper Sukhumvit corridor.",
+        "Premium outcall massage delivered to your Thonglor hotel, residence or condominium · including Soi 38 dining row, Ekkamai and the upper Sukhumvit corridor.",
       extra:
         "Verified Thai practitioners typically arrive within 25–45 minutes anywhere in Thonglor and Ekkamai; payment in cash on arrival or by transfer.",
     },
@@ -820,7 +820,7 @@ const DISTRICTS = [
       name: "通罗",
       nearby: "伊卡迈、彭蓬、素坤逸、帕卡农",
       intro:
-        "高端上门按摩送达您在通罗的酒店、公寓或 condo——包括 Soi 38 餐饮街、伊卡迈与素坤逸上段走廊。",
+        "高端上门按摩送达您在通罗的酒店、公寓或 condo · 包括 Soi 38 餐饮街、伊卡迈与素坤逸上段走廊。",
       extra:
         "认证泰国女性技师通常在 25–45 分钟内抵达通罗与伊卡迈，支持到付现金或转账。",
     },
@@ -828,7 +828,7 @@ const DISTRICTS = [
       name: "通羅",
       nearby: "伊卡邁、彭蓬、蘇坤蔚、帕卡農",
       intro:
-        "高端到府按摩送達您在通羅的飯店、公寓或社區大樓——包括 Soi 38 餐飲街、伊卡邁與蘇坤蔚上段走廊。",
+        "高端到府按摩送達您在通羅的飯店、公寓或社區大樓 · 包括 Soi 38 餐飲街、伊卡邁與蘇坤蔚上段走廊。",
       extra:
         "認證泰國女性技師通常在 25–45 分鐘內抵達通羅與伊卡邁，支援到付現金或轉帳。",
     },
@@ -844,7 +844,7 @@ const DISTRICTS = [
       name: "통러",
       nearby: "에까마이, 프롬퐁, 수쿰빗, 프라카농",
       intro:
-        "통러의 호텔·레지던스·콘도미니엄으로 프리미엄 출장 마사지를 제공합니다 — Soi 38 다이닝 거리, 에까마이, 어퍼 수쿰빗 커버.",
+        "통러의 호텔·레지던스·콘도미니엄으로 프리미엄 출장 마사지를 제공합니다 · Soi 38 다이닝 거리, 에까마이, 어퍼 수쿰빗 커버.",
       extra:
         "인증 태국 여성 테라피스트가 통러·에까마이 어디든 보통 25~45분 내 도착. 현금 또는 송금 결제.",
     },
@@ -856,7 +856,7 @@ const DISTRICTS = [
       nearby:
         "Sukhumvit, Silom, Asok, Thonglor, Sathorn, Phrom Phong, Ekkamai and Ratchada",
       intro:
-        "Premium outcall massage delivered anywhere in central Bangkok — the practitioner closest to your hotel is selected automatically. Live availability is shown on the homepage in real time so you can see who's free now.",
+        "Premium outcall massage delivered anywhere in central Bangkok · the practitioner closest to your hotel is selected automatically. Live availability is shown on the homepage in real time so you can see who's free now.",
       extra:
         "Verified Thai practitioners typically arrive within 30–60 minutes in central Bangkok. Multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
     },
@@ -864,7 +864,7 @@ const DISTRICTS = [
       name: "曼谷（离您最近）",
       nearby: "素坤逸、是隆、阿索克、通罗、沙吞、彭蓬、伊卡迈、拉差达",
       intro:
-        "高端上门按摩送达曼谷市中心任何位置——系统自动为您匹配距离最近的技师。首页实时显示当下可订状态。",
+        "高端上门按摩送达曼谷市中心任何位置 · 系统自动为您匹配距离最近的技师。首页实时显示当下可订状态。",
       extra:
         "认证泰国女性技师通常在 30–60 分钟内抵达曼谷市中心。多语言客服（English / 中文 / 日本語 / 한국어），全天候 24 小时。",
     },
@@ -872,7 +872,7 @@ const DISTRICTS = [
       name: "曼谷（離您最近）",
       nearby: "蘇坤蔚、是隆、阿索克、通羅、沙吞、彭蓬、伊卡邁、拉差達",
       intro:
-        "高端到府按摩送達曼谷市中心任何位置——系統自動為您配對距離最近的技師。首頁即時顯示當下可訂狀態。",
+        "高端到府按摩送達曼谷市中心任何位置 · 系統自動為您配對距離最近的技師。首頁即時顯示當下可訂狀態。",
       extra:
         "認證泰國女性技師通常在 30–60 分鐘內抵達曼谷市中心。多語言客服（English / 中文 / 日本語 / 한국어），全天候 24 小時。",
     },
@@ -889,7 +889,7 @@ const DISTRICTS = [
       name: "방콕(가까운 위치)",
       nearby: "수쿰빗, 실롬, 아속, 통러, 사톤, 프롬퐁, 에까마이, 라차다",
       intro:
-        "방콕 시내 어디든 프리미엄 출장 마사지를 제공합니다 — 호텔에서 가장 가까운 테라피스트가 자동 배정됩니다. 홈페이지에서 실시간 예약 가능 상태를 확인할 수 있습니다.",
+        "방콕 시내 어디든 프리미엄 출장 마사지를 제공합니다 · 호텔에서 가장 가까운 테라피스트가 자동 배정됩니다. 홈페이지에서 실시간 예약 가능 상태를 확인할 수 있습니다.",
       extra:
         "인증 태국 여성 테라피스트가 방콕 시내 어디든 보통 30~60분 내 도착. 다국어 컨시어지 (English / 中文 / 日本語 / 한국어), 24시간 운영.",
     },
@@ -899,16 +899,16 @@ const DISTRICTS = [
 // Per-locale wrappers for the district shell (title, h2, links).
 const DISTRICT_COPY = {
   en: {
-    title: (name) => `Outcall Massage ${name} — Delivered to Your Hotel 24/7 | SunRed`,
-    ogTitle: (name) => `Outcall Massage ${name} — Delivered to Your Hotel | SunRed`,
+    title: (name) => `Outcall Massage ${name} · Delivered to Your Hotel 24/7 | SunRed`,
+    ogTitle: (name) => `Outcall Massage ${name} · Delivered to Your Hotel | SunRed`,
     description: (name, nearby) =>
-      `Premium outcall massage in ${name}, Bangkok, delivered to your hotel — verified Thai practitioners, live 24/7 availability, multilingual concierge. Covering ${nearby}.`,
+      `Premium outcall massage in ${name}, Bangkok, delivered to your hotel · verified Thai practitioners, live 24/7 availability, multilingual concierge. Covering ${nearby}.`,
     ogDescription: (name) =>
-      `Premium outcall massage delivered to your hotel in ${name} — verified practitioners, live 24/7 availability. SunRed.`,
-    h1: (name) => `Outcall Massage in ${name} — Delivered to Your Hotel`,
+      `Premium outcall massage delivered to your hotel in ${name} · verified practitioners, live 24/7 availability. SunRed.`,
+    h1: (name) => `Outcall Massage in ${name} · Delivered to Your Hotel`,
     menuHeading: "Service menu &amp; pricing",
     reserveHeading: "Reserve or ask the concierge",
-    homeLink: "Home — live practitioner availability",
+    homeLink: "Home · live practitioner availability",
     allServices: "Browse all services",
     minutesLabel: "min",
     fromLabel: (p) => `from ฿${fmt(p)}`,
@@ -917,13 +917,13 @@ const DISTRICT_COPY = {
     title: (name) => `${name}上门按摩 24小时 · 送达酒店 | SunRed`,
     ogTitle: (name) => `${name}上门按摩 · 送达酒店 | SunRed`,
     description: (name, nearby) =>
-      `${name}（曼谷）高端上门按摩送达您的酒店——认证泰国女性技师、全天候 24 小时实时空闲、多语言客服。覆盖 ${nearby}。`,
+      `${name}（曼谷）高端上门按摩送达您的酒店 · 认证泰国女性技师、全天候 24 小时实时空闲、多语言客服。覆盖 ${nearby}。`,
     ogDescription: (name) =>
-      `${name}高端上门按摩，送达您的酒店——认证技师，24小时实时可订。SunRed。`,
-    h1: (name) => `${name}上门按摩 — 送达您的酒店`,
+      `${name}高端上门按摩，送达您的酒店 · 认证技师，24小时实时可订。SunRed。`,
+    h1: (name) => `${name}上门按摩 · 送达您的酒店`,
     menuHeading: "服务菜单与价格",
     reserveHeading: "预订或咨询礼宾",
-    homeLink: "首页 — 实时空闲",
+    homeLink: "首页 · 实时空闲",
     allServices: "全部服务",
     minutesLabel: "分钟",
     fromLabel: (p) => `฿${fmt(p)} 起`,
@@ -932,13 +932,13 @@ const DISTRICT_COPY = {
     title: (name) => `${name}到府按摩 24小時 · 送達飯店 | SunRed`,
     ogTitle: (name) => `${name}到府按摩 · 送達飯店 | SunRed`,
     description: (name, nearby) =>
-      `${name}（曼谷）高端到府按摩送達您的飯店——認證泰國女性技師、全天候 24 小時即時空閒、多語言客服。涵蓋 ${nearby}。`,
+      `${name}（曼谷）高端到府按摩送達您的飯店 · 認證泰國女性技師、全天候 24 小時即時空閒、多語言客服。涵蓋 ${nearby}。`,
     ogDescription: (name) =>
-      `${name}高端到府按摩，送達您的飯店——認證技師，24小時即時可訂。SunRed。`,
-    h1: (name) => `${name}到府按摩 — 送達您的飯店`,
+      `${name}高端到府按摩，送達您的飯店 · 認證技師，24小時即時可訂。SunRed。`,
+    h1: (name) => `${name}到府按摩 · 送達您的飯店`,
     menuHeading: "服務菜單與價格",
     reserveHeading: "預訂或諮詢禮賓",
-    homeLink: "首頁 — 即時空閒",
+    homeLink: "首頁 · 即時空閒",
     allServices: "全部服務",
     minutesLabel: "分鐘",
     fromLabel: (p) => `฿${fmt(p)} 起`,
@@ -948,13 +948,13 @@ const DISTRICT_COPY = {
       `${name}出張マッサージ 24時間 · ホテルへお届け | SunRed`,
     ogTitle: (name) => `${name}出張マッサージ · ホテルへお届け | SunRed`,
     description: (name, nearby) =>
-      `${name}（バンコク）の高級出張マッサージをホテルへお届け——認定タイ人女性セラピスト、24 時間リアルタイム予約、多言語コンシェルジュ。${nearby} に対応。`,
+      `${name}（バンコク）の高級出張マッサージをホテルへお届け · 認定タイ人女性セラピスト、24 時間リアルタイム予約、多言語コンシェルジュ。${nearby} に対応。`,
     ogDescription: (name) =>
-      `${name}の高級出張マッサージをホテルへお届け——認定セラピスト、24 時間予約可。SunRed。`,
-    h1: (name) => `${name}出張マッサージ — ホテルへお届け`,
+      `${name}の高級出張マッサージをホテルへお届け · 認定セラピスト、24 時間予約可。SunRed。`,
+    h1: (name) => `${name}出張マッサージ · ホテルへお届け`,
     menuHeading: "サービスメニューと料金",
     reserveHeading: "予約・コンシェルジュへ相談",
-    homeLink: "ホーム — リアルタイム空き状況",
+    homeLink: "ホーム · リアルタイム空き状況",
     allServices: "すべてのサービス",
     minutesLabel: "分",
     fromLabel: (p) => `฿${fmt(p)}〜`,
@@ -963,13 +963,13 @@ const DISTRICT_COPY = {
     title: (name) => `${name} 출장 마사지 24시간 · 호텔로 방문 | SunRed`,
     ogTitle: (name) => `${name} 출장 마사지 · 호텔로 방문 | SunRed`,
     description: (name, nearby) =>
-      `${name}(방콕) 프리미엄 출장 마사지를 호텔로 — 인증 태국 여성 테라피스트, 24시간 실시간 예약, 다국어 컨시어지. ${nearby} 커버.`,
+      `${name}(방콕) 프리미엄 출장 마사지를 호텔로 · 인증 태국 여성 테라피스트, 24시간 실시간 예약, 다국어 컨시어지. ${nearby} 커버.`,
     ogDescription: (name) =>
-      `${name} 프리미엄 출장 마사지를 호텔로 — 인증 테라피스트, 24시간 예약 가능. SunRed.`,
-    h1: (name) => `${name} 출장 마사지 — 호텔로 방문`,
+      `${name} 프리미엄 출장 마사지를 호텔로 · 인증 테라피스트, 24시간 예약 가능. SunRed.`,
+    h1: (name) => `${name} 출장 마사지 · 호텔로 방문`,
     menuHeading: "서비스 메뉴 & 가격",
     reserveHeading: "예약 또는 컨시어지 문의",
-    homeLink: "홈 — 실시간 예약 가능",
+    homeLink: "홈 · 실시간 예약 가능",
     allServices: "전체 서비스",
     minutesLabel: "분",
     fromLabel: (p) => `฿${fmt(p)}부터`,
@@ -1005,7 +1005,7 @@ function districtRoutes() {
             "@context": "https://schema.org",
             "@type": "Service",
             "@id": `${url}#service`,
-            name: `${c.name} — Outcall Massage`,
+            name: `${c.name} · Outcall Massage`,
             serviceType: "Outcall massage",
             description,
             areaServed: { "@type": "Place", name: c.name },
@@ -1062,33 +1062,33 @@ const PRICING_COPY = {
   en: {
     title: "Core Experiences · Outcall Massage Pricing in Bangkok | SunRed",
     description:
-      "SunRed Core Experiences — full pricing for our Bangkok outcall massage menu (Traditional Thai, Aromatherapy, Gentleman's Signature, Therapeutic). Verified practitioners, delivered to your hotel. 24/7 concierge in EN/中文/日本語/한국어.",
-    ogTitle: "Core Experiences — Outcall Massage Pricing | SunRed",
+      "SunRed Core Experiences · full pricing for our Bangkok outcall massage menu (Traditional Thai, Aromatherapy, Gentleman's Signature, Therapeutic). Verified practitioners, delivered to your hotel. 24/7 concierge in EN/中文/日本語/한국어.",
+    ogTitle: "Core Experiences · Outcall Massage Pricing | SunRed",
     ogDescription:
       "Full service pricing for SunRed's Bangkok outcall massage menu. Delivered to your hotel, verified practitioners, 24/7 concierge.",
     h1: "Core Experiences · Service Pricing",
     intro:
-      "SunRed's Core Experiences menu delivers our full outcall massage catalogue to your Bangkok hotel, residence or villa — verified Thai practitioners, discreet arrival, multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
+      "SunRed's Core Experiences menu delivers our full outcall massage catalogue to your Bangkok hotel, residence or villa · verified Thai practitioners, discreet arrival, multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
     menuHeading: "Service menu & starting prices",
     reserveHeading: "Ask the concierge",
-    homeLink: "Home — live availability",
+    homeLink: "Home · live availability",
     allServices: "All services",
     contactLine:
-      "The full rate card is being finalised as part of the SunRed brand refresh. Our concierge can answer any question about services, session lengths, and rates — usually within a few minutes.",
+      "The full rate card is being finalised as part of the SunRed brand refresh. Our concierge can answer any question about services, session lengths, and rates · usually within a few minutes.",
   },
   zh: {
     title: "尊享体验 · 曼谷上门按摩价格 | SunRed",
     description:
-      "SunRed 尊享体验 — 曼谷上门按摩全套服务与价格（泰式、芳疗、尊享男士理疗、尊享理疗体验）。认证技师、上门送达酒店、全天候24小时多语言客服。",
-    ogTitle: "尊享体验 — 上门按摩价格 | SunRed",
+      "SunRed 尊享体验 · 曼谷上门按摩全套服务与价格（泰式、芳疗、尊享男士理疗、尊享理疗体验）。认证技师、上门送达酒店、全天候24小时多语言客服。",
+    ogTitle: "尊享体验 · 上门按摩价格 | SunRed",
     ogDescription:
       "SunRed 曼谷上门按摩全套服务与价格。认证技师、上门送达、24 小时客服。",
     h1: "尊享体验 · 服务价格",
     intro:
-      "SunRed 尊享体验菜单，将全套上门按摩服务送达您在曼谷的酒店、公寓或别墅——认证泰国女性技师、私密上门、多语言客服（English / 中文 / 日本語 / 한국어），全天候24小时。",
+      "SunRed 尊享体验菜单，将全套上门按摩服务送达您在曼谷的酒店、公寓或别墅 · 认证泰国女性技师、私密上门、多语言客服（English / 中文 / 日本語 / 한국어），全天候24小时。",
     menuHeading: "服务菜单与起始价格",
     reserveHeading: "咨询礼宾",
-    homeLink: "首页 — 实时空闲",
+    homeLink: "首页 · 实时空闲",
     allServices: "全部服务",
     contactLine:
       "完整的价目表将随 SunRed 品牌焕新一并推出。如需咨询服务、时长与价格，我们的礼宾团队通常在几分钟内回复。",
@@ -1096,16 +1096,16 @@ const PRICING_COPY = {
   "zh-TW": {
     title: "尊榮體驗 · 曼谷到府按摩價格 | SunRed",
     description:
-      "SunRed 尊榮體驗 — 曼谷到府按摩全套服務與價格（泰式、芳療、尊榮男士理療、尊榮理療體驗）。認證技師、到府送達飯店、全天候24小時多語言客服。",
-    ogTitle: "尊榮體驗 — 到府按摩價格 | SunRed",
+      "SunRed 尊榮體驗 · 曼谷到府按摩全套服務與價格（泰式、芳療、尊榮男士理療、尊榮理療體驗）。認證技師、到府送達飯店、全天候24小時多語言客服。",
+    ogTitle: "尊榮體驗 · 到府按摩價格 | SunRed",
     ogDescription:
       "SunRed 曼谷到府按摩全套服務與價格。認證技師、到府送達、24 小時客服。",
     h1: "尊榮體驗 · 服務價格",
     intro:
-      "SunRed 尊榮體驗菜單，將全套到府按摩服務送達您在曼谷的飯店、公寓或別墅——認證泰國女性技師、私密到府、多語言客服（English / 中文 / 日本語 / 한국어），全天候24小時。",
+      "SunRed 尊榮體驗菜單，將全套到府按摩服務送達您在曼谷的飯店、公寓或別墅 · 認證泰國女性技師、私密到府、多語言客服（English / 中文 / 日本語 / 한국어），全天候24小時。",
     menuHeading: "服務菜單與起始價格",
     reserveHeading: "諮詢禮賓",
-    homeLink: "首頁 — 即時空閒",
+    homeLink: "首頁 · 即時空閒",
     allServices: "全部服務",
     contactLine:
       "完整的價目表將隨 SunRed 品牌煥新一併推出。如需諮詢服務、時長與價格，我們的禮賓團隊通常在幾分鐘內回覆。",
@@ -1114,8 +1114,8 @@ const PRICING_COPY = {
     title:
       "コア・エクスペリエンス · バンコク出張マッサージ料金 | SunRed",
     description:
-      "SunRed コア・エクスペリエンス — バンコク出張マッサージ全メニューの料金（タイ古式・アロマ・メンズ シグネチャー・セラピー）。認定セラピスト、ホテルへ出張、24 時間多言語コンシェルジュ。",
-    ogTitle: "コア・エクスペリエンス — 出張マッサージ料金 | SunRed",
+      "SunRed コア・エクスペリエンス · バンコク出張マッサージ全メニューの料金（タイ古式・アロマ・メンズ シグネチャー・セラピー）。認定セラピスト、ホテルへ出張、24 時間多言語コンシェルジュ。",
+    ogTitle: "コア・エクスペリエンス · 出張マッサージ料金 | SunRed",
     ogDescription:
       "SunRed バンコク出張マッサージの全メニューと料金。認定セラピスト、ホテルへ出張、24 時間コンシェルジュ。",
     h1: "コア・エクスペリエンス · サービス料金",
@@ -1123,7 +1123,7 @@ const PRICING_COPY = {
       "SunRed コア・エクスペリエンスは、バンコクのホテル・ご滞在先へ全メニューを出張でお届けします。認定タイ人女性セラピスト、プライベートな訪問、多言語コンシェルジュ（English / 中文 / 日本語 / 한국어）、24 時間対応。",
     menuHeading: "サービスメニューと料金（〜から）",
     reserveHeading: "コンシェルジュへ相談",
-    homeLink: "ホーム — リアルタイム空き状況",
+    homeLink: "ホーム · リアルタイム空き状況",
     allServices: "すべてのサービス",
     contactLine:
       "完全な料金表は SunRed のブランドリニューアルに合わせて公開予定です。サービス内容・時間・料金についてのご質問は、コンシェルジュへお気軽にどうぞ（通常数分でご返信）。",
@@ -1131,16 +1131,16 @@ const PRICING_COPY = {
   ko: {
     title: "코어 익스피리언스 · 방콕 출장 마사지 가격 | SunRed",
     description:
-      "SunRed 코어 익스피리언스 — 방콕 출장 마사지 전체 메뉴 가격 (타이, 아로마, 젠틀맨 시그니처, 테라퓨틱). 인증 테라피스트, 호텔로 방문, 24시간 다국어 컨시어지.",
-    ogTitle: "코어 익스피리언스 — 출장 마사지 가격 | SunRed",
+      "SunRed 코어 익스피리언스 · 방콕 출장 마사지 전체 메뉴 가격 (타이, 아로마, 젠틀맨 시그니처, 테라퓨틱). 인증 테라피스트, 호텔로 방문, 24시간 다국어 컨시어지.",
+    ogTitle: "코어 익스피리언스 · 출장 마사지 가격 | SunRed",
     ogDescription:
       "SunRed 방콕 출장 마사지 전체 메뉴와 가격. 인증 테라피스트, 호텔 방문, 24시간 컨시어지.",
     h1: "코어 익스피리언스 · 서비스 가격",
     intro:
-      "SunRed 코어 익스피리언스 메뉴는 방콕 호텔·레지던스·빌라로 전체 출장 마사지 카탈로그를 제공합니다 — 인증 태국 여성 테라피스트, 프라이빗 방문, 다국어 컨시어지 (English / 中文 / 日本語 / 한국어), 24시간 운영.",
+      "SunRed 코어 익스피리언스 메뉴는 방콕 호텔·레지던스·빌라로 전체 출장 마사지 카탈로그를 제공합니다 · 인증 태국 여성 테라피스트, 프라이빗 방문, 다국어 컨시어지 (English / 中文 / 日本語 / 한국어), 24시간 운영.",
     menuHeading: "서비스 메뉴 & 시작 가격",
     reserveHeading: "컨시어지 문의",
-    homeLink: "홈 — 실시간 예약 가능",
+    homeLink: "홈 · 실시간 예약 가능",
     allServices: "전체 서비스",
     contactLine:
       "전체 가격표는 SunRed 브랜드 리뉴얼에 맞춰 공개됩니다. 서비스·시간·요금 문의는 컨시어지에게 부탁드리며, 보통 몇 분 안에 답변드립니다.",
@@ -1244,9 +1244,9 @@ function staticPageRoutes() {
       htmlLang: "en",
       ogLocale: "en_US",
       title:
-        "Our Practitioners — Verified Outcall Massage Therapists in Bangkok | SunRed",
+        "Our Practitioners · Verified Outcall Massage Therapists in Bangkok | SunRed",
       description: `Meet SunRed's verified female outcall massage practitioners in Bangkok — ${THERAPISTS.length} specialised therapists across ${AREAS_EN}. Live availability, discreet arrival to your hotel or residence, 24/7 concierge in EN/中文/日本語/한국어.`,
-      ogTitle: "Our Practitioners — Verified Outcall Massage Therapists, Bangkok",
+      ogTitle: "Our Practitioners · Verified Outcall Massage Therapists, Bangkok",
       ogDescription:
         "Verified SunRed practitioners across central Bangkok. Live availability, discreet arrival to your hotel, 24/7 concierge.",
       jsonLd: [
@@ -1267,10 +1267,10 @@ function staticPageRoutes() {
         },
       ],
       noscript: `
-        <h1>Our Practitioners — Verified Outcall Massage Therapists in Bangkok</h1>
+        <h1>Our Practitioners · Verified Outcall Massage Therapists in Bangkok</h1>
         <p>Every SunRed practitioner is a licensed Thai female therapist, identity-verified
           by our concierge before her first session. Sessions are delivered to your hotel,
-          residence or villa across ${AREAS_EN} — discreet arrival, multilingual concierge
+          residence or villa across ${AREAS_EN} · discreet arrival, multilingual concierge
           (English, 中文, 日本語, 한국어), available 24/7.</p>
         <h2>Practitioners</h2>
         <ul>
@@ -1281,7 +1281,7 @@ ${THERAPISTS.map(
         </ul>
         <h2>Reserve or ask the concierge</h2>
         <ul>
-          <li><a href="${ORIGIN}/">Home — live availability</a></li>
+          <li><a href="${ORIGIN}/">Home · live availability</a></li>
           <li><a href="${ORIGIN}/services">Browse all services &amp; pricing</a></li>
           <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
           <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
@@ -1295,12 +1295,12 @@ ${THERAPISTS.map(
       htmlLang: "en",
       ogLocale: "en_US",
       title:
-        "Payment, Travel Fee & Booking Policy — Outcall Massage Bangkok | SunRed",
+        "Payment, Travel Fee & Booking Policy · Outcall Massage Bangkok | SunRed",
       description:
-        "How to pay SunRed: cash (THB), PromptPay QR, WeChat Pay and Alipay — settled with your practitioner on arrival, never in advance. Travel fee, arrival window, cancellation and privacy policy for outcall massage in Bangkok.",
+        "How to pay SunRed: cash (THB), PromptPay QR, WeChat Pay and Alipay · settled with your practitioner on arrival, never in advance. Travel fee, arrival window, cancellation and privacy policy for outcall massage in Bangkok.",
       ogTitle: "Payment & Booking Policy | SunRed Bangkok",
       ogDescription:
-        "Cash, PromptPay, WeChat Pay or Alipay — paid on arrival, never upfront. Travel fee, arrival window and cancellation policy.",
+        "Cash, PromptPay, WeChat Pay or Alipay · paid on arrival, never upfront. Travel fee, arrival window and cancellation policy.",
       jsonLd: [
         breadcrumbJsonLd([
           { name: "SunRed", url: `${ORIGIN}/` },
@@ -1310,13 +1310,13 @@ ${THERAPISTS.map(
       noscript: `
         <h1>Payment, Travel Fee &amp; Booking Policy</h1>
         <p>SunRed is an outcall service: your practitioner travels to your hotel, residence
-          or villa in Bangkok, and payment is settled with her on arrival — never in advance,
+          or villa in Bangkok, and payment is settled with her on arrival · never in advance,
           never by bank transfer to a stranger.</p>
         <h2>Accepted payment methods</h2>
         <ul>
-          <li>Cash — Thai Baht only</li>
-          <li>PromptPay QR — no additional fee</li>
-          <li>WeChat Pay / Alipay — carries a transfer fee (5% + &#3647;200 handling)</li>
+          <li>Cash · Thai Baht only</li>
+          <li>PromptPay QR · no additional fee</li>
+          <li>WeChat Pay / Alipay · carries a transfer fee (5% + &#3647;200 handling)</li>
         </ul>
         <h2>Before you reserve</h2>
         <ul>
@@ -1326,7 +1326,7 @@ ${THERAPISTS.map(
         </ul>
         <h2>Reserve or ask the concierge</h2>
         <ul>
-          <li><a href="${ORIGIN}/">Home — live availability</a></li>
+          <li><a href="${ORIGIN}/">Home · live availability</a></li>
           <li><a href="${ORIGIN}/services">Services &amp; pricing</a></li>
           <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
           <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
@@ -1353,12 +1353,12 @@ function blogRoutes() {
     htmlLang: "en",
     ogLocale: "en_US",
     title:
-      "The SunRed Journal — Outcall Massage Guides for Bangkok Travellers | SunRed",
+      "The SunRed Journal · Outcall Massage Guides for Bangkok Travellers | SunRed",
     description:
-      "Practical, no-nonsense guides to outcall massage in Bangkok — how to choose a service, late-night options, after-flight recovery, and travel-specific advice for international visitors.",
-    ogTitle: "The SunRed Journal — Outcall Massage Guides, Bangkok",
+      "Practical, no-nonsense guides to outcall massage in Bangkok · how to choose a service, late-night options, after-flight recovery, and travel-specific advice for international visitors.",
+    ogTitle: "The SunRed Journal · Outcall Massage Guides, Bangkok",
     ogDescription:
-      "Guides to outcall massage in Bangkok for international travellers — choosing a service, late-night options, and recovery.",
+      "Guides to outcall massage in Bangkok for international travellers · choosing a service, late-night options, and recovery.",
     jsonLd: [
       breadcrumbJsonLd([
         { name: "SunRed", url: `${ORIGIN}/` },
@@ -1389,7 +1389,7 @@ ${BLOG_POSTS.map(
     `          <li><a href="${p.url}">${p.title}</a> — ${p.readingMinutes} min read. ${p.metaDescription}</li>`
 ).join("\n")}
         </ul>
-        <p><a href="${ORIGIN}/">Home — live availability</a></p>`,
+        <p><a href="${ORIGIN}/">Home · live availability</a></p>`,
   });
 
   // One route per article — the full HTML body is the crawlable payload.
@@ -1615,7 +1615,7 @@ async function main() {
   const templatePath = join(DIST, "index.html");
   if (!existsSync(templatePath)) {
     throw new Error(
-      `[prerender] ${templatePath} not found — run "vite build" first`
+      `[prerender] ${templatePath} not found · run "vite build" first`
     );
   }
   const template = await readFile(templatePath, "utf8");

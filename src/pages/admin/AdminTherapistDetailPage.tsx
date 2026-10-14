@@ -896,7 +896,7 @@ const AdminTherapistDetailPage: React.FC = () => {
             })()}
 
             {/* 🆕 Round 28x.138 (founder: "โบนัสรายคน ต้องบาลานซ์กับหน้า rebook
-                rate ด้วย เดี๋ยวไม่เนียน") — a boosted session count next to a
+                rate ด้วย เดี๋ยวไม่เนียน") · a boosted session count next to a
                 0%/blank rebook reads as fake. This sets the rebook % customers
                 see, so the pair looks consistent. Leave BLANK to show the real
                 rate. Staff keep seeing their real rebook. */}
@@ -1269,7 +1269,7 @@ const AdminTherapistDetailPage: React.FC = () => {
             </SectionCard>
 
             {/* 🆕 28x.81 (founder: "บัญชียังไม่เปิดใช้งาน ... ให้ติดต่อมาขอให้
-                แอดมินซิงก์งาน กับตั้งค่าช่องงาน") — a deliberate activation step,
+                แอดมินซิงก์งาน กับตั้งค่าช่องงาน") · a deliberate activation step,
                 separate from linking. Linking (above) proves who she is;
                 activation is admin confirming the job sync + channel setup are
                 done before she can operate the staff app at all. Saved with

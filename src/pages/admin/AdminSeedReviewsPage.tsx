@@ -520,7 +520,7 @@ const AdminSeedReviewsPage: React.FC = () => {
           <ToggleButton value="all">All</ToggleButton>
         </ToggleButtonGroup>
         {/* 🆕 Round 28s265 (audit: dropdowns app-wide inheriting the global
-            theme's translucent Paper background) — MenuProps forces an
+            theme's translucent Paper background) · MenuProps forces an
             opaque menu. */}
         <Select
           value={therapistFilter}

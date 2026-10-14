@@ -79,7 +79,7 @@ const AddTherapistPage: React.FC = () => {
     try {
       const ref = doc(db, "therapists", id);
       if ((await getDoc(ref)).exists()) {
-        setSnackbar({ msg: `ID "${id}" มีอยู่แล้ว — ใช้ ID อื่น`, sev: "error" });
+        setSnackbar({ msg: `ID "${id}" มีอยู่แล้ว · ใช้ ID อื่น`, sev: "error" });
         setSaving(false);
         return;
       }

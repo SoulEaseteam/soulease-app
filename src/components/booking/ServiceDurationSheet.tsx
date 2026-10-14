@@ -371,7 +371,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     {tagText}
                   </Typography>
                 </Box>
-                {/* 🆕 28w.63 (founder "ใส่ราคา + ป้ายวิบวับ") — price is back:
+                {/* 🆕 28w.63 (founder "ใส่ราคา + ป้ายวิบวับ") · price is back:
                     struck-through was-price + current price; the popular tier
                     gets the shimmering Best Seller / Best Value badge. */}
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: "4px" }}>

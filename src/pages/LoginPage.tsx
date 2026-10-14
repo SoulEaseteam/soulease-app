@@ -517,7 +517,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
           </Typography>
           )}
 
-          {/* 🆕 28w.77 (founder "ใส่ ลืมรหัสผ่าน? แล้วให้ลิ้งไปที่แอดมิน") — no
+          {/* 🆕 28w.77 (founder "ใส่ ลืมรหัสผ่าน? แล้วให้ลิ้งไปที่แอดมิน") · no
               self-serve reset flow exists, so this hands the guest straight to
               the concierge with a pre-filled request instead of a dead end. */}
           <Typography mt={1} fontSize={14} sx={{ color: "var(--sr-body)" }}>

@@ -678,7 +678,7 @@ const AdminBookingListPage: React.FC = () => {
   //   session total synced from AdminTherapistDetailPage's "Sync Stats".
   const cancelBooking = (id: string) => {
     const reason = window.prompt(
-      "ยกเลิกการจองนี้?\nใส่เหตุผล (เว้นว่างได้) — กด Cancel เพื่อไม่ยกเลิก:",
+      "ยกเลิกการจองนี้?\nใส่เหตุผล (เว้นว่างได้) · กด Cancel เพื่อไม่ยกเลิก:",
       ""
     );
     if (reason === null) return; // operator backed out
@@ -851,7 +851,7 @@ const AdminBookingListPage: React.FC = () => {
 
       {/* 🆕 28s253 — summary strip: what needs the operator's attention first,
           before any card is scanned.
-          🆕 Round 28r44 (founder: "polish to Dashboard visual quality") — the
+          🆕 Round 28r44 (founder: "polish to Dashboard visual quality") · the
           original 3-card left-rail strip elevated to the same icon-circle
           widget vocabulary Dashboard's "Period Summary" row uses (28s241):
           46px icon circle per stat (Warning / Clock / Wallet / Buildings) on
@@ -961,7 +961,7 @@ const AdminBookingListPage: React.FC = () => {
             "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          {/* 🆕 Round 28r44 (founder: "ตรงตัวกรองไม่ต้อง") — filter labels are
+          {/* 🆕 Round 28r44 (founder: "ตรงตัวกรองไม่ต้อง") · filter labels are
               English-only. Thai subtitles retained on the page header + summary
               strip + status badges (row state) + edit-drawer labels + actions
               per r40 bilingual policy; only the FILTER controls (tabs, date
@@ -1089,7 +1089,7 @@ const AdminBookingListPage: React.FC = () => {
           <MenuItem value="unpaid">Unpaid</MenuItem>
         </Select>
 
-        {/* 🆕 28w.56 → 28w.57 (founder "เปลี่ยนเป็น button") — promo filter as a
+        {/* 🆕 28w.56 → 28w.57 (founder "เปลี่ยนเป็น button") · promo filter as a
             pill toggle (matches the status tabs): on = only promo orders. */}
         <motion.button
           type="button"
@@ -1359,7 +1359,7 @@ const BookingCard: React.FC<{
         )}
 
         {/* customer name — 🆕 28x.38 (founder: "ในใบจอง...กดเข้าดูโปรไฟล์หรือ
-            ประวัติการจองหรือ เลขรหัสสมาชิกของลูกค้าได้") — tap the name to open
+            ประวัติการจองหรือ เลขรหัสสมาชิกของลูกค้าได้") · tap the name to open
             the members page filtered to this guest (SRD code · ยอดสะสม · history).
             Booking phone is the key (concierge bookings carry no userId).
             stopPropagation so it doesn't also open the booking drawer. */}
@@ -1545,7 +1545,7 @@ const BookingCard: React.FC<{
               style={{ overflow: "hidden" }}
             >
               <Box sx={{ pt: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
-                {/* 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") — WHO opened this
+                {/* 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") · WHO opened this
                     reservation. Tap-to-call the admin who did: when a therapist is
                     at the door and the price is wrong, the person to reach is
                     whoever booked it, and an email address is useless on a
@@ -1981,7 +1981,7 @@ const DetailPanel: React.FC<{
     //   is displayed, including the therapist's own job list.
     const parsedStart = parseDateTimeBKK(editForm.date, editForm.time);
     if (!parsedStart) {
-      window.alert("Invalid date/time — save cancelled. · วันที่/เวลาไม่ถูกต้อง");
+      window.alert("Invalid date/time · save cancelled. · วันที่/เวลาไม่ถูกต้อง");
       return;
     }
     const startAt = Timestamp.fromDate(parsedStart.toDate());
@@ -2182,7 +2182,7 @@ const DetailPanel: React.FC<{
       {/* scrollable body */}
       <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2 }}>
 
-        {/* 🆕 28w.58 (founder "ดูตรงไหนว่าโปรอะไร") — promo used on this order:
+        {/* 🆕 28w.58 (founder "ดูตรงไหนว่าโปรอะไร") · promo used on this order:
             label + code + amount, from the booking's discountCode/Label. */}
         {(b.discountCode || (b.discountAmount ?? 0) > 0) && (
           <Box
@@ -2286,7 +2286,7 @@ const DetailPanel: React.FC<{
           </Select>
         </Box>
 
-        {/* 🆕 Round 28x.134 (founder chose "รวมเหลืออันเดียว") — the per-booking
+        {/* 🆕 Round 28x.134 (founder chose "รวมเหลืออันเดียว") · the per-booking
             "ยังนับเป็นยอดจองให้พนักงาน" (countsAsSession) switch is REMOVED. It
             padded the customer-facing session count, which is now the single
             job of displaySessionBonus on the therapist page — one boost tool,
@@ -2379,7 +2379,7 @@ const DetailPanel: React.FC<{
                     <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
                   ))}
                 </TextField>
-                {/* 🆕 28s264 (founder: "Duration ทำเป็น ดรอปดาว") — was a pill
+                {/* 🆕 28s264 (founder: "Duration ทำเป็น ดรอปดาว") · was a pill
                     row in 28s263; founder asked for a dropdown instead. */}
                 <TextField
                   select label="Duration · ระยะเวลา" size="small" fullWidth value={editForm.duration}

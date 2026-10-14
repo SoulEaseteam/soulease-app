@@ -252,7 +252,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
 
         {/* 📍 Travel fee — 🆕 28x.6 (founder: "เทคซี่ละ") introduced this
              editable table. 🆕 28x.99u (audit "Audit หน้าเว็บ แอดมินปัจจุบัน
-             แบบเจาะลึก") — that table went silently dead when 28x.99n
+             แบบเจาะลึก") · that table went silently dead when 28x.99n
              rewrote the fare model to interpolate between real spot-checked
              GrabBike checkpoints instead of flat bands: it kept saving to
              Firestore and this card kept showing "Live", but nothing in the

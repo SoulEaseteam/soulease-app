@@ -197,7 +197,7 @@ const AdminFloatingChat: React.FC = () => {
   const greetingByMode: Record<typeof concierge.mode, { title: string; body: string }> = {
     prime: {
       title: "Concierge live · tonight's roster",
-      body: "Tap to chat — a practitioner is dispatched in under 40 minutes.",
+      body: "Tap to chat · a practitioner is dispatched in under 40 minutes.",
     },
     evening: {
       title: "Slots opening for late-night",
@@ -205,11 +205,11 @@ const AdminFloatingChat: React.FC = () => {
     },
     day: {
       title: "Plan tonight's ritual",
-      body: "Tap to chat — 22:00 onward fills fastest.",
+      body: "Tap to chat · 22:00 onward fills fastest.",
     },
     off: {
       title: "Concierge resumes at 09:00",
-      body: "Leave a message — we'll confirm at sunrise.",
+      body: "Leave a message · we'll confirm at sunrise.",
     },
   };
   const greet = greetingByMode[concierge.mode];
@@ -754,7 +754,7 @@ const AdminFloatingChat: React.FC = () => {
           disable during expanded / reduced-motion. */}
       {!isExpanded && !prefersReducedMotion && concierge.mode !== "off" && (
         <>
-          {/* 🆕 Round 28x.129 (founder: "ปุ่มลอยแอดมิน เพราะกระตุก") — was two
+          {/* 🆕 Round 28x.129 (founder: "ปุ่มลอยแอดมิน เพราะกระตุก") · was two
               framer-motion springs with `repeat: Infinity`. framer drives each
               frame from JS, so these were permanent main-thread rAF loops on
               EVERY page of the app, fighting the staff job list for frame

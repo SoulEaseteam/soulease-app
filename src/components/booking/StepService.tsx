@@ -111,10 +111,10 @@ const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> 
 // Any service not listed falls to the end in its original
 // data-array order, so adding a new SKU never silently disappears.
 const EDITORIAL_ORDER = [
-  "SR-HJ2200", // Gentleman's Signature — ฿2,200 (best seller)
-  "SR-B2B3200", // SunRed Therapeutic — ฿3,200
-  "SR-Aroma", // Aromatherapy — ฿1,600
-  "xSR-Thai", // Thai Massage — ฿1,200
+  "SR-HJ2200", // Gentleman's Signature · ฿2,200 (best seller)
+  "SR-B2B3200", // SunRed Therapeutic · ฿3,200
+  "SR-Aroma", // Aromatherapy · ฿1,600
+  "xSR-Thai", // Thai Massage · ฿1,200
 ] as const;
 
 // 🆕 28t.16 — single source of truth for the pinned best-seller (matches
@@ -288,7 +288,7 @@ const StepService: React.FC<Props> = ({
             }}
           >
             {/* Small image on the LEFT — uniform frame · face-priority
-                🆕 28r125 (founder "ทำขอบให้มันสมส่วนกัน") — r124's
+                🆕 28r125 (founder "ทำขอบให้มันสมส่วนกัน") · r124's
                 object-fit: contain left inconsistent rose-blush
                 letterboxes across portrait vs landscape images.  Back
                 to object-fit: cover with center-top anchoring so every
@@ -362,7 +362,7 @@ const StepService: React.FC<Props> = ({
                 minWidth: 0,
               }}
             >
-              {/* 🆕 28w.71 (founder "BEST SELLER ให้อยู่เหนือ") — the badge was
+              {/* 🆕 28w.71 (founder "BEST SELLER ให้อยู่เหนือ") · the badge was
                   absolutely pinned to the card corner and the service name ran
                   underneath it. It now sits ABOVE the name on its own line,
                   right-aligned, so nothing overlaps. */}
@@ -394,21 +394,21 @@ const StepService: React.FC<Props> = ({
                   letterSpacing: "0.01em",
                 }}
               >
-                {/* 🆕 28x.104 (founder "เมนู gentleman ใส่นาทีผิด") — was a
+                {/* 🆕 28x.104 (founder "เมนู gentleman ใส่นาทีผิด") · was a
                     hardcoded "60 min" on every card; Gentleman's/Therapeutic
                     have no 60-min tier (70/120 only). Show the service's
                     REAL minimum tier. */}
                 {durationsFor(s)[0] ?? 60} min
               </Typography>
-              {/* 🆕 28w.63 (founder "ใส่ราคาเริ่มต้น + ป้ายวิบวับ") — starting
+              {/* 🆕 28w.63 (founder "ใส่ราคาเริ่มต้น + ป้ายวิบวับ") · starting
                   price (struck-through was + from-price) + shimmering badge. */}
               {/* 🆕 28x.104 — struck was-price removed (ราคาขีดฆ่า ออกทุกจุด);
                   price SERIF→SANS for readability. */}
               {/* 🆕 28x.175 (founder screenshot, a competitor's per-service
                   "practitioner recommends" pill: "แต่งป้าย บริการให้เป็นแบบนี้
-                  ... ไม่ต้องเอามา เพราะ ของใครของมัน") — she wants the PILL
+                  ... ไม่ต้องเอามา เพราะ ของใครของมัน") · she wants the PILL
                   styling, not the reference's actual text (that pill named
-                  a specific practitioner on someone else's roster — not
+                  a specific practitioner on someone else's roster · not
                   ours to borrow, same call already made for
                   TherapistMinimalCard's specialty row in 28x.119). `typeLabel`
                   was already real, our-own per-service copy sitting as plain

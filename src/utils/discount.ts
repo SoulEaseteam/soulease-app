@@ -489,7 +489,7 @@ export function validateDiscount(
       valid: true,
       code,
       amount,
-      label: ov?.label?.trim() || `VIP — ฿${amount} off premium`,
+      label: ov?.label?.trim() || `VIP · ฿${amount} off premium`,
       type: "fixed",
     };
   }
@@ -516,7 +516,7 @@ export function validateDiscount(
       valid: true,
       code,
       amount: taxi,
-      label: ov?.label?.trim() || `Travel comped — saves ฿${taxi}`,
+      label: ov?.label?.trim() || `Travel comped · saves ฿${taxi}`,
       type: "fixed",
     };
   }
@@ -600,7 +600,7 @@ export function validateDiscount(
       valid: true,
       code,
       amount,
-      label: ov?.label?.trim() || `Sammyboy — ฿${amount} off`,
+      label: ov?.label?.trim() || `Sammyboy · ฿${amount} off`,
       type: "fixed",
     };
   }
@@ -756,10 +756,10 @@ const REJECT_MSG = {
   EMPTY: "empty code",
   DISABLED_BUILTIN: "built-in code is disabled by admin",
   DELETED_BUILTIN: "built-in code is deleted by admin",
-  PREMIUM_BLOCKED: "premium-tier service — only VIP100 / FREETAXI allowed",
+  PREMIUM_BLOCKED: "premium-tier service · only VIP100 / FREETAXI allowed",
   VIP_NOT_PREMIUM: "VIP100 only applies to premium (Gentleman / B2B)",
   FREETAXI_NOT_PREMIUM: "FREETAXI only applies to premium (Gentleman / B2B)",
-  FREETAXI_NO_FARE: "FREETAXI needs a real taxi fare — set an address",
+  FREETAXI_NO_FARE: "FREETAXI needs a real taxi fare · set an address",
   TONIGHT_HOURS: "TONIGHT500 only valid 22:00–04:00 BKK",
   BUILTIN_STARTS_AT: "code hasn't started yet (admin override)",
   BUILTIN_EXPIRED: "code has expired (admin override)",

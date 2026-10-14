@@ -192,7 +192,7 @@ const AdminUserDetailPage: React.FC = () => {
           <Typography fontSize={12.5} color="text.secondary" sx={{ mt: 0.5, mb: 1 }}>
             {user.phone
               ? `รีเซตแล้วรหัสจะเป็นเบอร์ ${user.phone} · เข้าด้วย ${user.username || user.phone}`
-              : "⚠️ ลูกค้ารายนี้ไม่มีเบอร์ในระบบ — รีเซตเป็นเบอร์ไม่ได้"}
+              : "⚠️ ลูกค้ารายนี้ไม่มีเบอร์ในระบบ · รีเซตเป็นเบอร์ไม่ได้"}
           </Typography>
           <Button
             variant="outlined"

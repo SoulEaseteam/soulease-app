@@ -110,7 +110,7 @@ const TherapistProfilePage: React.FC = () => {
         updatedAt: serverTimestamp(),
         updatedBy: auth.currentUser?.uid ?? null,
       });
-      setToast({ msg: next ? "Holiday mode ON — you're off today." : "Holiday mode OFF", severity: "success" });
+      setToast({ msg: next ? "Holiday mode ON · you're off today." : "Holiday mode OFF", severity: "success" });
     } catch (err) {
       console.error("[TherapistProfile] updateHoliday failed:", err);
       setToast({ msg: "Couldn't update holiday mode. Please try again.", severity: "error" });

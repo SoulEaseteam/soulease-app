@@ -95,13 +95,13 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
       ? districtSeo.title
       : t(
           "meta.home.title",
-          "SunRed Bangkok — Luxury Outcall Massage Delivered to Your Hotel"
+          "SunRed Bangkok · Luxury Outcall Massage Delivered to Your Hotel"
         ),
     description: districtSeo
       ? districtSeo.description
       : t(
           "meta.home.description",
-          "Bangkok's #1 luxury outcall massage. Verified practitioners delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability."
+          "Bangkok's #1 luxury outcall massage. Verified practitioners delivered to your hotel · Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability."
         ),
     locale: langToLocale(i18n.language),
     url: districtSeo ? districtSeo.url : "https://sunred.vip/",
@@ -165,7 +165,7 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
           — HomeHero removed entirely; the anniversary/promo banner
           (moved above hero in 28x.130) is now the page's sole top
           visual, no separate hero section underneath it. */}
-      {/* 🆕 "ป้ายโดนบัง" fix — wrapper only renders while the campaign is
+      {/* 🆕 "ป้ายโดนบัง" fix · wrapper only renders while the campaign is
           live (same anniversaryIsLive() gate the banner itself uses), so an
           ended campaign leaves no empty spacer box behind. */}
       {promoBannerLive && (
@@ -259,9 +259,9 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
         <HomeTherapistGrid />
       </Box>
 
-      {/* 🆕 28x.129 (founder selected both sections, "เอาออก") — Membership
+      {/* 🆕 28x.129 (founder selected both sections, "เอาออก") · Membership
           Benefits + Why SunRed removed. Footer remains. */}
-      {/* 🆕 28x.257 (founder boxed the footer: "=ซ่อน") — hidden. HomePage is
+      {/* 🆕 28x.257 (founder boxed the footer: "=ซ่อน") · hidden. HomePage is
           the ONLY place HomeFooterV2 renders, so this takes the footer off the
           customer site entirely; the links it carried (menu / areas / help /
           contact) all still live in the hamburger drawer, so nothing becomes

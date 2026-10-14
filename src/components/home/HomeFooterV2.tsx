@@ -395,7 +395,7 @@ const HomeFooterV2: React.FC = () => {
                         cursor: "pointer",
                         color: "inherit",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#FF8484" }, // ROSE — link hover
+                        "&:hover": { color: "#FF8484" }, // ROSE · link hover
                         "&:focus-visible": {
                           outline: "2px solid #FF8484", // ROSE focus ring
                           outlineOffset: 2,

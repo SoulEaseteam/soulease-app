@@ -27,8 +27,8 @@
 export const TIER_THERAPIST_PCT: Record<string, number> = {
   "xSR-Thai": 0.6,
   "SR-Aroma": 0.6,
-  "SR-HJ2200": 0.6, // was 0.65 (tier premium off — flat 60/40, 28s248)
-  "SR-B2B3200": 0.6, // was 0.70 (tier premium off — flat 60/40, 28s248)
+  "SR-HJ2200": 0.6, // was 0.65 (tier premium off · flat 60/40, 28s248)
+  "SR-B2B3200": 0.6, // was 0.70 (tier premium off · flat 60/40, 28s248)
 };
 
 export const DEFAULT_THERAPIST_PCT = 0.6;

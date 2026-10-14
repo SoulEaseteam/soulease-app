@@ -87,7 +87,7 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
             src={PRIVILEGES_IMG}
             alt={t(
               "anniv.image.alt",
-              "SunRed 1st Anniversary exclusive privileges. New guests: THB 100 welcome gift, minimum spend THB 1,400. Returning guests choose one — THB 200 gift, THB 300 voucher, or double SunPoints. Valid 15 July to 15 August 2026. Cannot be combined with other promotions.",
+              "SunRed 1st Anniversary exclusive privileges. New guests: THB 100 welcome gift, minimum spend THB 1,400. Returning guests choose one · THB 200 gift, THB 300 voucher, or double SunPoints. Valid 15 July to 15 August 2026. Cannot be combined with other promotions.",
             )}
             loading="lazy"
             decoding="async"

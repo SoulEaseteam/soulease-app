@@ -153,7 +153,7 @@ const IdentityCard: React.FC<Props> = ({
               {geoStatus === "prompt"
                 ? t("detail.loc.locating", "Locating…")
                 : geoStatus === "denied"
-                  ? t("detail.loc.blocked", "Location blocked — allow it in your browser settings")
+                  ? t("detail.loc.blocked", "Location blocked · allow it in your browser settings")
                   : geoStatus === "unsupported"
                     ? t("detail.loc.unsupported", "Location unavailable on this device")
                     : t("detail.loc.allow", "Allow location")}

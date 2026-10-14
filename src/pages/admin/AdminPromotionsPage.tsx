@@ -787,7 +787,7 @@ const AdminPromotionsPage: React.FC = () => {
         count: svcRows.length + customSvcRows.length,
         changedFields: [...svcRows, ...customSvcRows].filter((r) => !r.enabled).map((r) => `${r.id}: ปิด`),
       });
-      toast.success("บันทึกราคา/บริการแล้ว — มีผลกับการจองใหม่ทันที");
+      toast.success("บันทึกราคา/บริการแล้ว · มีผลกับการจองใหม่ทันที");
     } catch (err) {
       console.error(err);
       toast.error("บันทึกไม่สำเร็จ");
@@ -939,7 +939,7 @@ const AdminPromotionsPage: React.FC = () => {
         earnPerTHB: annivCfg.earnPerTHB,
         redeemTHB: annivCfg.redeemTHB,
       });
-      toast.success("บันทึกแคมเปญครบรอบแล้ว — มีผลกับลูกค้าทันที");
+      toast.success("บันทึกแคมเปญครบรอบแล้ว · มีผลกับลูกค้าทันที");
     } catch (err) {
       console.error(err);
       toast.error("บันทึกไม่สำเร็จ");
@@ -1224,7 +1224,7 @@ const AdminPromotionsPage: React.FC = () => {
       await navigator.clipboard.writeText(shareUrl);
       toast.success("คัดลอกลิงก์แล้ว");
     } catch {
-      toast.error("คัดลอกไม่สำเร็จ — กดค้างที่ลิงก์เพื่อคัดลอกเอง");
+      toast.error("คัดลอกไม่สำเร็จ · กดค้างที่ลิงก์เพื่อคัดลอกเอง");
     }
   };
 
@@ -1640,7 +1640,7 @@ const AdminPromotionsPage: React.FC = () => {
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* 🆕 Round 28s300 — Pricing & services editor */}
         {/* 🆕 28w.96 (founder: "admin/promotions เพิ่มประวัติไปด้วยให้โปรนี้ใช้ได้จริง ·
-            แก้ไขและเปลี่ยนเองได้โดยไม่ต้องป้อนคำสั่งซ้ำๆ") — the Anniversary campaign,
+            แก้ไขและเปลี่ยนเองได้โดยไม่ต้องป้อนคำสั่งซ้ำๆ") · the Anniversary campaign,
             editable. Every number here used to be hardcoded, so changing a spend
             floor or a date meant a code change and a deploy. Saved to
             publicRules.anniversary; MaintenanceGate pushes it to guests live. */}
@@ -1826,7 +1826,7 @@ const AdminPromotionsPage: React.FC = () => {
         </SectionCard>
 
         {/* 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม
-            เอาออกจากทุกที่ที่มี") — the Add-ons editor (28s302) has been
+            เอาออกจากทุกที่ที่มี") · the Add-ons editor (28s302) has been
             removed alongside the customer picker. If addonOverrides /
             customAddons still exist on publicRules from a previous save,
             they're no longer read by anything. */}
@@ -1853,7 +1853,7 @@ const AdminPromotionsPage: React.FC = () => {
             แก้ไข/ลบได้ทุกโค้ด — ตัวที่ลบไปเก็บอยู่ล่างสุด (กู้คืนได้)
           </Typography>
           <Stack spacing={1}>
-            {/* 🆕 28x.40 (founder: "ลบแล้วลบ ออกไปเลย") — deleted built-ins no
+            {/* 🆕 28x.40 (founder: "ลบแล้วลบ ออกไปเลย") · deleted built-ins no
                 longer clutter the main list; they drop into the folded
                 "โค้ดที่ลบแล้ว" dropdown below, still recoverable. */}
             {BUILTIN_CODES.filter((b) => builtinOverrides[b.code]?.deleted !== true).map((b) => {
@@ -1900,7 +1900,7 @@ const AdminPromotionsPage: React.FC = () => {
                         ...(deleted ? { textDecoration: "line-through" } : {}),
                       }}
                     >
-                      {/* 🆕 28x.42 (founder: "คัดลอกโค้ดได้") — tap the code to copy it. */}
+                      {/* 🆕 28x.42 (founder: "คัดลอกโค้ดได้") · tap the code to copy it. */}
                       <Box
                         component="span"
                         role="button"
@@ -1937,7 +1937,7 @@ const AdminPromotionsPage: React.FC = () => {
                         }}
                       >
                         {promosEnabled && enabled && !deleted
-                          ? `เชื่อมหน้า Refer & earn ลูกค้าแล้ว — กำลังแสดง Give ฿${effAmount} / Get ฿${effAmount}`
+                          ? `เชื่อมหน้า Refer & earn ลูกค้าแล้ว · กำลังแสดง Give ฿${effAmount} / Get ฿${effAmount}`
                           : "หน้า Refer & earn ลูกค้า: ซ่อนอยู่ (ต้องเปิด “โปรโมชั่น” ด้านบน + เปิดโค้ดนี้)"}
                       </Typography>
                     )}
@@ -2090,7 +2090,7 @@ const AdminPromotionsPage: React.FC = () => {
           </Button>
         </SectionCard>
 
-        {/* 🆕 Round 28r50 (feature #1 "Bundle Packages") — prepaid
+        {/* 🆕 Round 28r50 (feature #1 "Bundle Packages") · prepaid
             multi-session discounts, e.g. buy-3-get-10%-off. Admin
             management surface only in this phase — customer-facing
             display + BookingFlow wiring is Phase 2. Empty = nothing
@@ -2184,7 +2184,7 @@ const AdminPromotionsPage: React.FC = () => {
           </Button>
         </SectionCard>
 
-        {/* 🆕 Round 28r59 (Phase 4 feature #4 "A/B analytics") — Usage
+        {/* 🆕 Round 28r59 (Phase 4 feature #4 "A/B analytics") · Usage
             stats table now includes redemption count, total discount ฿
             granted, avg ticket, and a simple "drives N/mo · ฿X ticket"
             line so admin can compare active codes at a glance. */}
@@ -2742,12 +2742,12 @@ const AdminPromotionsPage: React.FC = () => {
       </Dialog>
 
       {/* 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม
-          เอาออกจากทุกที่ที่มี") — the "Add Add-on" dialog (28s302) has
+          เอาออกจากทุกที่ที่มี") · the "Add Add-on" dialog (28s302) has
           been removed. */}
 
       {/* 🆕 Round 28r49 — Edit a built-in code (per-code override into
           publicRules.builtinCodeOverrides). The visible fields depend on
-          the code's type — percent codes show %+cap, fixed codes show
+          the code's type · percent codes show %+cap, fixed codes show
           amount, FREETAXI's amount field is hidden with an explanatory
           notice since the discount equals the actual taxi fare. */}
       <Dialog open={!!builtinEditCode} onClose={() => setBuiltinEditCode(null)} fullWidth maxWidth="xs">
@@ -2823,7 +2823,7 @@ const AdminPromotionsPage: React.FC = () => {
                 />
               </Stack>
               {/* 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft
-                  Mode") — schedule this override's ACTIVATION. Distinct
+                  Mode") · schedule this override's ACTIVATION. Distinct
                   from วันเริ่ม above (which gates guest eligibility once
                   the override IS live): scheduledFor sits the override
                   ITSELF dormant, so the code runs on hardcoded defaults
@@ -2960,7 +2960,7 @@ const AdminPromotionsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 🆕 Round 28r50 (feature #1 "Bundle Packages") — create/edit dialog. */}
+      {/* 🆕 Round 28r50 (feature #1 "Bundle Packages") · create/edit dialog. */}
       <Dialog open={bundleDialogOpen} onClose={() => setBundleDialogOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
           {editingBundleId ? "Edit Bundle · แก้ไขแพ็คเกจ" : "Add Bundle · เพิ่มแพ็คเกจ"}
@@ -3137,7 +3137,7 @@ const AdminPromotionsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 🆕 Round 28r50 (feature #3 "Bulk Service Edits") — dialog. */}
+      {/* 🆕 Round 28r50 (feature #3 "Bulk Service Edits") · dialog. */}
       <Dialog open={bulkOpen} onClose={() => setBulkOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
           Bulk Adjust · ปรับราคายกชุด
@@ -3248,7 +3248,7 @@ const AdminPromotionsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 🆕 Round 28r50 (feature #4 "Print/Share Promo Card") — printable
+      {/* 🆕 Round 28r50 (feature #4 "Print/Share Promo Card") · printable
           card + QR + PDF/image export. */}
       <Dialog open={!!printCode} onClose={() => setPrintCode(null)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
