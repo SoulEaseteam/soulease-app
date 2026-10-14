@@ -61,6 +61,9 @@ interface HomePageProps {
   district?: District;
 }
 
+/** 🆕 28x.257 — founder hid the home footer ("=ซ่อน"). See the render site. */
+const SHOW_HOME_FOOTER = false;
+
 const HomePage: React.FC<HomePageProps> = ({ district }) => {
   // 🆕 "ป้ายโดนบัง" fix — live-subscribe so ending/starting a campaign from
   //   /admin/promotions updates the layout without a reload.
@@ -258,7 +261,16 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
 
       {/* 🆕 28x.129 (founder selected both sections, "เอาออก") — Membership
           Benefits + Why SunRed removed. Footer remains. */}
-      <HomeFooterV2 />
+      {/* 🆕 28x.257 (founder boxed the footer: "=ซ่อน") — hidden. HomePage is
+          the ONLY place HomeFooterV2 renders, so this takes the footer off the
+          customer site entirely; the links it carried (menu / areas / help /
+          contact) all still live in the hamburger drawer, so nothing becomes
+          unreachable. Flag rather than deletion — flip to true to bring it
+          back, the component and its translations are untouched.
+          ⚠️ Worth knowing: footer links are also an internal-linking signal
+          for crawlers. The sitemap + prerendered routes still cover those
+          pages, so this is a ranking nudge at most, not a de-indexing. */}
+      {SHOW_HOME_FOOTER && <HomeFooterV2 />}
 
       {/* 🆕 28x.192 — installed-PWA prompt (fixed position, renders above
           the bottom nav; hides itself when standalone / snoozed). Home
