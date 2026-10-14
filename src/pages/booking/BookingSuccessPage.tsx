@@ -104,6 +104,17 @@ const SERIF = '"Inter", system-ui, -apple-system, sans-serif';
 //   Federo/Italiana/Cinzel in 28r70 and never loaded them back, so naming it
 //   here would silently fall through to Georgia.
 const DECO = '"Playfair Display", Georgia, "Times New Roman", serif';
+/** Gold used for the deco rules, frames and engraving. */
+const GOLD = "#D7B56D";
+/**
+ * 🆕 28x.256 — letterspacing, but only where it is typographically legal.
+ * Thai stacks vowels and tone marks onto the consonant; tracking a Thai
+ * string tears them apart ("ก า ร จ อ ง"). 28x.255 did exactly that to the
+ * eyebrow. Latin/digit strings (the reservation code) still get the wide
+ * deco tracking.
+ */
+const trackIfLatin = (str: string, amount: string) =>
+  /[\u0E00-\u0E7F]/.test(str) ? "0.01em" : amount;
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // 30 min prep buffer — shown as 'Will leave for your location at HH:mm'
@@ -484,8 +495,8 @@ const BookingSuccessPage: React.FC = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "1px solid rgba(215, 181, 109, 0.55)",
-                boxShadow: "inset 0 0 0 4px var(--sr-bg), inset 0 0 0 5px rgba(215, 181, 109, 0.28)",
+                border: `1.5px solid ${GOLD}`,
+                boxShadow: `inset 0 0 0 4px var(--sr-bg), inset 0 0 0 5px ${GOLD}66`,
               }}
             >
               <CheckRoundedIcon sx={{ color: "var(--sr-cta)", fontSize: 26 }} />
@@ -496,11 +507,11 @@ const BookingSuccessPage: React.FC = () => {
               className="deco-eyebrow"
               sx={{
                 fontFamily: DECO,
-                fontSize: "10px",
+                fontSize: "10.5px",
                 fontWeight: 600,
-                letterSpacing: "0.26em",
+                letterSpacing: trackIfLatin(t("success.eyebrow", "Reservation"), "0.26em"),
                 textTransform: "uppercase",
-                color: "rgba(215, 181, 109, 0.95)",
+                color: GOLD,
                 marginBottom: "8px",
               }}
             >
@@ -553,15 +564,21 @@ const BookingSuccessPage: React.FC = () => {
             <Box
               sx={{
                 marginTop: "14px",
-                paddingY: "9px",
-                borderTop: "1px solid rgba(215, 181, 109, 0.30)",
-                borderBottom: "1px solid rgba(215, 181, 109, 0.30)",
+                padding: "11px 16px",
+                borderRadius: "10px",
+                // Espresso plaque in BOTH themes — gold engraved on black is
+                // the grand-hotel brass-plate register, and it gives the page
+                // the single high-contrast anchor it was missing.
+                background: "#121318",
+                border: `1px solid ${GOLD}80`,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.28)",
                 fontFamily: DECO,
-                fontSize: "21px",
-                fontWeight: 500,
-                letterSpacing: "0.20em",
+                fontSize: "23px",
+                fontWeight: 600,
+                letterSpacing: "0.18em",
+                textIndent: "0.18em",
                 textAlign: "center",
-                color: "var(--sr-ink)",
+                color: GOLD,
                 fontVariantNumeric: "tabular-nums",
               }}
             >
@@ -1309,7 +1326,7 @@ const StepLabel: React.FC<{ n: number; text: string }> = ({ n, text }) => (
         height: 22,
         flexShrink: 0,
         borderRadius: "50%",
-        border: "1px solid rgba(215, 181, 109, 0.65)",
+        border: `1.5px solid ${GOLD}`,
         color: "var(--sr-ink)",
         display: "flex",
         alignItems: "center",
