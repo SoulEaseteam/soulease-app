@@ -464,14 +464,14 @@ const BookingSuccessPage: React.FC = () => {
             {/* Pulsing check disc */}
             <Box
               sx={{
-                width: 68,
-                height: 68,
+                width: 56,
+                height: 56,
                 borderRadius: "50%",
                 background: "#FF9999",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                margin: "10px auto 14px",
+                margin: "6px auto 10px",
                 boxShadow: "0 14px 40px rgba(15, 23, 42, 0.35)",
                 animation: "successPulse 1.6s ease-in-out infinite",
                 "@keyframes successPulse": {
@@ -491,7 +491,7 @@ const BookingSuccessPage: React.FC = () => {
                 },
               }}
             >
-              <CheckRoundedIcon sx={{ color: "#fff", fontSize: 38 }} />
+              <CheckRoundedIcon sx={{ color: "#fff", fontSize: 32 }} />
             </Box>
 
             {/* Title */}
@@ -569,8 +569,8 @@ const BookingSuccessPage: React.FC = () => {
                 fontSize: "13px",
                 color: "var(--sr-body)",
                 textAlign: "center",
-                marginTop: "12px",
-                lineHeight: 1.55,
+                marginTop: "8px",
+                lineHeight: 1.5,
                 padding: "0 8px",
               }}
             >
@@ -580,74 +580,6 @@ const BookingSuccessPage: React.FC = () => {
                 { name: therapistName, time: timeLabel }
               )}
             </Typography>
-
-            {/* 🆕 Round 28r9 (founder 2026-05-06) — AdminPresenceBadge
-                replaced with the time-aware concierge chip. Same
-                visual weight + same "we're here for you" reassurance,
-                but the label reflects reality (no fake "Admin online"
-                when the heartbeat writer doesn't exist). */}
-            <Box
-              sx={{
-                marginTop: "12px",
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  paddingX: "12px",
-                  paddingY: "5px",
-                  borderRadius: 999,
-                  background:
-                    concierge.mode === "off"
-                      ? "rgba(100, 116, 139, 0.10)"
-                      : "rgba(22, 163, 74, 0.10)",
-                  border:
-                    concierge.mode === "off"
-                      ? "1px solid rgba(100, 116, 139, 0.22)"
-                      : "1px solid rgba(22, 163, 74, 0.28)",
-                }}
-              >
-                <ConciergeModeIcon
-                  mode={concierge.mode}
-                  sx={{
-                    fontSize: 13,
-                    color: modeTint,
-                    filter:
-                      concierge.mode === "off"
-                        ? "none"
-                        : `drop-shadow(0 0 3px ${modeTint})`,
-                  }}
-                />
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color:
-                      concierge.mode === "off"
-                        ? "var(--sr-body)"
-                        : "#15803d",
-                  }}
-                >
-                  {/* 🆕 Round 28r19 — fix duplicated label.
-                      For "off" mode, pillLabel is already "Concierge ·
-                      09:00" so prefixing with "Concierge resumes at
-                      09:00" produced "Concierge resumes at 09:00 ·
-                      Concierge · 09:00" double-up. Use pillLabel
-                      directly for off mode (it self-describes); only
-                      prefix "Concierge live ·" for active modes. */}
-                  {concierge.mode === "off"
-                    ? t("success.concierge.resumesAt9", "Concierge resumes at 09:00")
-                    : t("success.concierge.live", "Concierge live · {{label}}", {
-                        label: concierge.pillLabel,
-                      })}
-                </Typography>
-              </Box>
-            </Box>
 
             {/* 🆕 Round 28b21 — Phase 2: 10-minute hold countdown.
                 Round 28b28 — moved below the admin presence pill. */}
