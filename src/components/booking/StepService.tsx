@@ -96,7 +96,7 @@ interface Props {
 const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
   SIGNATURE: { bg: "rgba(184, 86, 127, 0.95)", fg: "#fff" },
   POPULAR: { bg: "rgba(214, 40, 40, 0.95)", fg: "#fff" },
-  RECOMMEND: { bg: "rgba(217, 124, 149, 0.95)", fg: "#fff" },
+  RECOMMEND: { bg: "rgba(255, 132, 132, 0.95)", fg: "#fff" },
   EXCLUSIVE: { bg: "rgba(138, 58, 87, 0.96)", fg: "#FFF0F0" },
 };
 
@@ -274,15 +274,15 @@ const StepService: React.FC<Props> = ({
               // 🆕 28x.182 — hairline between rows instead of a border
               //   around each card; first row carries none.
               borderTop: idx === 0 ? "none" : "1px solid var(--sr-line)",
-              background: isSelected ? "rgba(255,153,153,0.07)" : "transparent",
+              background: isSelected ? "rgba(255, 132, 132,0.07)" : "transparent",
               cursor: "pointer",
               userSelect: "none",
               transition: "background 0.18s ease",
               "@media (hover: hover)": {
-                "&:hover": { background: "rgba(217,124,149,0.05)" },
+                "&:hover": { background: "rgba(255, 132, 132,0.05)" },
               },
               "&:focus-visible": {
-                outline: "2px solid #FF9999",
+                outline: "2px solid #FF8484",
                 outlineOffset: -2,
               },
             }}
@@ -305,7 +305,7 @@ const StepService: React.FC<Props> = ({
                   borderRadius: "10px",
                   overflow: "hidden",
                   background:
-                    "linear-gradient(135deg, rgba(232,183,198,0.35), rgba(217,124,149,0.20))",
+                    "linear-gradient(135deg, rgba(232,183,198,0.35), rgba(255, 132, 132,0.20))",
                 }}
               >
                 <Box
@@ -436,7 +436,7 @@ const StepService: React.FC<Props> = ({
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
                       <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10px", color: "var(--sr-muted)", fontWeight: 600 }}>เริ่มต้น</Typography>
-                      <Typography component="span" sx={{ fontFamily: PRICE_SERIF, fontSize: "17px", fontWeight: 800, color: "#D97C95", lineHeight: 1 }}>{formatTHB(from)}</Typography>
+                      <Typography component="span" sx={{ fontFamily: PRICE_SERIF, fontSize: "17px", fontWeight: 800, color: "#FF8484", lineHeight: 1 }}>{formatTHB(from)}</Typography>
                     </Box>
                   </Box>
                 );
@@ -454,7 +454,7 @@ const StepService: React.FC<Props> = ({
                   right: 10,
                   padding: "3px 9px",
                   borderRadius: 999,
-                  background: "#FF9999",
+                  background: "#FF8484",
                   color: "#fff",
                   fontFamily: SANS,
                   fontSize: "10px",

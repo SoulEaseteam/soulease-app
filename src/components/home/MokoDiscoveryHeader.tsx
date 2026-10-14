@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 export type RosterFilter = "all" | "available_now" | "express";
 
 // 🕯️ 28t dark-luxury day/night — rose + gold accents fixed; text follows mode.
-const MAGENTA = "#FF9999"; // primary — Vintage Rose (active / selected / icons) — fixed
+const MAGENTA = "#FF8484"; // primary — Vintage Rose (active / selected / icons) — fixed
 const GREEN = "#57B88B"; // available / on-standby dot — green (founder semantic)
 const TEXT = "var(--sr-ink)"; // primary text
 const MUTED = "var(--sr-muted)"; // muted text

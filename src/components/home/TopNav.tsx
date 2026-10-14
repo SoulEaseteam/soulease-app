@@ -404,7 +404,7 @@ const TopNav: React.FC = () => {
             flexShrink: 0,
             marginRight: { md: "auto" },
             "&:focus-visible": {
-              outline: "2px solid #FF9999",
+              outline: "2px solid #FF8484",
               outlineOffset: 2,
             },
           }}
@@ -412,7 +412,7 @@ const TopNav: React.FC = () => {
           {/* 🆕 28x.132 swapped this to the italic SunRedWordmark; 🆕 28x.139
               (founder selected the italic nav wordmark + sent a reference
               screenshot of the old two-tone caps treatment, "เปลี่ยน เอาโลโก้
-              นี้") — restored, #FF9999 instead of the old #D97C95 to match
+              นี้") — restored, #FF8484 instead of the old #FF8484 to match
               the sitewide 28x.134 color unification. 🆕 28x.142 (founder:
               "ปรับหน่อย" → spacing / font size / letter-spacing / overall
               alignment) — 0.22em read as too wide next to the compact search
@@ -433,7 +433,7 @@ const TopNav: React.FC = () => {
             <Box component="span" sx={{ color: fg }}>
               SUN
             </Box>
-            <Box component="span" sx={{ color: "#FF9999" }}>
+            <Box component="span" sx={{ color: "#FF8484" }}>
               RED
             </Box>
           </Box>
@@ -531,7 +531,7 @@ const TopNav: React.FC = () => {
                     //   light day bar; rose reads on cream, dark, and light-rose
                     //   alike. Label stays `fg` (ink) for contrast.
                     background: active
-                      ? "rgba(217, 124, 149, 0.20)"
+                      ? "rgba(255, 132, 132, 0.20)"
                       : "transparent",
                     border: "none",
                     padding: "8px 14px",
@@ -545,8 +545,8 @@ const TopNav: React.FC = () => {
                     transition: "background 0.15s ease, transform 0.15s ease",
                     "&:hover": {
                       background: active
-                        ? "rgba(217, 124, 149, 0.26)"
-                        : "rgba(217, 124, 149, 0.10)",
+                        ? "rgba(255, 132, 132, 0.26)"
+                        : "rgba(255, 132, 132, 0.10)",
                       transform: "translateY(-1px)",
                     },
                     "&:focus-visible": {
@@ -581,7 +581,7 @@ const TopNav: React.FC = () => {
             alignItems: "center",
             gap: "8px",
             // 🕯️ 28t — dusty-rose gradient concierge pill (both home + inner).
-            background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
+            background: "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)",
             border: "none",
             color: "#FFF7F0",
             fontFamily: SANS,
@@ -659,7 +659,7 @@ const TopNav: React.FC = () => {
               width: 44,
               height: 44,
               "&:focus-visible": {
-                outline: "2px solid #FF9999",
+                outline: "2px solid #FF8484",
                 outlineOffset: 2,
               },
             }}
@@ -711,15 +711,15 @@ const TopNav: React.FC = () => {
               // 🆕 28w.3 — was faint cream + retired gold/tan (dated "แก่").
               //   Unified rose card for both admin + therapist.
               background:
-                "linear-gradient(135deg, rgba(217,124,149,0.18), rgba(217,124,149,0.06))",
-              border: "1px solid rgba(217,124,149,0.30)",
+                "linear-gradient(135deg, rgba(255, 132, 132,0.18), rgba(255, 132, 132,0.06))",
+              border: "1px solid rgba(255, 132, 132,0.30)",
               cursor: "pointer",
               fontFamily: SANS,
               textAlign: "left",
               "&:hover": { transform: "translateY(-1px)" },
               transition: "transform 0.15s ease",
               "&:focus-visible": {
-                outline: "2px solid #FF9999",
+                outline: "2px solid #FF8484",
                 outlineOffset: 2,
               },
             }}
@@ -730,7 +730,7 @@ const TopNav: React.FC = () => {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: "#FF9999",
+                background: "#FF8484",
                 color: "#FFFFFF",
                 display: "inline-flex",
                 alignItems: "center",
@@ -778,7 +778,7 @@ const TopNav: React.FC = () => {
               aria-hidden
               sx={{
                 fontSize: 18,
-                color: "#FF9999",
+                color: "#FF8484",
                 fontWeight: 800,
                 flexShrink: 0,
               }}
@@ -872,7 +872,7 @@ const TopNav: React.FC = () => {
                 borderRadius: "12px",
                 background: "transparent",
                 border: "none",
-                color: "#FF9999",
+                color: "#FF8484",
                 fontFamily: SANS,
                 fontSize: 14,
                 fontWeight: 600,
@@ -880,12 +880,12 @@ const TopNav: React.FC = () => {
                 cursor: "pointer",
                 "&:hover": { background: "rgba(243,230,219,0.07)" },
                 "&:focus-visible": {
-                  outline: "2px solid #FF9999",
+                  outline: "2px solid #FF8484",
                   outlineOffset: 2,
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 0, color: "#FF9999" }}>
+              <ListItemIcon sx={{ minWidth: 0, color: "#FF8484" }}>
                 <LogoutRoundedIcon />
               </ListItemIcon>
               {t("nav.signOut", "Sign out")}
@@ -903,7 +903,7 @@ const TopNav: React.FC = () => {
                 padding: "12px 14px",
                 borderRadius: "12px",
                 background:
-                  "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
+                  "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)",
                 border: "none",
                 color: "#FFF7F0",
                 fontFamily: SANS,
@@ -916,7 +916,7 @@ const TopNav: React.FC = () => {
                   boxShadow: "0 8px 20px rgba(0, 0, 0, 0.5)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #FF9999",
+                  outline: "2px solid #FF8484",
                   outlineOffset: 2,
                 },
               }}
@@ -994,10 +994,10 @@ function renderNavRow(
              dark drawer (#2A1D16): a soft rose-tint fill + rose label with
              a warm cream register for inactive rows. */
           background: active
-            ? "linear-gradient(135deg, rgba(217,124,149,0.22), rgba(217,124,149,0.10))"
+            ? "linear-gradient(135deg, rgba(255, 132, 132,0.22), rgba(255, 132, 132,0.10))"
             : "transparent",
           border: "none",
-          color: active ? "#E7A9AB" : "var(--sr-body)",
+          color: active ? "#FF8484" : "var(--sr-body)",
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: active ? 700 : 600,
@@ -1006,11 +1006,11 @@ function renderNavRow(
           transition: "background 0.2s ease",
           "&:hover": {
             background: active
-              ? "linear-gradient(135deg, rgba(217,124,149,0.28), rgba(217,124,149,0.14))"
+              ? "linear-gradient(135deg, rgba(255, 132, 132,0.28), rgba(255, 132, 132,0.14))"
               : "rgba(243,230,219,0.07)",
           },
           "&:focus-visible": {
-            outline: "2px solid #FF9999",
+            outline: "2px solid #FF8484",
             outlineOffset: 2,
           },
         }}
@@ -1018,7 +1018,7 @@ function renderNavRow(
         <ListItemIcon
           sx={{
             minWidth: 0,
-            color: active ? "#FF9999" : "var(--sr-muted)",
+            color: active ? "#FF8484" : "var(--sr-muted)",
           }}
         >
           {item.icon}

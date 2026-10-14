@@ -26,9 +26,9 @@ const FINE =
   typeof window !== "undefined" &&
   window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
-const MAGENTA = "230,25,126";
+const MAGENTA = "255, 132, 132";
 const GOLD = "215,181,109";
-const BLUSH = "240,80,160";
+const BLUSH = "255, 132, 132";
 
 // 28x.230 (founder: "แอดมินมีลูกเล่น") — the admin/staff exclusion from
 // 28x.219 is lifted: the suite runs everywhere now. Keeping the function

@@ -410,7 +410,7 @@ export const SERVICE_BADGE: Record<string, ServiceBadge> = {
 
 export const BADGE_META: Record<ServiceBadge, { label: string; emoji: string; color: string }> = {
   bestseller: { label: "Best Seller", emoji: "⭐", color: "#E6A817" },
-  bestvalue:  { label: "Best Value",  emoji: "🔥", color: "#FF9999" },
+  bestvalue:  { label: "Best Value",  emoji: "🔥", color: "#FF8484" },
 };
 
 export function badgeFor(serviceId: string): ServiceBadge | null {

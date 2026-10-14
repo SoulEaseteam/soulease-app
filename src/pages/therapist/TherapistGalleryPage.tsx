@@ -358,7 +358,7 @@ const TherapistGalleryPage: React.FC = () => {
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-          <CircularProgress sx={{ color: "#FF9999" }} />
+          <CircularProgress sx={{ color: "#FF8484" }} />
         </Box>
       ) : (
         <Box sx={{ px: 2 }}>
@@ -372,7 +372,7 @@ const TherapistGalleryPage: React.FC = () => {
               border: "1px solid rgba(194,24,91,0.20)",
             }}
           >
-            <Box sx={{ width: 34, height: 34, borderRadius: "11px", flexShrink: 0, background: "linear-gradient(135deg, #FF9999, #FF9999)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Box sx={{ width: 34, height: 34, borderRadius: "11px", flexShrink: 0, background: "linear-gradient(135deg, #FF8484, #FF8484)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Image size={17} weight="duotone" color="#fff" />
             </Box>
             <Box>
@@ -436,7 +436,7 @@ const TherapistGalleryPage: React.FC = () => {
                   variant="contained"
                   sx={{
                     py: 1.2, borderRadius: 2, textTransform: "none", fontWeight: 700,
-                    background: "linear-gradient(135deg, #FF9999, #FF9999)", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+                    background: "linear-gradient(135deg, #FF8484, #FF8484)", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
                     "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },
                   }}
                 >
@@ -478,7 +478,7 @@ const TherapistGalleryPage: React.FC = () => {
               </Typography>
               {live.length === 0 ? (
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 1.25, py: 5 }}>
-                  <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #FF9999, #FF9999)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(194,24,91,0.28)" }}>
+                  <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #FF8484, #FF8484)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(194,24,91,0.28)" }}>
                     <Image size={26} weight="duotone" />
                   </Box>
                   <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)" }}>
@@ -543,7 +543,7 @@ const TherapistGalleryPage: React.FC = () => {
                 startIcon={uploading ? <CircleNotch size={16} className="sr-spin" /> : <UploadSimple size={16} weight="bold" />}
                 sx={{
                   mt: 1, py: 1.4, textTransform: "none", fontWeight: 700, borderRadius: 2,
-                  background: "linear-gradient(135deg, #FF9999, #FF9999)", color: "#fff", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+                  background: "linear-gradient(135deg, #FF8484, #FF8484)", color: "#fff", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
                   "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
                   "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },
                   "& .sr-spin": { animation: "srspin 0.8s linear infinite" },
@@ -568,7 +568,7 @@ const TherapistGalleryPage: React.FC = () => {
                   border: "1px solid rgba(194,24,91,0.20)",
                 }}
               >
-                <Box sx={{ width: 34, height: 34, borderRadius: "11px", flexShrink: 0, background: "linear-gradient(135deg, #FF9999, #FF9999)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Box sx={{ width: 34, height: 34, borderRadius: "11px", flexShrink: 0, background: "linear-gradient(135deg, #FF8484, #FF8484)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <VideoCamera size={17} weight="duotone" color="#fff" />
                 </Box>
                 <Box>
@@ -648,7 +648,7 @@ const TherapistGalleryPage: React.FC = () => {
                 startIcon={uploadingVideo ? <CircleNotch size={16} className="sr-spin" /> : <VideoCamera size={16} weight="bold" />}
                 sx={{
                   mt: 1, py: 1.4, textTransform: "none", fontWeight: 700, borderRadius: 2,
-                  background: "linear-gradient(135deg, #FF9999, #FF9999)", color: "#fff", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+                  background: "linear-gradient(135deg, #FF8484, #FF8484)", color: "#fff", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
                   "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
                   "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },
                   "& .sr-spin": { animation: "srspin 0.8s linear infinite" },

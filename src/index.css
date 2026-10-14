@@ -77,7 +77,7 @@ button,
      🕯️ 28t — SunRed DARK-LUXURY day/night theme tokens.
      Founder direction 2026-07-12: auto-switch a warm light "day" look
      (cream/ivory grounds) and a dark "night" look (espresso grounds).
-     ACCENTS (dusty rose #C56A6D, soft gold #D7B56D, tan) are identical
+     ACCENTS (dusty rose #FF8484, soft gold #D7B56D, tan) are identical
      in both modes — ONLY surfaces + text-on-surface flip, so components
      hardcode accents and read these vars for grounds/text/hairlines.
 
@@ -85,7 +85,7 @@ button,
      A tiny runtime (DayNightSync) toggles `.sr-day` on <html> by BKK hour.
      ───────────────────────────────────────────────────────────────── */
   /* 🌙 NIGHT — clean dark charcoal + dusty-rose accent (balanced). Rose
-     #FF9999 comes from the components; these vars are grounds + text only.
+     #FF8484 comes from the components; these vars are grounds + text only.
      surfaces (deep → raised) */
   --sr-bg: #17181D;          /* page ground — deep charcoal */
   /* 🆕 28x.135 (founder: "ทั้งเว็บเป็น glassmorphic design") tried translucent
@@ -102,16 +102,16 @@ button,
   --sr-panel-deep: rgba(18, 19, 25, 0.86);  /* footer / drawer / deep ground */
   /* 🆕 28x.240 editorial pass — primary CTA fill.
      🆕 28x.241 (founder selected the night button: "สีธีมร้าน ไม่คล้ำเกิน") —
-     the deeper #B4566F read muddy; night now uses the shop's own Vintage
-     Rose #FF9999, the SAME fixed accent the night theme already runs on the
+     the deeper #FF8484 read muddy; night now uses the shop's own Vintage
+     Rose #FF8484, the SAME fixed accent the night theme already runs on the
      wordmark, badges and heart — white text per the founder's badge spec. */
-  --sr-cta: #FF9999;
+  --sr-cta: #FF8484;
   /* text on surfaces (clear hierarchy) */
   --sr-ink: #F3F2F4;         /* headings / brightest */
   --sr-body: #BCC0CA;        /* body */
   --sr-muted: #878D99;       /* muted */
   --sr-dim: #5E636E;         /* dim caption */
-  --sr-gold-text: #FF9999;   /* accent (was gold — retired as dated) → rose */
+  --sr-gold-text: #FF8484;   /* accent (was gold — retired as dated) → rose */
   /* lines / shadow */
   --sr-hairline: #31343F;    /* border */
   --sr-line: #282B34;        /* divider */
@@ -135,10 +135,10 @@ button,
   --sr-tier-gold:   #E7C55A;
   --sr-tier-vip:    #FFFFFF;
   /* Money ink — the one accent that must stay readable at 13px BOLD in both
-     themes. The existing --sr-gold-text (#FF9999) is a single value shared by
+     themes. The existing --sr-gold-text (#FF8484) is a single value shared by
      day and night and only clears ~2.9:1 on the white day panel, so rate
      tables using it were the "ตัวเลขหนาทึบจนดูไม่ออก" complaint. */
-  --sr-money: #E8899F;       /* bright rose on charcoal */
+  --sr-money: #FF8484;       /* bright rose on charcoal */
 }
 
 /* ☀️ DAY — High-Key Korean Wellness (Apple / Aesop / Laneige / Sulwhasoo).
@@ -157,12 +157,12 @@ html.sr-day {
   --sr-panel-2: rgba(252, 235, 241, 0.75);
   --sr-panel-deep: rgba(255, 255, 255, 0.72);
   /* 🆕 28x.219 — day keeps the founder's fresh rose for the CTA. */
-  --sr-cta: #D97C95;
+  --sr-cta: #FF8484;
   --sr-ink: #232B36;         /* navy-charcoal headings */
   --sr-body: #5C6573;        /* cool-gray body */
   --sr-muted: #8B93A0;       /* muted */
   --sr-dim: #AEB4BF;         /* dim caption */
-  --sr-gold-text: #FF9999;   /* accent (was gold — retired as dated) → rose */
+  --sr-gold-text: #FF8484;   /* accent (was gold — retired as dated) → rose */
   --sr-hairline: #EFE3E8;    /* border */
   --sr-line: #F2E9ED;        /* divider */
   --sr-card-shadow: 0 12px 40px rgba(35, 43, 54, 0.08);

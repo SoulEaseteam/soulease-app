@@ -21,7 +21,7 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 // pill should read at a glance, not just by its label text.
 const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> = {
   available: { bg: "#22C55E", color: "#fff", label: "Available" },
-  bookable: { bg: "#DB2777", color: "#fff", label: "In session" },
+  bookable: { bg: "#FF8484", color: "#fff", label: "In session" },
   resting: { bg: "#5B4470", color: "#F4F6F5", label: "Resting" },
   holiday: { bg: "#B45309", color: "#FFFFFF", label: "On holiday" },
 };
@@ -46,7 +46,7 @@ const TherapistIdentityCard: React.FC<{
       sx={{
         position: "relative",
         padding: "24px 20px 28px",
-        background: "linear-gradient(160deg, #FF9999 0%, #FF9999 55%, #FF9999 100%)",
+        background: "linear-gradient(160deg, #FF8484 0%, #FF8484 55%, #FF8484 100%)",
         borderBottomLeftRadius: 28,
         borderBottomRightRadius: 28,
         color: "#fff",

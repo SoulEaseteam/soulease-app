@@ -34,8 +34,8 @@ import { SUPPORTED_LANGS, setLangPref, langLabel, type LangCode } from "@/utils/
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#FF9999";
-const ROSE_DEEP = "#FF9999";
+const ROSE = "#FF8484";
+const ROSE_DEEP = "#FF8484";
 
 export interface AccountDialogs {
   activeLangLabel: string;
@@ -146,9 +146,9 @@ export function useAccountDialogs(): AccountDialogs {
                   py: 1.5,
                   borderRadius: 3,
                   cursor: "pointer",
-                  background: on ? "rgba(217,124,149,0.14)" : "transparent",
+                  background: on ? "rgba(255, 132, 132,0.14)" : "transparent",
                   transition: "background 160ms ease",
-                  "&:hover": { background: "rgba(217,124,149,0.10)" },
+                  "&:hover": { background: "rgba(255, 132, 132,0.10)" },
                 }}
               >
                 <Typography

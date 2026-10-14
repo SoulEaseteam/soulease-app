@@ -11,7 +11,7 @@
 //     refunded, no_show, rejected, failed — each mapped to a bucket so
 //     completed/cancelled sessions actually appear instead of crashing.
 //   • Retheme: retired taupe #8F8474 + navy rgba(15,23,42) → rose
-//     #FF9999 accent on day/night var(--sr-*) tokens (matches detail
+//     #FF8484 accent on day/night var(--sr-*) tokens (matches detail
 //     page). Dark hero → rose-berry gradient (white text safe in both
 //     day + night, mode-independent).
 //   • a11y: aria-label on back button, role="tablist"/role="tab" +
@@ -81,12 +81,12 @@ const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
 
 // ── brand accents (fixed hex — day/night surfaces come from var(--sr-*)) ─
-const ROSE       = "#FF9999";
+const ROSE       = "#FF8484";
 const GREEN      = "#57B88B";
 const GREEN_TEXT = "#2E7D57";
 const AMBER_TEXT = "#C97A1F";
 // Rose-berry hero gradient: dark enough for white text in BOTH day + night.
-const HERO_GRADIENT = "linear-gradient(160deg, #FF9999 0%, #FF9999 100%)";
+const HERO_GRADIENT = "linear-gradient(160deg, #FF8484 0%, #FF8484 100%)";
 
 // ── types ────────────────────────────────────────────────────────────
 type BookingStatus =
@@ -140,7 +140,7 @@ interface Booking {
 //   only the semantic status hues are fixed hex.
 const STATUS_META: Record<string, { label: string; bg: string; fg: string; bucket: TabKey }> = {
   // ── upcoming (active) ──
-  upcoming:    { label: "Upcoming",   bg: "rgba(217,124,149,0.12)", fg: ROSE,              bucket: "upcoming"  },
+  upcoming:    { label: "Upcoming",   bg: "rgba(255, 132, 132,0.12)", fg: ROSE,              bucket: "upcoming"  },
   pending:     { label: "Pending",    bg: "var(--sr-panel-2)",      fg: "var(--sr-muted)", bucket: "upcoming"  },
   confirmed:   { label: "Confirmed",  bg: "rgba(87,184,139,0.14)",  fg: GREEN_TEXT,        bucket: "upcoming"  },
   paid:        { label: "Paid",       bg: "rgba(87,184,139,0.14)",  fg: GREEN_TEXT,        bucket: "upcoming"  },
@@ -660,7 +660,7 @@ const BookingCard: React.FC<{
               sx={{
                 width: "100%",
                 height: "100%",
-                background: "linear-gradient(135deg, #E8B7C6, #FF9999)",
+                background: "linear-gradient(135deg, #FFADAD, #FF8484)",
                 fontSize: 16,
                 fontWeight: 700,
                 fontFamily: SERIF,
@@ -782,7 +782,7 @@ const BookingCard: React.FC<{
                   height: 38,
                   padding: "0 16px",
                   borderRadius: 999,
-                  background: "rgba(217, 124, 149, 0.12)",
+                  background: "rgba(255, 132, 132, 0.12)",
                   color: ROSE,
                   fontFamily: SANS,
                   fontSize: 13,
@@ -858,7 +858,7 @@ const BookingCard: React.FC<{
             onClick={() => void submitReport()}
             disabled={reportBusy || !reportMsg.trim()}
             variant="contained"
-            sx={{ fontFamily: SANS, fontWeight: 700, borderRadius: 2, px: 2.5, background: ROSE, boxShadow: "none", "&:hover": { background: "#FF9999", boxShadow: "none" } }}
+            sx={{ fontFamily: SANS, fontWeight: 700, borderRadius: 2, px: 2.5, background: ROSE, boxShadow: "none", "&:hover": { background: "#FF8484", boxShadow: "none" } }}
           >
             ส่งรีพอร์ต
           </Button>

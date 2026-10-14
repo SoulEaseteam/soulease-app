@@ -178,7 +178,7 @@ const EditProfilePage: React.FC = () => {
           sx={{
             py: 1.5,
             borderRadius: 8,
-            // 🎨 Round 28r79 — Nordic sweep · was salmon #FB8085 / #F9C1B1.
+            // 🎨 Round 28r79 — Nordic sweep · was salmon #FF8484 / #F9C1B1.
             background: "#8F8474",
             color: "#fff",
             fontWeight: "bold",

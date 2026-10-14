@@ -1680,8 +1680,8 @@ const TherapistDetailPage: React.FC = () => {
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              background: "rgba(217,124,149,0.12)",
-                              color: "#FF9999",
+                              background: "rgba(255, 132, 132,0.12)",
+                              color: "#FF8484",
                               "& svg": { fontSize: 19 },
                             }}
                           >
@@ -1757,13 +1757,13 @@ const TherapistDetailPage: React.FC = () => {
               height: 44,
               borderRadius: "50%",
               border: isSaved
-                ? "1px solid rgba(255,153,153,0.45)"
-                : "1px solid rgba(217,124,149,0.28)",
+                ? "1px solid rgba(255, 132, 132,0.45)"
+                : "1px solid rgba(255, 132, 132,0.28)",
               background: isSaved
-                ? "rgba(255,153,153,0.14)"
+                ? "rgba(255, 132, 132,0.14)"
                 : "var(--sr-panel)",
               boxShadow: isSaved
-                ? "0 6px 16px rgba(255,153,153,0.35)"
+                ? "0 6px 16px rgba(255, 132, 132,0.35)"
                 : "var(--sr-card-shadow)",
               display: "flex",
               alignItems: "center",
@@ -1775,15 +1775,15 @@ const TherapistDetailPage: React.FC = () => {
               },
               "&:active": { transform: "scale(0.94)" },
               "&:focus-visible": {
-                outline: "2px solid #FF9999",
+                outline: "2px solid #FF8484",
                 outlineOffset: 2,
               },
             }}
           >
             {isSaved ? (
-              <FavoriteRoundedIcon sx={{ fontSize: 20, color: "#FF9999" }} />
+              <FavoriteRoundedIcon sx={{ fontSize: 20, color: "#FF8484" }} />
             ) : (
-              <FavoriteBorderRoundedIcon sx={{ fontSize: 20, color: "#D9A0AF" }} />
+              <FavoriteBorderRoundedIcon sx={{ fontSize: 20, color: "#FF8484" }} />
             )}
           </Box>
           <StatusPill
@@ -1869,21 +1869,21 @@ const TherapistDetailPage: React.FC = () => {
                   transition: "color 0.18s ease",
                   color: isActive ? "var(--sr-ink)" : "var(--sr-body)",
                   "& .tab-icon": {
-                    color: isActive ? "#FF9999" : "var(--sr-muted)",
+                    color: isActive ? "#FF8484" : "var(--sr-muted)",
                     transition: "color 0.18s ease",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   },
                   "&:hover .tab-icon": {
-                    color: isActive ? "#FF9999" : "var(--sr-body)",
+                    color: isActive ? "#FF8484" : "var(--sr-body)",
                   },
                   "&:focus-visible": {
                     // 🆕 28t.22 (founder "เลยขอบ") — rose + INSET ring. Was
                     //   teal #2EC4B0 with outlineOffset:2, which drew a box
                     //   2px OUTSIDE the tab so it spilled past the tab-bar
                     //   edge on tap. Negative offset keeps it inside.
-                    outline: "2px solid #FF9999",
+                    outline: "2px solid #FF8484",
                     outlineOffset: "-3px",
                     borderRadius: "10px",
                   },
@@ -1895,7 +1895,7 @@ const TherapistDetailPage: React.FC = () => {
                     bottom: -1,
                     height: 3,
                     borderRadius: 3,
-                    background: isActive ? "#FF9999" : "transparent",
+                    background: isActive ? "#FF8484" : "transparent",
                     transition: "background 0.18s ease",
                   },
                 }}
@@ -2362,7 +2362,7 @@ const TherapistDetailPage: React.FC = () => {
                     boxShadow: "var(--sr-card-shadow)",
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #FF9999",
+                    outline: "2px solid #FF8484",
                     outlineOffset: 2,
                   },
                 }}

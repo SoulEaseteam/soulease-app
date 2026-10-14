@@ -36,7 +36,7 @@ import { PROMOS_ENABLED } from "@/config/featureFlags";
 import { responsiveShell } from "@/theme/breakpoints";
 import { fonts } from "@/theme";
 
-const ROSE = "#FF9999";
+const ROSE = "#FF8484";
 
 const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Box
@@ -296,7 +296,7 @@ const MyCodesPage: React.FC = () => {
                             aria-hidden
                             sx={{
                               width: 36, height: 36, borderRadius: "10px", flexShrink: 0,
-                              background: "rgba(217,124,149,0.12)", color: ROSE,
+                              background: "rgba(255, 132, 132,0.12)", color: ROSE,
                               display: "flex", alignItems: "center", justifyContent: "center",
                             }}
                           >
@@ -321,7 +321,7 @@ const MyCodesPage: React.FC = () => {
                             sx={{
                               flexShrink: 0, minHeight: 34, px: 1.75,
                               border: "none", borderRadius: 999, cursor: "pointer",
-                              background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
+                              background: "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)",
                               color: "#fff", fontFamily: fonts.body, fontSize: 12.5, fontWeight: 700,
                               opacity: submitting ? 0.6 : 1,
                             }}
@@ -347,7 +347,7 @@ const MyCodesPage: React.FC = () => {
                         aria-hidden
                         sx={{
                           width: 36, height: 36, borderRadius: "10px", flexShrink: 0,
-                          background: "rgba(217,124,149,0.12)", color: ROSE,
+                          background: "rgba(255, 132, 132,0.12)", color: ROSE,
                           display: "flex", alignItems: "center", justifyContent: "center",
                         }}
                       >
@@ -465,7 +465,7 @@ const ctaSx = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
   width: "100%", minHeight: 42,
   border: "none", borderRadius: 999, cursor: "pointer",
-  background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
+  background: "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)",
   color: "#fff",
   fontFamily: fonts.body, fontSize: 13.5, fontWeight: 700,
 } as const;

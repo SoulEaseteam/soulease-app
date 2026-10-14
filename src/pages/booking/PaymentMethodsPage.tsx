@@ -95,8 +95,8 @@ const RECOMMENDED: PaymentOption = {
   label: "PromptPay",
   sub: "Scan QR on arrival (Details after booking)",
   icon: <QrCodeScannerRoundedIcon />,
-  iconBg: "rgba(217, 124, 149, 0.12)",
-  iconFg: "#FF9999",
+  iconBg: "rgba(255, 132, 132, 0.12)",
+  iconFg: "#FF8484",
 };
 
 // 🆕 Round 28t (founder 2026-05-02, corrected) — Cards (Visa/Mastercard/
@@ -110,8 +110,8 @@ const LINKED_DEFAULTS: PaymentOption[] = [
     label: "Cash",
     sub: "Pay with cash on arrival",
     icon: <LocalAtmRoundedIcon />,
-    iconBg: "rgba(217, 124, 149, 0.10)",
-    iconFg: "#FF9999",
+    iconBg: "rgba(255, 132, 132, 0.10)",
+    iconFg: "#FF8484",
   },
 ];
 
@@ -398,8 +398,8 @@ const PaymentMethodsPage: React.FC = () => {
           sx={{
             padding: "14px 14px 6px",
             borderRadius: "20px",
-            background: "rgba(217, 124, 149, 0.08)",
-            border: "1px solid rgba(217, 124, 149, 0.18)",
+            background: "rgba(255, 132, 132, 0.08)",
+            border: "1px solid rgba(255, 132, 132, 0.18)",
           }}
         >
           <Typography
@@ -940,7 +940,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
         top: "12%",
         bottom: "12%",
         width: "2px",
-        background: "#FF9999",
+        background: "#FF8484",
         borderRadius: "2px",
         opacity: 0,
         transition: "opacity 220ms ease",

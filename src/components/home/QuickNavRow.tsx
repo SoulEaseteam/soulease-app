@@ -169,7 +169,7 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
             "&:hover .qn-icon": {
               background: "var(--sr-panel-2)", // WALNUT hover-on-panel
               borderColor: "#D2B67C", // GOLD hairline
-              color: "#FF9999", // ROSE icon accent
+              color: "#FF8484", // ROSE icon accent
               // 🆕 ลูกเล่น — playful tilt + grow on hover (interaction-only).
               transform: "rotate(-8deg) scale(1.1)",
             },
@@ -180,7 +180,7 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #FF9999", // ROSE focus ring
+              outline: "2px solid #FF8484", // ROSE focus ring
               outlineOffset: 3,
               borderRadius: "8px",
             },
@@ -197,14 +197,14 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
                 borderRadius: "50%",
                 // 🆕 28w.38 — highlighted (Pricing) tile gets a soft rose halo
                 //   at rest so the eye lands on it.
-                background: highlight ? "rgba(217,124,149,0.12)" : "transparent",
+                background: highlight ? "rgba(255, 132, 132,0.12)" : "transparent",
                 // 🆕 Round 28r75 — border removed per founder direction
                 //   "เอาขอบวงกลม ออก" — cleaner Muji / Aesop feel.
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 // Rose accent at rest for the highlighted tile; muted otherwise.
-                color: highlight ? "#FF9999" : "var(--sr-muted)",
+                color: highlight ? "#FF8484" : "var(--sr-muted)",
                 transition: "background 0.18s ease, color 0.18s ease, transform 0.22s cubic-bezier(.34,1.56,.64,1)",
               }}
             >
@@ -227,7 +227,7 @@ const QuickNavRow: React.FC<{ overlapBanner?: boolean }> = ({ overlapBanner = fa
                   display: "flex",
                   alignItems: "center",
                   borderRadius: "999px",
-                  background: "linear-gradient(135deg, #E0879E 0%, #FF9999 100%)",
+                  background: "linear-gradient(135deg, #FF8484 0%, #FF8484 100%)",
                   color: "#fff",
                   fontFamily: fonts.body,
                   fontSize: 8,

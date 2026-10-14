@@ -106,7 +106,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
         cursor: "pointer",
         textAlign: "left",
         "&:focus-visible": {
-          outline: "2px solid #FF9999",
+          outline: "2px solid #FF8484",
           outlineOffset: 2,
           borderRadius: 4,
         },
@@ -190,7 +190,7 @@ export const HowItWorksFAQ: React.FC = () => {
               content: '""',
               width: "22px",
               height: "1px",
-              background: "rgba(217, 124, 149, 0.65)",
+              background: "rgba(255, 132, 132, 0.65)",
             },
           }}
         >
@@ -210,7 +210,7 @@ export const HowItWorksFAQ: React.FC = () => {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#FF9999",
+              color: "#FF8484",
             },
           }}
           dangerouslySetInnerHTML={{

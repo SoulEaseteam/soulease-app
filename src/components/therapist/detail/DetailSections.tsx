@@ -328,13 +328,13 @@ export const About: React.FC<{
               marginBottom: "4px",
               background: g.startsWith("m")
                 ? "rgba(91,100,115,0.12)"
-                : "rgba(217,124,149,0.14)",
+                : "rgba(255, 132, 132,0.14)",
             }}
           >
             <GenderIcon
               sx={{
                 fontSize: 15,
-                color: g.startsWith("m") ? "#5B6473" : "#FF9999",
+                color: g.startsWith("m") ? "#5B6473" : "#FF8484",
               }}
             />
           </Box>
@@ -499,7 +499,7 @@ export const About: React.FC<{
               position: "relative",
               borderRadius: "14px",
               background: "var(--sr-panel-2)",
-              borderLeft: "4px solid #FF9999",
+              borderLeft: "4px solid #FF8484",
               padding: "14px 46px 14px 16px",
             }}
           >
@@ -536,7 +536,7 @@ export const About: React.FC<{
                 height: 28,
                 background: "var(--sr-panel)",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.14)",
-                color: "#FF9999",
+                color: "#FF8484",
                 "&:hover": { background: "var(--sr-panel)" },
                 // 🆕 28w.72 (founder "กระพริบได้ กลัวลูกค้าไม่รู้") — pulse a rose
                 //   halo while the bio is COLLAPSED so guests notice it expands.
@@ -547,11 +547,11 @@ export const About: React.FC<{
                 "@keyframes sr-bio-pulse": {
                   "0%, 100%": {
                     transform: "scale(1)",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.14), 0 0 0 0 rgba(217,124,149,0.60)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.14), 0 0 0 0 rgba(255, 132, 132,0.60)",
                   },
                   "50%": {
                     transform: "scale(1.12)",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.18), 0 0 0 7px rgba(217,124,149,0)",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.18), 0 0 0 7px rgba(255, 132, 132,0)",
                   },
                 },
                 "@media (prefers-reduced-motion: reduce)": { animation: "none" },

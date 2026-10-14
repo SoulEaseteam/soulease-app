@@ -36,8 +36,8 @@ import ConciergeChannels from "@/components/common/ConciergeChannels";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#FF9999";
-const ROSE_DEEP = "#FF9999";
+const ROSE = "#FF8484";
+const ROSE_DEEP = "#FF8484";
 
 interface GuideItem {
   /** Bold lead-in — the thing she's looking for. */

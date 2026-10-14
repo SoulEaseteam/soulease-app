@@ -19,7 +19,7 @@ import { Box, Typography } from "@mui/material";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#E6197E";
+const ROSE = "#FF8484";
 
 type Lang = "th" | "en" | "zh";
 const LANGS: { code: Lang; label: string }[] = [
@@ -137,7 +137,7 @@ const ProviderTermsPage: React.FC = () => {
           {t.updated}
         </Typography>
 
-        <Box sx={{ p: { xs: 2.5, md: 3.5 }, background: "#fff", borderRadius: "20px", border: "1px solid rgba(230,25,126,0.12)", boxShadow: "0 8px 30px rgba(31,41,51,0.06)", display: "flex", flexDirection: "column", gap: 2.5 }}>
+        <Box sx={{ p: { xs: 2.5, md: 3.5 }, background: "#fff", borderRadius: "20px", border: "1px solid rgba(255, 132, 132,0.12)", boxShadow: "0 8px 30px rgba(31,41,51,0.06)", display: "flex", flexDirection: "column", gap: 2.5 }}>
           <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "#4A5568", lineHeight: 1.8 }}>{t.intro}</Typography>
           {t.sections.map((s) => (
             <Box key={s.h}>

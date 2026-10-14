@@ -91,7 +91,7 @@ html.sr-fx .sr-reveal.sr-in {
   animation: srAurora 4.2s ease-in-out infinite;
 }
 @keyframes srAurora {
-  0%, 100% { box-shadow: 0 10px 34px -12px rgba(230, 25, 126, 0.42), 0 0 0 1px rgba(230, 25, 126, 0.18); }
+  0%, 100% { box-shadow: 0 10px 34px -12px rgba(255, 132, 132, 0.42), 0 0 0 1px rgba(255, 132, 132, 0.18); }
   50% { box-shadow: 0 12px 40px -12px rgba(215, 181, 109, 0.55), 0 0 0 1px rgba(215, 181, 109, 0.34); }
 }
 
@@ -102,7 +102,7 @@ html.sr-fx .sr-reveal.sr-in {
   width: 12px;
   height: 12px;
   pointer-events: none;
-  background: linear-gradient(135deg, #f050a0, #e6197e);
+  background: linear-gradient(135deg, #FF8484, #FF8484);
   transform: rotate(45deg);
   border-radius: 0 0 2px 0;
   animation: srHeartFloat 1.8s ease-out both;
@@ -195,7 +195,7 @@ body::after {
 
 /* 3 · brand-rose text selection — a signature nobody templates */
 ::selection {
-  background: rgba(255, 153, 153, 0.4);
+  background: rgba(255, 132, 132, 0.4);
   color: #2a1a14;
 }
 
@@ -204,7 +204,7 @@ body::after {
   ::-webkit-scrollbar { width: 9px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 153, 153, 0.55);
+    background: rgba(255, 132, 132, 0.55);
     border-radius: 99px;
     border: 2px solid transparent;
     background-clip: content-box;

@@ -504,20 +504,20 @@ const StepDateTime: React.FC<Props> = ({
                   // 🆕 28t.20 — day/night rose (was navy-active / white-rest,
                   //   a light island on the now-dark sheet).
                   background: isActive
-                    ? "#FF9999"
+                    ? "#FF8484"
                     : "var(--sr-panel-2)",
                   color: isActive ? "#fff" : "var(--sr-ink)",
                   border: isActive
                     ? "1px solid transparent"
                     : "1px solid var(--sr-hairline)",
                   boxShadow: isActive
-                    ? "0 6px 16px rgba(217, 124, 149, 0.28)"
+                    ? "0 6px 16px rgba(255, 132, 132, 0.28)"
                     : "none",
                   fontFamily: SANS,
                   transition:
                     "background 0.2s ease, border-color 0.2s ease",
                   "&:focus-visible": {
-                    outline: "2px solid #FF9999",
+                    outline: "2px solid #FF8484",
                     outlineOffset: "2px",
                   },
                 }}
@@ -910,7 +910,7 @@ const StepDateTime: React.FC<Props> = ({
                             background: taken
                               ? "transparent"
                               : isActive
-                                ? "#FF9999"
+                                ? "#FF8484"
                                 : "var(--sr-panel-2)",
                             color: taken
                               ? "var(--sr-dim)"
@@ -929,7 +929,7 @@ const StepDateTime: React.FC<Props> = ({
                             whiteSpace: "nowrap",
                             textDecoration: taken ? "line-through" : "none",
                             boxShadow: isActive
-                              ? "0 6px 16px rgba(217, 124, 149, 0.28)"
+                              ? "0 6px 16px rgba(255, 132, 132, 0.28)"
                               : "none",
                             transition:
                               "background 0.15s ease, border-color 0.15s ease, transform 0.12s ease",
@@ -939,12 +939,12 @@ const StepDateTime: React.FC<Props> = ({
                                 : isActive
                                   ? {}
                                   : {
-                                      borderColor: "rgba(217, 124, 149, 0.45)",
+                                      borderColor: "rgba(255, 132, 132, 0.45)",
                                       background: "var(--sr-panel)",
                                     },
                             },
                             "&:focus-visible": {
-                              outline: "2px solid #FF9999",
+                              outline: "2px solid #FF8484",
                               outlineOffset: "2px",
                             },
                           }}

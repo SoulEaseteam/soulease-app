@@ -40,8 +40,8 @@ const ANNIV_IMG = "/images/anniversary/privileges.jpg";
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
 
-const ROSE = "#FF9999";
-const HERO_GRADIENT = "linear-gradient(160deg, #FF9999 0%, #FF9999 100%)";
+const ROSE = "#FF8484";
+const HERO_GRADIENT = "linear-gradient(160deg, #FF8484 0%, #FF8484 100%)";
 
 /** One-line human discount label for a custom promo code. */
 function codeDiscountLabel(t: TFunction, type: "percent" | "fixed", amount: number, capThb?: number | null): string {
@@ -245,7 +245,7 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => {
       boxShadow: "var(--sr-card-shadow)",
       transition: "transform 0.15s ease, box-shadow 0.15s ease",
       "&:hover": { transform: "translateY(-2px)" },
-      "&:focus-visible": { boxShadow: "0 0 0 3px rgba(217,124,149,0.55)" },
+      "&:focus-visible": { boxShadow: "0 0 0 3px rgba(255, 132, 132,0.55)" },
     }}
   >
     <Box
@@ -264,7 +264,7 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => {
         justifyContent: "center",
         gap: 0.75,
         py: 1.1,
-        background: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
+        background: "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)",
         color: "#fff",
         fontFamily: SANS,
         fontSize: 13,
@@ -333,7 +333,7 @@ const OfferCard: React.FC<{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(217,124,149,0.14)",
+        background: "rgba(255, 132, 132,0.14)",
         color: ROSE,
       }}
     >
@@ -362,7 +362,7 @@ const OfferCard: React.FC<{
           py: "8px",
           borderRadius: "999px",
           border: `1px dashed ${ROSE}`,
-          background: copied ? "rgba(87,184,139,0.14)" : "rgba(217,124,149,0.10)",
+          background: copied ? "rgba(87,184,139,0.14)" : "rgba(255, 132, 132,0.10)",
           color: copied ? "#2E7D57" : ROSE,
           fontFamily: SANS,
           fontSize: 12,

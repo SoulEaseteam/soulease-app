@@ -27,7 +27,7 @@ import { db } from "@/lib/firebase";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#E6197E";
+const ROSE = "#FF8484";
 
 const CONTACT_METHODS = ["Telegram", "LINE", "WhatsApp", "WeChat", "เบอร์โทร"] as const;
 
@@ -195,7 +195,7 @@ const ApplyPage: React.FC = () => {
         </Typography>
 
         {done ? (
-          <Box sx={{ mt: 3, p: { xs: 3, md: 4 }, background: "#fff", borderRadius: "20px", border: "1px solid rgba(230,25,126,0.15)", boxShadow: "0 8px 30px rgba(31,41,51,0.08)", textAlign: "center" }}>
+          <Box sx={{ mt: 3, p: { xs: 3, md: 4 }, background: "#fff", borderRadius: "20px", border: "1px solid rgba(255, 132, 132,0.15)", boxShadow: "0 8px 30px rgba(31,41,51,0.08)", textAlign: "center" }}>
             <Box sx={{ width: 56, height: 56, borderRadius: "50%", mx: "auto", mb: 2, background: "rgba(22,163,74,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Box component="span" sx={{ color: "#16A34A", fontSize: 30, fontWeight: 800, lineHeight: 1 }}>✓</Box>
             </Box>
@@ -211,7 +211,7 @@ const ApplyPage: React.FC = () => {
               {t.sub}
             </Typography>
 
-            <Box sx={{ p: { xs: 2.5, md: 3 }, background: "#fff", borderRadius: "20px", border: "1px solid rgba(230,25,126,0.12)", boxShadow: "0 8px 30px rgba(31,41,51,0.06)", display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ p: { xs: 2.5, md: 3 }, background: "#fff", borderRadius: "20px", border: "1px solid rgba(255, 132, 132,0.12)", boxShadow: "0 8px 30px rgba(31,41,51,0.06)", display: "flex", flexDirection: "column", gap: 2 }}>
               <TextField label={t.name} required fullWidth size="small" sx={fieldSx} value={name} onChange={(e) => setName(e.target.value)} />
 
               <TextField
@@ -244,7 +244,7 @@ const ApplyPage: React.FC = () => {
 
               <Button
                 onClick={() => void submit()} disabled={submitting}
-                sx={{ mt: 0.5, py: 1.25, borderRadius: "12px", textTransform: "none", fontWeight: 800, fontSize: 15, fontFamily: SANS, color: "#fff", background: "linear-gradient(135deg,#F050A0,#E6197E)", boxShadow: "0 4px 14px rgba(230,25,126,0.32)", "&:hover": { background: "linear-gradient(135deg,#E6197E,#C2185B)" }, "&.Mui-disabled": { color: "#fff", opacity: 0.7 } }}
+                sx={{ mt: 0.5, py: 1.25, borderRadius: "12px", textTransform: "none", fontWeight: 800, fontSize: 15, fontFamily: SANS, color: "#fff", background: "linear-gradient(135deg,#FF8484,#FF8484)", boxShadow: "0 4px 14px rgba(255, 132, 132,0.32)", "&:hover": { background: "linear-gradient(135deg,#FF8484,#C2185B)" }, "&.Mui-disabled": { color: "#fff", opacity: 0.7 } }}
               >
                 {submitting ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : t.submit}
               </Button>

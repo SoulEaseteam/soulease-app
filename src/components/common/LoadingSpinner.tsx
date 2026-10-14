@@ -84,7 +84,7 @@ const LoadingSpinner: React.FC = () => {
             size={66}
             thickness={5}
             sx={{
-              color: "#e91e63",
+              color: "#FF8484",
               filter: "drop-shadow(0 0 10px rgba(233,30,99,0.6))",
             }}
           />

@@ -17,8 +17,8 @@ import { Box, Typography } from "@mui/material";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#FF9999";
-const ROSE_DEEP = "#FF9999";
+const ROSE = "#FF8484";
+const ROSE_DEEP = "#FF8484";
 const GREEN = "#22C55E";
 const GREEN_TEXT = "#15803D";
 

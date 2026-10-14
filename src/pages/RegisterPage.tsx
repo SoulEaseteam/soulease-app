@@ -1,7 +1,7 @@
 // src/pages/RegisterPage.tsx
 //
 // 🆕 Round 28w.3 (2026-07-13) — audit retheme, mirrors LoginPage 28w.1/.2:
-//   retired taupe #8F8474 + Chonburi + navy → rose #FF9999 on day/night
+//   retired taupe #8F8474 + Chonburi + navy → rose #FF8484 on day/night
 //   var(--sr-*); real <form> (Enter submits); type=email + autoComplete;
 //   labelled fields with a visible rose border (MUI's default computes
 //   white → invisible on the day panel); removed emoji from the toast;
@@ -23,8 +23,8 @@ import { resolveLoginId } from "@/utils/loginId";
 import { useTranslation } from "react-i18next";
 
 const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
-const ROSE = "#FF9999";
-const ROSE_HOVER = "#FF9999";
+const ROSE = "#FF8484";
+const ROSE_HOVER = "#FF8484";
 
 // Shared field styling — rose border visible in both day + night
 // (MUI's default outline computes to white on the day panel).
@@ -38,7 +38,7 @@ const fieldSx = {
   mb: 2,
   '& .MuiOutlinedInput-root': {
     borderRadius: '16px',
-    '& fieldset': { borderColor: 'rgba(217, 124, 149, 0.55)' },
+    '& fieldset': { borderColor: 'rgba(255, 132, 132, 0.55)' },
     '&:hover fieldset': { borderColor: ROSE },
     '&.Mui-focused fieldset': { borderColor: ROSE },
   },

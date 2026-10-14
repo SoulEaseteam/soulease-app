@@ -90,7 +90,7 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
             boxShadow: "var(--sr-card-shadow)",
           },
           "&:focus-visible": {
-            boxShadow: "0 0 0 3px rgba(217,124,149,0.55)",
+            boxShadow: "0 0 0 3px rgba(255, 132, 132,0.55)",
           },
         }}
       >

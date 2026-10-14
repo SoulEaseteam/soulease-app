@@ -109,8 +109,8 @@ const MEETING_POINTS: {
     id: "lift",
     label: "Meet at the Elevator",
     icon: <ElevatorRoundedIcon sx={{ fontSize: 22 }} />,
-    iconBg: "rgba(217, 124, 149, 0.12)",
-    iconFg: "#FF9999",
+    iconBg: "rgba(255, 132, 132, 0.12)",
+    iconFg: "#FF8484",
   },
   {
     id: "direct",
@@ -993,8 +993,8 @@ const SelectLocationPage: React.FC = () => {
             minWidth: 0,
             position: "relative",
             "&:focus-within input": {
-              borderColor: "#FF9999",
-              boxShadow: "0 0 0 3px rgba(217, 124, 149, 0.12)",
+              borderColor: "#FF8484",
+              boxShadow: "0 0 0 3px rgba(255, 132, 132, 0.12)",
             },
           }}
         >
@@ -1082,23 +1082,23 @@ const SelectLocationPage: React.FC = () => {
             height: 48,
             borderRadius: "999px",
             background:
-              "linear-gradient(180deg, rgba(217, 124, 149, 0.10), rgba(217, 124, 149, 0.06))",
-            color: "#FF9999",
+              "linear-gradient(180deg, rgba(255, 132, 132, 0.10), rgba(255, 132, 132, 0.06))",
+            color: "#FF8484",
             fontFamily: SANS,
             fontWeight: 700,
             fontSize: "14px",
             textTransform: "none",
-            border: "1.5px solid rgba(217, 124, 149, 0.35)",
-            boxShadow: "0 2px 8px rgba(217, 124, 149, 0.08)",
+            border: "1.5px solid rgba(255, 132, 132, 0.35)",
+            boxShadow: "0 2px 8px rgba(255, 132, 132, 0.08)",
             transition: "all 0.15s ease",
             "&:hover": {
               background:
-                "linear-gradient(180deg, rgba(217, 124, 149, 0.18), rgba(217, 124, 149, 0.10))",
-              borderColor: "#FF9999",
+                "linear-gradient(180deg, rgba(255, 132, 132, 0.18), rgba(255, 132, 132, 0.10))",
+              borderColor: "#FF8484",
             },
             "&.Mui-disabled": {
               opacity: 0.55,
-              color: "#FF9999",
+              color: "#FF8484",
             },
           }}
         >
@@ -1278,12 +1278,12 @@ const SelectLocationPage: React.FC = () => {
                     // 🆕 Round 28s73 (audit) — was a copy-pasted border
                     //   value in `background` (invalid, silently ignored).
                     //   Now a real light-teal tint behind the pill.
-                    background: "rgba(217, 124, 149, 0.10)",
-                    color: "#FF9999",
+                    background: "rgba(255, 132, 132, 0.10)",
+                    color: "#FF8484",
                     fontFamily: SANS,
                     fontSize: "11px",
                     fontWeight: 700,
-                    border: "1.5px solid rgba(217, 124, 149, 0.35)",
+                    border: "1.5px solid rgba(255, 132, 132, 0.35)",
                     animation: "addrSync 0.3s ease-out",
                     "@keyframes addrSync": {
                       "0%": { opacity: 0, transform: "translateY(-4px)" },
@@ -1296,7 +1296,7 @@ const SelectLocationPage: React.FC = () => {
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" 
                   height="26px" viewBox="0 -960 960 960" 
-                  width="26px" fill="#FF9999">
+                  width="26px" fill="#FF8484">
                     <path d="M420-180 220-380l60-60 140 140 260-260 60 60L420-180Z"/>
                   </svg> {t("loc.addrUpdated", "Address updated to match pin")}
                 </Box>
@@ -1388,9 +1388,9 @@ const SelectLocationPage: React.FC = () => {
                 cursor: "pointer",
                 userSelect: "none",
                 transition: "border-color 0.15s ease",
-                "&:hover": { borderColor: "rgba(217, 124, 149, 0.45)" },
+                "&:hover": { borderColor: "rgba(255, 132, 132, 0.45)" },
                 "&:focus-visible": {
-                  outline: "2px solid #FF9999",
+                  outline: "2px solid #FF8484",
                   outlineOffset: "2px",
                 },
               }}
@@ -1445,7 +1445,7 @@ const SelectLocationPage: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: "14px",
                       "&.Mui-selected": {
-                        background: "rgba(217, 124, 149, 0.1)",
+                        background: "rgba(255, 132, 132, 0.1)",
                       },
                     }}
                   >
@@ -1679,8 +1679,8 @@ const SelectLocationPage: React.FC = () => {
             position: "relative",
             padding: "14px 16px 14px 18px",
             borderRadius: "14px",
-            background: "rgba(217, 124, 149, 0.10)",
-            border: "1px solid rgba(217, 124, 149, 0.28)",
+            background: "rgba(255, 132, 132, 0.10)",
+            border: "1px solid rgba(255, 132, 132, 0.28)",
             marginTop: "-4px",
             overflow: "hidden",
             "&::before": {
@@ -1690,7 +1690,7 @@ const SelectLocationPage: React.FC = () => {
               top: 0,
               bottom: 0,
               width: "3px",
-              background: "#FF9999",
+              background: "#FF8484",
             },
           }}
         >
@@ -1699,7 +1699,7 @@ const SelectLocationPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: "14px",
               fontWeight: 700,
-              color: "#FF9999",
+              color: "#FF8484",
               marginBottom: "4px",
             }}
           >
@@ -1750,7 +1750,7 @@ const SelectLocationPage: React.FC = () => {
           sx={{
             height: 46,
             borderRadius: "999px",
-            background: "#FF9999",
+            background: "#FF8484",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "14.5px",
@@ -1761,7 +1761,7 @@ const SelectLocationPage: React.FC = () => {
               "0 8px 20px rgba(15, 23, 42, 0.32), 0 3px 8px rgba(214, 40, 40, 0.15)",
             transition: "transform 0.15s ease, box-shadow 0.15s ease",
             "&:hover": {
-              background: "#FF9999",
+              background: "#FF8484",
               transform: "translateY(-1px)",
               boxShadow:
                 "0 12px 24px rgba(15, 23, 42, 0.38), 0 4px 10px rgba(214, 40, 40, 0.20)",
@@ -1806,9 +1806,9 @@ const inputSx = {
     fontSize: "16px",
     color: "var(--sr-ink)",
     "& fieldset": { borderColor: "var(--sr-hairline)" },
-    "&:hover fieldset": { borderColor: "rgba(217, 124, 149, 0.45)" },
+    "&:hover fieldset": { borderColor: "rgba(255, 132, 132, 0.45)" },
     "&.Mui-focused fieldset": {
-      borderColor: "#FF9999",
+      borderColor: "#FF8484",
       borderWidth: "1.5px",
     },
   },
@@ -1854,8 +1854,8 @@ const FieldLabel: React.FC<{
             height: 28,
             flexShrink: 0,
             borderRadius: "8px",
-            background: "rgba(217, 124, 149, 0.12)",
-            color: "#FF9999",
+            background: "rgba(255, 132, 132, 0.12)",
+            color: "#FF8484",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",

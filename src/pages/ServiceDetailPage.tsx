@@ -594,13 +594,13 @@ const ServiceDetailPage: React.FC = () => {
                   cursor: "pointer",
                   border: isActive
                     ? "1px solid transparent"
-                    : "1px solid rgba(217, 124, 149, 0.30)",
+                    : "1px solid rgba(255, 132, 132, 0.30)",
                   background: isActive
                     ? gradients.primary
                     : "var(--sr-panel)",
                   color: isActive ? "#fff" : "var(--sr-ink)",
                   boxShadow: isActive
-                    ? "0 10px 24px rgba(217, 124, 149, 0.30)"
+                    ? "0 10px 24px rgba(255, 132, 132, 0.30)"
                     : "var(--sr-card-shadow)",
                   transition:
                     "background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease",
@@ -1051,7 +1051,7 @@ const ServiceDetailPage: React.FC = () => {
                         // 🆕 28x.242 editorial — price numerals in the wordmark
                         //   serif + the founder's fresh rose, same signature as
                         //   the home cards and pricing page.
-                        sx={{ fontFamily: fonts.heading, color: "#D97C95", fontWeight: 800, fontSize: "18px" }}
+                        sx={{ fontFamily: fonts.heading, color: "#FF8484", fontWeight: 800, fontSize: "18px" }}
                       >
                         {formatTHB(from)}
                       </Box>

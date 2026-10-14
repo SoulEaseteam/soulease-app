@@ -55,8 +55,8 @@ import { getReferralConfig } from "@/utils/discount";
 const SHARE_HOST = "https://sunred.vip";
 
 // Rose theme (Round 28w) — retired the dated taupe #8F8474 banner/button.
-const ROSE = "#FF9999";
-const ROSE_DEEP = "#FF9999";
+const ROSE = "#FF8484";
+const ROSE_DEEP = "#FF8484";
 
 interface Props {
   open: boolean;
@@ -363,7 +363,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
             borderRadius: "12px",
             boxShadow: "0 6px 18px rgba(138, 58, 87, 0.30)",
             "&:hover": {
-              background: `linear-gradient(135deg, ${ROSE_DEEP} 0%, #B85F79 100%)`,
+              background: `linear-gradient(135deg, ${ROSE_DEEP} 0%, #FF8484 100%)`,
               boxShadow: "0 8px 22px rgba(138, 58, 87, 0.40)",
             },
           }}

@@ -109,7 +109,7 @@ const IdentityCard: React.FC<Props> = ({
           <VerifiedRoundedIcon
             aria-label="verified"
             titleAccess="Verified by SunRed"
-            sx={{ fontSize: 22, color: "#FF9999", marginLeft: "auto" }}
+            sx={{ fontSize: 22, color: "#FF8484", marginLeft: "auto" }}
           />
         </Box>
 
@@ -172,7 +172,7 @@ const IdentityCard: React.FC<Props> = ({
                   //   the tinted fill turned into flat gray slabs on the
                   //   night theme.
                   background: "transparent",
-                  border: "1px solid rgba(217,124,149,0.38)",
+                  border: "1px solid rgba(255, 132, 132,0.38)",
                   borderRadius: "999px",
                   padding: "3px 10px",
                   fontFamily: SANS,
@@ -196,7 +196,7 @@ const IdentityCard: React.FC<Props> = ({
                   //   the tinted fill turned into flat gray slabs on the
                   //   night theme.
                   background: "transparent",
-                  border: "1px solid rgba(217,124,149,0.38)",
+                  border: "1px solid rgba(255, 132, 132,0.38)",
                   borderRadius: "999px",
                   padding: "3px 10px",
                   fontFamily: SANS,
@@ -218,7 +218,7 @@ const IdentityCard: React.FC<Props> = ({
                   //   the tinted fill turned into flat gray slabs on the
                   //   night theme.
                   background: "transparent",
-                  border: "1px solid rgba(217,124,149,0.38)",
+                  border: "1px solid rgba(255, 132, 132,0.38)",
                   borderRadius: "999px",
                   padding: "3px 10px",
                   fontFamily: SANS,

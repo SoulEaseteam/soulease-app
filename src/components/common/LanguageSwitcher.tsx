@@ -200,8 +200,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           transition: "background 0.2s ease, border-color 0.25s ease, box-shadow 0.25s ease",
           "&:hover": {
             background: "rgba(255, 255, 255, 0.75)",
-            borderColor: "rgba(255, 153, 153, 0.7)",
-            boxShadow: "0 0 14px rgba(255, 153, 153, 0.35)",
+            borderColor: "rgba(255, 132, 132, 0.7)",
+            boxShadow: "0 0 14px rgba(255, 132, 132, 0.35)",
           },
           "&:focus-visible": {
             outline: "2px solid #2D2D2B",
@@ -246,8 +246,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             background: "rgba(255, 255, 255, 0.94)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(255, 153, 153, 0.55)",
-            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.16), 0 0 18px rgba(255, 153, 153, 0.28)",
+            border: "1px solid rgba(255, 132, 132, 0.55)",
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.16), 0 0 18px rgba(255, 132, 132, 0.28)",
             whiteSpace: "nowrap",
             transformOrigin: "100% 50%",
             animation: "srLangPop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both",
@@ -296,7 +296,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                       active || isPicked
                         ? "linear-gradient(135deg, #FFADAD, #FF8484)"
                         : "rgba(255, 229, 236, 0.9)",
-                    color: active || isPicked ? "#FFFFFF" : "#E4738F",
+                    color: active || isPicked ? "#FFFFFF" : "#FF8484",
                   },
                 }}
               >
@@ -328,7 +328,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               transform: picked === "auto" ? "scale(1.12)" : "none",
               transition:
                 "background 0.25s ease, color 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease",
-              "&:hover": { background: isAuto ? undefined : "rgba(255, 229, 236, 0.9)", color: isAuto ? "#FFFFFF" : "#E4738F" },
+              "&:hover": { background: isAuto ? undefined : "rgba(255, 229, 236, 0.9)", color: isAuto ? "#FFFFFF" : "#FF8484" },
             }}
           >
             <AutoAwesomeRoundedIcon sx={{ fontSize: 14 }} />

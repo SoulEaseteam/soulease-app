@@ -137,7 +137,7 @@ const InstallAppBanner: React.FC = () => {
           flexShrink: 0,
           display: "grid",
           placeItems: "center",
-          background: "linear-gradient(135deg,#F050A0,#E6197E)",
+          background: "linear-gradient(135deg,#FF8484,#FF8484)",
           color: "#fff",
         }}
       >
@@ -185,7 +185,7 @@ const InstallAppBanner: React.FC = () => {
             fontSize: 12.5,
             fontWeight: 700,
             color: "#fff",
-            background: "linear-gradient(135deg,#F050A0,#E6197E)",
+            background: "linear-gradient(135deg,#FF8484,#FF8484)",
             flexShrink: 0,
           }}
         >

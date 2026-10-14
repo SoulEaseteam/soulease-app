@@ -156,7 +156,7 @@ const HomeFooterV2: React.FC = () => {
         // with real contrast instead of white-on-white.
         background: "linear-gradient(165deg, #2B1A15 0%, #1D110D 100%)",
         backgroundImage:
-          "radial-gradient(120% 90% at 100% 0%, rgba(240, 80, 160, 0.10), transparent 55%), linear-gradient(165deg, #2B1A15 0%, #1D110D 100%)",
+          "radial-gradient(120% 90% at 100% 0%, rgba(255, 132, 132, 0.10), transparent 55%), linear-gradient(165deg, #2B1A15 0%, #1D110D 100%)",
         borderRadius: "24px",
         border: "1px solid rgba(215, 181, 109, 0.30)",
         position: "relative",
@@ -170,7 +170,7 @@ const HomeFooterV2: React.FC = () => {
           height: "2px",
           borderRadius: "2px",
           background:
-            "linear-gradient(90deg, transparent, rgba(240, 80, 160, 0.8), rgba(215, 181, 109, 0.8), transparent)",
+            "linear-gradient(90deg, transparent, rgba(255, 132, 132, 0.8), rgba(215, 181, 109, 0.8), transparent)",
         },
       }}
     >
@@ -187,7 +187,7 @@ const HomeFooterV2: React.FC = () => {
         <Box>
           {/* 28x.233 (founder: สีโลโก้เหมือนกัน) — mirrors TopNav's lockup
               exactly: Playfair 700, 0.12em tracking, SUN in ink (ivory on
-              this dark ground) + RED in the brand rose #FF9999. */}
+              this dark ground) + RED in the brand rose #FF8484. */}
           <Box
             sx={{
               fontFamily: '"Playfair Display", "Fraunces", Georgia, serif',
@@ -200,7 +200,7 @@ const HomeFooterV2: React.FC = () => {
             }}
           >
             SUN
-            <Box component="span" sx={{ color: "#FF9999" }}>
+            <Box component="span" sx={{ color: "#FF8484" }}>
               RED
             </Box>
           </Box>
@@ -323,9 +323,9 @@ const HomeFooterV2: React.FC = () => {
                         textDecoration: "none",
                         display: "inline-block",
                         transition: "color 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                        "&:hover": { color: "#F050A0", transform: "translateX(3px)" },
+                        "&:hover": { color: "#FF8484", transform: "translateX(3px)" },
                         "&:focus-visible": {
-                          outline: "2px solid #F050A0",
+                          outline: "2px solid #FF8484",
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },
@@ -358,13 +358,13 @@ const HomeFooterV2: React.FC = () => {
                               transition:
                                 "color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
                               "&:hover": {
-                                color: "#F050A0",
-                                borderColor: "rgba(240, 80, 160, 0.5)",
-                                background: "rgba(240, 80, 160, 0.14)",
+                                color: "#FF8484",
+                                borderColor: "rgba(255, 132, 132, 0.5)",
+                                background: "rgba(255, 132, 132, 0.14)",
                                 transform: "translateY(-1px)",
                               },
                               "&:focus-visible": {
-                                outline: "2px solid #F050A0",
+                                outline: "2px solid #FF8484",
                                 outlineOffset: 2,
                               },
                             }
@@ -374,9 +374,9 @@ const HomeFooterV2: React.FC = () => {
                               display: "inline-block",
                               transition:
                                 "color 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                              "&:hover": { color: "#F050A0", transform: "translateX(3px)" },
+                              "&:hover": { color: "#FF8484", transform: "translateX(3px)" },
                               "&:focus-visible": {
-                                outline: "2px solid #F050A0",
+                                outline: "2px solid #FF8484",
                                 outlineOffset: 2,
                                 borderRadius: "3px",
                               },
@@ -395,9 +395,9 @@ const HomeFooterV2: React.FC = () => {
                         cursor: "pointer",
                         color: "inherit",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#FF9999" }, // ROSE — link hover
+                        "&:hover": { color: "#FF8484" }, // ROSE — link hover
                         "&:focus-visible": {
-                          outline: "2px solid #FF9999", // ROSE focus ring
+                          outline: "2px solid #FF8484", // ROSE focus ring
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },

@@ -34,7 +34,7 @@ import { formatTHB } from "@/utils/servicePricing";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#FF9999";
+const ROSE = "#FF8484";
 
 // 🆕 28x.111 — the taxi widget's in-line service picker. Bestseller (same id
 //   as ServicesPage/PricingPage/StepService) gets the ★ + is the default pick.
@@ -592,7 +592,7 @@ const TaxiEstimator: React.FC = () => {
               padding: "10px 14px",
               borderRadius: "12px",
               border: "none",
-              background: "linear-gradient(135deg, #FF9999 0%, #FF9999 100%)",
+              background: "linear-gradient(135deg, #FF8484 0%, #FF8484 100%)",
               color: "#fff",
               fontFamily: SANS,
               fontSize: 14,
@@ -750,12 +750,12 @@ const TaxiEstimator: React.FC = () => {
                 sx={{
                   display: "inline-flex", alignItems: "center", gap: "6px",
                   px: "12px", py: "5px", borderRadius: "999px",
-                  background: "rgba(230,25,126,0.10)",
-                  border: "1px solid rgba(230,25,126,0.30)",
+                  background: "rgba(255, 132, 132,0.10)",
+                  border: "1px solid rgba(255, 132, 132,0.30)",
                 }}
               >
-                <Box component="span" sx={{ width: 7, height: 7, borderRadius: "50%", background: "#E6197E" }} />
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "#FF9999" }}>
+                <Box component="span" sx={{ width: 7, height: 7, borderRadius: "50%", background: "#FF8484" }} />
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "#FF8484" }}>
                   {t("nearme.taxi.saved", "You save ฿{{n}} booking online", { n: estimate.save })}
                 </Typography>
               </Box>
@@ -789,14 +789,14 @@ const TaxiEstimator: React.FC = () => {
                         position: "relative", textAlign: "left", cursor: "pointer",
                         p: "8px 10px", borderRadius: "11px",
                         border: active ? `1.5px solid ${ROSE}` : "1px solid var(--sr-hairline)",
-                        background: active ? "rgba(217,124,149,0.12)" : "var(--sr-panel-2)",
+                        background: active ? "rgba(255, 132, 132,0.12)" : "var(--sr-panel-2)",
                         transition: "border-color .15s ease, background .15s ease",
                       }}
                     >
                       <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2 }}>
                         {isBest && "★ "}{SERVICE_SHORT[s.id] ?? s.name}
                       </Typography>
-                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: active ? "#FF9999" : "var(--sr-body)", mt: 0.2 }}>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: active ? "#FF8484" : "var(--sr-body)", mt: 0.2 }}>
                         {formatTHB(s.price)}
                       </Typography>
                     </Box>
@@ -839,7 +839,7 @@ const TaxiEstimator: React.FC = () => {
                 onClick={bookNow}
                 sx={{
                   width: "100%", py: "11px", borderRadius: "12px", border: "none", cursor: "pointer",
-                  background: "linear-gradient(135deg, #FF9999 0%, #FF9999 100%)",
+                  background: "linear-gradient(135deg, #FF8484 0%, #FF8484 100%)",
                   color: "#fff", fontFamily: SANS, fontSize: 14, fontWeight: 800,
                   boxShadow: "0 6px 16px rgba(138,58,87,0.28)",
                 }}
@@ -892,7 +892,7 @@ const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; div
         fontWeight: 700,
         lineHeight: 1.15,
         mt: 0.35,
-        color: accent ? "#FF9999" : "var(--sr-ink)",
+        color: accent ? "#FF8484" : "var(--sr-ink)",
       }}
     >
       {value}
@@ -1065,7 +1065,7 @@ const NearMePage: React.FC = () => {
             height: 34,
             flexShrink: 0,
             borderRadius: "50%",
-            background: "rgba(217,124,149,0.14)",
+            background: "rgba(255, 132, 132,0.14)",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",

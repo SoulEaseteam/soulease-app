@@ -112,7 +112,7 @@ const HowItWorks: React.FC = () => {
               content: '""',
               width: "22px",
               height: "1px",
-              background: "rgba(217, 124, 149, 0.65)", // rose tinted eyebrow hairline (28r105)
+              background: "rgba(255, 132, 132, 0.65)", // rose tinted eyebrow hairline (28r105)
             },
           }}
         >
@@ -136,7 +136,7 @@ const HowItWorks: React.FC = () => {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#FF9999",
+              color: "#FF8484",
             },
           }}
         >
@@ -173,7 +173,7 @@ const HowItWorks: React.FC = () => {
             bottom: "70px",
             width: "1px",
             background:
-              "linear-gradient(180deg, rgba(217, 124, 149, 0.55) 0%, rgba(217, 124, 149, 0.28) 55%, rgba(217, 124, 149, 0.06) 100%)",
+              "linear-gradient(180deg, rgba(255, 132, 132, 0.55) 0%, rgba(255, 132, 132, 0.28) 55%, rgba(255, 132, 132, 0.06) 100%)",
             pointerEvents: "none",
           }}
         />
@@ -219,7 +219,7 @@ const HowItWorks: React.FC = () => {
                   flexShrink: 0,
                   borderRadius: "50%",
                   background:
-                    "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)", // 28r105 rose gradient
+                    "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)", // 28r105 rose gradient
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",
@@ -228,7 +228,7 @@ const HowItWorks: React.FC = () => {
                   fontWeight: 500,
                   fontSize: "15px",
                   letterSpacing: "0.04em",
-                  boxShadow: "0 6px 16px rgba(217, 124, 149, 0.30)",
+                  boxShadow: "0 6px 16px rgba(255, 132, 132, 0.30)",
                   "&::before": {
                     content: '""',
                     position: "absolute",
@@ -318,7 +318,7 @@ const HowItWorks: React.FC = () => {
               "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
             "&:hover": {
               transform: "translateY(-1px)",
-              borderColor: "rgba(217, 124, 149, 0.35)",
+              borderColor: "rgba(255, 132, 132, 0.35)",
             },
           }}
         >
@@ -328,8 +328,8 @@ const HowItWorks: React.FC = () => {
               height: 38,
               flexShrink: 0,
               borderRadius: "12px",
-              background: "rgba(217, 124, 149, 0.14)",
-              color: "#FF9999",
+              background: "rgba(255, 132, 132, 0.14)",
+              color: "#FF8484",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

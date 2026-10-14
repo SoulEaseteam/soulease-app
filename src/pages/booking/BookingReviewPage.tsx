@@ -130,7 +130,7 @@ const BookingReviewPage: React.FC = () => {
 
         {state.kind === "loading" && (
           <Box sx={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
-            <CircularProgress size={26} sx={{ color: "#FF9999" }} />
+            <CircularProgress size={26} sx={{ color: "#FF8484" }} />
           </Box>
         )}
 
@@ -213,7 +213,7 @@ const BookingReviewPage: React.FC = () => {
               <Rating
                 value={rating}
                 onChange={(_, v) => setRating(v)}
-                icon={<StarRoundedIcon sx={{ fontSize: 36, color: "#FF9999" }} />}
+                icon={<StarRoundedIcon sx={{ fontSize: 36, color: "#FF8484" }} />}
                 emptyIcon={<StarRoundedIcon sx={{ fontSize: 36, color: "var(--sr-hairline)" }} />}
               />
             </Box>
@@ -257,7 +257,7 @@ const BookingReviewPage: React.FC = () => {
                 border: "none",
                 background: submitting || !rating
                   ? "var(--sr-panel-2)"
-                  : "linear-gradient(135deg, #FFB5C8 0%, #FF9999 55%, #E8607E 100%)",
+                  : "linear-gradient(135deg, #FFADAD 0%, #FF8484 55%, #FF8484 100%)",
                 color: submitting || !rating ? "var(--sr-muted)" : "#fff",
                 fontFamily: SANS,
                 fontSize: "14px",

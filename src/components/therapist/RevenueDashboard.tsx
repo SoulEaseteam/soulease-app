@@ -31,8 +31,8 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#FF9999";
-const ROSE_DEEP = "#FF9999";
+const ROSE = "#FF8484";
+const ROSE_DEEP = "#FF8484";
 const GREEN = "#57B88B";
 
 /** Revenue for ONE booking row: her real payout if it's a valid job, her
@@ -197,15 +197,15 @@ export const RevenueDashboard: React.FC<{ uid: string | null | undefined }> = ({
       <Box
         sx={{
           borderRadius: "22px",
-          background: "linear-gradient(135deg, rgba(217,124,149,0.16) 0%, var(--sr-panel) 55%, var(--sr-panel) 100%)",
-          border: "1px solid rgba(217,124,149,0.30)",
-          boxShadow: "0 10px 32px rgba(217,124,149,0.14)",
+          background: "linear-gradient(135deg, rgba(255, 132, 132,0.16) 0%, var(--sr-panel) 55%, var(--sr-panel) 100%)",
+          border: "1px solid rgba(255, 132, 132,0.30)",
+          boxShadow: "0 10px 32px rgba(255, 132, 132,0.14)",
           p: "20px 18px 18px",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        <Box aria-hidden sx={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(217,124,149,0.22) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <Box aria-hidden sx={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255, 132, 132,0.22) 0%, transparent 70%)", pointerEvents: "none" }} />
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, position: "relative" }}>
           <Wallet size={15} color={ROSE_DEEP} weight="fill" />
@@ -218,7 +218,7 @@ export const RevenueDashboard: React.FC<{ uid: string | null | undefined }> = ({
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 2 }}>
-          <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #FF9999, #FF9999)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 6px 18px rgba(217,124,149,0.42)" }}>
+          <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #FF8484, #FF8484)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 6px 18px rgba(255, 132, 132,0.42)" }}>
             <Wallet size={26} weight="duotone" />
           </Box>
           <Box sx={{ minWidth: 0 }}>

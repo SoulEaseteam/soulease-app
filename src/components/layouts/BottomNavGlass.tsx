@@ -175,7 +175,7 @@ const BottomNavGlass: React.FC = () => {
         >
           {/* Sliding pill — x-transform, pure pixel interpolation.
               🆕 Round 28x.184 (founder: "แถบล่างทำให้มันมีลูกเล่นขึ้นหน่อย") —
-              was a flat #FF9999 fill + plain black shadow; swapped for a
+              was a flat #FF8484 fill + plain black shadow; swapped for a
               soft gradient + a rose-tinted glow (matches the heart button's
               own 28x.180 glow language) so the active tab reads as a lit
               accent instead of a grey UI shadow. Slightly bouncier spring
@@ -194,7 +194,7 @@ const BottomNavGlass: React.FC = () => {
                 borderRadius: 999,
                 background: "linear-gradient(135deg, #FFADAD 0%, #FF8484 100%)",
                 boxShadow:
-                  "0 4px 16px rgba(255,153,153,0.55), 0 2px 6px rgba(255,132,132,0.35)",
+                  "0 4px 16px rgba(255, 132, 132,0.55), 0 2px 6px rgba(255,132,132,0.35)",
                 zIndex: 0,
                 pointerEvents: "none",
               }}

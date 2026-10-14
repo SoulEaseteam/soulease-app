@@ -37,7 +37,7 @@ import { CONCIERGE, whatsappDeepLink } from "@/config/concierge";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#FF9999";
+const ROSE = "#FF8484";
 
 // 🆕 Round 28x.106 (founder: "แถบบาร์เพิ่มหน้าเว็บ Practitioners เอาไว้ก่อน
 //   หน้าทำงาน") — a quick way to peek at the live customer site (the public
@@ -148,7 +148,7 @@ const ActivationGate: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => (
       gap: 2,
     }}
   >
-    <ShieldWarning size={48} weight="duotone" color="#FF9999" />
+    <ShieldWarning size={48} weight="duotone" color="#FF8484" />
     <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "var(--sr-ink)" }}>
       บัญชียังไม่เปิดใช้งาน
     </Typography>
@@ -194,7 +194,7 @@ const StaffLayout: React.FC = () => {
   if (activation === "loading") {
     return (
       <Box sx={{ minHeight: "100vh", background: "var(--sr-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <CircularProgress sx={{ color: "#FF9999" }} />
+        <CircularProgress sx={{ color: "#FF8484" }} />
       </Box>
     );
   }

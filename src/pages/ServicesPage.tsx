@@ -58,8 +58,8 @@ import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 // ─── Palette tokens ────────────────────────────────────────────────
 const SERIF         = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS          = '"Sarabun", "Inter", system-ui, -apple-system, sans-serif';
-const ROSE          = "#FF9999";
-const ROSE_GRADIENT = "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)";
+const ROSE          = "#FF8484";
+const ROSE_GRADIENT = "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)";
 const BESTSELLER_ID = "SR-HJ2200";
 
 // ─── Remaining services order (bestseller shown separately at top) ─
@@ -103,7 +103,7 @@ const ABOUT_PILLARS = [
     Icon: VisibilityOffRoundedIcon,
     title: "Discreet & private",
     body: "Plain-card payments, encrypted reservations, no signage upon arrival. Your stay remains yours.",
-    tone: { bg: "rgba(217,124,149,0.12)", fg: ROSE },
+    tone: { bg: "rgba(255, 132, 132,0.12)", fg: ROSE },
   },
   {
     id: "outcall",
@@ -503,7 +503,7 @@ const ServicesPage: React.FC = () => {
                       different visual language, so it was dropped rather than
                       stacked on top of the ribbon. The line-flanked eyebrow slot
                       stays for the ritual label. */}
-                  <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }} />
+                  <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(255, 132, 132,0.45)" }} />
                   <Box
                     sx={{
                       fontFamily: SANS,
@@ -516,7 +516,7 @@ const ServicesPage: React.FC = () => {
                   >
                     {t("services.mostRequested", "Most requested")}
                   </Box>
-                  <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }} />
+                  <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(255, 132, 132,0.45)" }} />
                 </Box>
 
                 <Box
@@ -726,7 +726,7 @@ const ServicesPage: React.FC = () => {
                         px: "4px",
                       }}
                     >
-                      <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.35)" }} />
+                      <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(255, 132, 132,0.35)" }} />
                       <Typography
                         component="p"
                         sx={{
@@ -741,7 +741,7 @@ const ServicesPage: React.FC = () => {
                       >
                         {t("services.ritualNumbered", "Ritual · {{n}}", { n: ritualNumber })}
                       </Typography>
-                      <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.35)" }} />
+                      <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(255, 132, 132,0.35)" }} />
                     </Box>
 
                     {/* ── Card · full-size, unified with featured layout ──
@@ -779,7 +779,7 @@ const ServicesPage: React.FC = () => {
                           "&:hover": {
                             transform: "translateY(-3px)",
                             boxShadow: "0 14px 32px rgba(0,0,0,0.28)",
-                            borderColor: "rgba(217,124,149,0.4)",
+                            borderColor: "rgba(255, 132, 132,0.4)",
                           },
                         },
                         "&:focus-visible": {

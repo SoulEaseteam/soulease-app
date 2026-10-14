@@ -36,15 +36,15 @@ const GRAY_800 = "var(--sr-ink)";          // heading + primary TEXT
 const GRAY_900 = "var(--sr-ink)";          // headline ink
 
 // Accent tints (FIXED both modes) — tan retired (read dated) → rose family
-const WARM_100 = "#FF9999";     // light rose
-const WARM_200 = "#FF9999";     // rose (skin / secondary fill)
+const WARM_100 = "#FF8484";     // light rose
+const WARM_200 = "#FF8484";     // rose (skin / secondary fill)
 const SAGE_400 = "#57B88B"; // success / online / "available" → green (founder semantic)
 
 // ── Dusty-rose primary CTA (was WARM_TAUPE) ────────────────────────
-// Founder spec: Dusty Rose #FF9999 primary, Dusty Rose Brown #FF9999
+// Founder spec: Dusty Rose #FF8484 primary, Dusty Rose Brown #FF8484
 // ribbon/hover. Names kept as WARM_TAUPE* so all CTA call-sites re-skin.
-const WARM_TAUPE       = "#FF9999"; // primary CTA fill — Vintage Rose
-const WARM_TAUPE_HOVER = "#FF9999"; // primary CTA hover — Dusty Rose Brown
+const WARM_TAUPE       = "#FF8484"; // primary CTA fill — Vintage Rose
+const WARM_TAUPE_HOVER = "#FF8484"; // primary CTA hover — Dusty Rose Brown
 
 // ── Signal-highlight accents (dark-luxury values) ──────────────────
 // Soft-gold is the single signature "embroidery" accent — NEW badges,
@@ -52,8 +52,8 @@ const WARM_TAUPE_HOVER = "#FF9999"; // primary CTA hover — Dusty Rose Brown
 const TEAL_MINT           = "var(--sr-gold-text)"; // NEW badge / highlights → gold (per mode)
 const AVAILABLE_GREEN     = "rgba(87,184,139,0.14)"; // "Available" pill bg — green tint
 const AVAILABLE_GREEN_TEXT = "#57B88B"; // "Available" text — green
-const FAVORITE_PINK       = "rgba(217,124,149,0.16)"; // heart / favorite bg — rose tint (fixed)
-const FAVORITE_PINK_TEXT  = "#FF9999"; // heart glyph — Vintage Rose (fixed)
+const FAVORITE_PINK       = "rgba(255, 132, 132,0.16)"; // heart / favorite bg — rose tint (fixed)
+const FAVORITE_PINK_TEXT  = "#FF8484"; // heart glyph — Vintage Rose (fixed)
 const AMBER_STAR          = "#F4C542"; // star rating — bright gold-yellow (founder)
 
 // ── New named token trees (preferred going forward) ────────────────
@@ -118,7 +118,7 @@ export const brand = {
 
   // ── Small accent palette — dark-luxury signature is Soft Gold
   amber: "#F4C542", // ★ star ratings — bright fresh gold-yellow
-  pink: "rgba(217,124,149,0.16)", // favourite bg · soft rose highlight
+  pink: "rgba(255, 132, 132,0.16)", // favourite bg · soft rose highlight
   tagBlue: NEUTRAL_100,        // tag chip bg
   tagPeach: NEUTRAL_200,       // tag chip bg (warmer variant)
 
@@ -146,14 +146,14 @@ export const brand = {
 // ─────────────────────────────────────────────────────────────────────
 export const gradients = {
   /** Primary CTA — dusty-rose gradient (28t dark-luxury) */
-  primary: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
+  primary: "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)",
   /** Section background — flat espresso ground */
   surface: NEUTRAL_50,
   /** Final hero CTA — dusty-rose gradient */
-  finalCta: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)",
+  finalCta: "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)",
 
   // legacy aliases
-  primaryHover: "linear-gradient(135deg,#FF9999 0%,#FF9999 100%)", // deeper rose on hover
+  primaryHover: "linear-gradient(135deg,#FF8484 0%,#FF8484 100%)", // deeper rose on hover
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
@@ -263,15 +263,15 @@ const theme = createTheme({
     // 28t dark-luxury — espresso ground, dusty-rose primary, gold secondary.
     mode: "dark",
     primary: {
-      main: WARM_TAUPE,          // Vintage Rose #FF9999
-      light: "#FF9999",          // dark-mode hover tint
-      dark: WARM_TAUPE_HOVER,    // Dusty Rose Brown #FF9999
+      main: WARM_TAUPE,          // Vintage Rose #FF8484
+      light: "#FF8484",          // dark-mode hover tint
+      dark: WARM_TAUPE_HOVER,    // Dusty Rose Brown #FF8484
       contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#FF9999",           // rose (gold retired — read dated)
-      light: "#FF9999",
-      dark: "#FF9999",
+      main: "#FF8484",           // rose (gold retired — read dated)
+      light: "#FF8484",
+      dark: "#FF8484",
       contrastText: "#FFFFFF",
     },
     success: { main: "#57B88B" }, // Available green (founder semantic)
@@ -356,7 +356,7 @@ const theme = createTheme({
         containedPrimary: {
           background: gradients.primary,
           boxShadow:
-            "0 6px 18px rgba(217, 124, 149, 0.30), inset 0 1px 0 rgba(255,255,255,0.12)",
+            "0 6px 18px rgba(255, 132, 132, 0.30), inset 0 1px 0 rgba(255,255,255,0.12)",
           "&:hover": {
             background: gradients.primaryHover,
             boxShadow: "0 8px 22px rgba(161, 98, 86, 0.38)",

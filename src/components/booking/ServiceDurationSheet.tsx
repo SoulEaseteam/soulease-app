@@ -237,7 +237,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             gap: "5px",
           }}
         >
-          <GpsFixedRoundedIcon sx={{ fontSize: 13, color: "#FF9999" }} />
+          <GpsFixedRoundedIcon sx={{ fontSize: 13, color: "#FF8484" }} />
           {t("sheet.chooseDuration", "Choose duration")}
         </Typography>
         <Box
@@ -283,12 +283,12 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   userSelect: "none",
                   background: "var(--sr-panel-2)",
                   border: isActive
-                    ? "2px solid #FF9999"
+                    ? "2px solid #FF8484"
                     : isPopular
-                      ? "2px solid rgba(217, 124, 149, 0.55)"
+                      ? "2px solid rgba(255, 132, 132, 0.55)"
                       : "1px solid var(--sr-hairline)",
                   boxShadow: isActive
-                    ? "0 6px 18px rgba(217, 124, 149, 0.20)"
+                    ? "0 6px 18px rgba(255, 132, 132, 0.20)"
                     : "0 2px 6px rgba(0, 0, 0, 0.05)",
                   transform: isPopular ? "scale(1.025)" : "scale(1)",
                   transformOrigin: "center",
@@ -300,17 +300,17 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   "@keyframes popularPulse": {
                     "0%, 100%": {
                       boxShadow:
-                        "0 2px 6px rgba(0, 0, 0, 0.05), 0 0 0 0 rgba(217, 124, 149, 0.45)",
+                        "0 2px 6px rgba(0, 0, 0, 0.05), 0 0 0 0 rgba(255, 132, 132, 0.45)",
                       transform: "scale(1.025)",
                     },
                     "50%": {
                       boxShadow:
-                        "0 8px 22px rgba(217, 124, 149, 0.22), 0 0 0 8px rgba(217, 124, 149, 0)",
+                        "0 8px 22px rgba(255, 132, 132, 0.22), 0 0 0 8px rgba(255, 132, 132, 0)",
                       transform: "scale(1.045)",
                     },
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #FF9999",
+                    outline: "2px solid #FF8484",
                     outlineOffset: "2px",
                   },
                   // Respect reduced-motion preference
@@ -327,7 +327,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     flexShrink: 0,
                     borderRadius: "50%",
                     border: isActive
-                      ? "5px solid #FF9999"
+                      ? "5px solid #FF8484"
                       : "2px solid var(--sr-line)",
                     background: isActive ? "#fff" : "transparent",
                     transition: "all 0.15s ease",
@@ -354,7 +354,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                       fontSize: "11px",
                       fontWeight: 700,
                       color: isPopular
-                        ? "#FF9999"
+                        ? "#FF8484"
                         : "var(--sr-muted)",
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
@@ -385,7 +385,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     {/* 🆕 28x.104 — struck was-price removed (founder
                         "ราคาขีดฆ่า ออกทั้งเว็บทุกจุด"); price switched
                         SERIF→SANS (founder "เปลี่ยนฟ้อนให้อ่านง่ายขึ้น"). */}
-                    <Typography component="span" sx={{ fontFamily: SANS, fontSize: "17px", fontWeight: 700, color: isActive ? "#FF9999" : "var(--sr-ink)", lineHeight: 1.15 }}>
+                    <Typography component="span" sx={{ fontFamily: SANS, fontSize: "17px", fontWeight: 700, color: isActive ? "#FF8484" : "var(--sr-ink)", lineHeight: 1.15 }}>
                       {formatTHB(price)}
                     </Typography>
                   </Box>
@@ -404,7 +404,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             padding: "18px 18px 16px",
             borderRadius: "20px",
             background: "var(--sr-panel-2)",
-            border: "1px solid rgba(217, 124, 149, 0.22)",
+            border: "1px solid rgba(255, 132, 132, 0.22)",
             boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
           }}
         >
@@ -426,9 +426,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "#FF9999",
+                  background: "#FF8484",
                   color: "#fff",
-                  boxShadow: "0 4px 10px rgba(217, 124, 149, 0.30)",
+                  boxShadow: "0 4px 10px rgba(255, 132, 132, 0.30)",
                 }}
               >
                 <EventRoundedIcon sx={{ fontSize: 16 }} />
@@ -500,17 +500,17 @@ const ServiceDurationSheet: React.FC<Props> = ({
             borderRadius: "999px",
             // 🆕 28t.18 — rose primary (was retired taupe #8F8474). This is
             //   the most important button in the booking flow.
-            background: "#FF9999",
+            background: "#FF8484",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "15px",
             fontWeight: 700,
             letterSpacing: "0.02em",
             textTransform: "none",
-            boxShadow: "0 10px 26px rgba(217, 124, 149, 0.40)",
+            boxShadow: "0 10px 26px rgba(255, 132, 132, 0.40)",
             "&:hover": {
-              background: "#FF9999",
-              boxShadow: "0 12px 30px rgba(217, 124, 149, 0.46)",
+              background: "#FF8484",
+              boxShadow: "0 12px 30px rgba(255, 132, 132, 0.46)",
             },
             "&.Mui-disabled": {
               background: "var(--sr-panel-2)",

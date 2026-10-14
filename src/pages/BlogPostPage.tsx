@@ -53,11 +53,11 @@ const proseSx = {
   "& em": { fontStyle: "italic" },
   "& ul, & ol": { margin: "0 0 1.2em", paddingLeft: "1.35em" },
   "& li": { margin: "0 0 0.5em", paddingLeft: "0.15em" },
-  "& li::marker": { color: "#FF9999" },
+  "& li::marker": { color: "#FF8484" },
   "& blockquote": {
     margin: "1.4em 0",
     padding: "14px 18px",
-    borderLeft: "3px solid #FF9999",
+    borderLeft: "3px solid #FF8484",
     background: "#FBEEF2",
     borderRadius: "0 12px 12px 0",
     "& p": { margin: 0, fontStyle: "italic", color: grays.g800 },
@@ -149,7 +149,7 @@ const BlogPostPage: React.FC = () => {
           fontSize: 13.5,
           fontWeight: 600,
           color: grays.g600,
-          "&:hover": { color: "#FF9999" },
+          "&:hover": { color: "#FF8484" },
         }}
       >
         <ArrowBackRoundedIcon sx={{ fontSize: 17 }} />
@@ -167,7 +167,7 @@ const BlogPostPage: React.FC = () => {
           fontWeight: 600,
           letterSpacing: "0.06em",
           textTransform: "uppercase",
-          color: "#FF9999",
+          color: "#FF8484",
           margin: "22px 0 0",
         }}
       >
@@ -217,7 +217,7 @@ const BlogPostPage: React.FC = () => {
       {/* reserve CTA */}
       <Box
         sx={{
-          background: "linear-gradient(135deg, #FF9999 0%, #FF9999 55%, #FF9999 100%)",
+          background: "linear-gradient(135deg, #FF8484 0%, #FF8484 55%, #FF8484 100%)",
           borderRadius: "18px",
           padding: { xs: "22px 20px", md: "28px 28px" },
           margin: { xs: "32px 0 0", md: "44px 0 0" },
@@ -255,7 +255,7 @@ const BlogPostPage: React.FC = () => {
           sx={{
             marginTop: "18px",
             background: "#fff",
-            color: "#B4526C",
+            color: "#FF8484",
             fontFamily: fonts.body,
             fontWeight: 700,
             fontSize: 15,
@@ -301,7 +301,7 @@ const BlogPostPage: React.FC = () => {
                   borderRadius: "14px",
                   padding: "14px 16px",
                   transition: "border-color .18s ease",
-                  "&:hover": { borderColor: "#D97C9566" },
+                  "&:hover": { borderColor: "#FF848466" },
                 }}
               >
                 <Box
@@ -321,7 +321,7 @@ const BlogPostPage: React.FC = () => {
                   sx={{
                     fontFamily: fonts.body,
                     fontSize: 12.5,
-                    color: "#FF9999",
+                    color: "#FF8484",
                     fontWeight: 600,
                     margin: "6px 0 0",
                   }}

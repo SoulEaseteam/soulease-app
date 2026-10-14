@@ -60,7 +60,7 @@ interface PayoutForm {
 }
 const EMPTY: PayoutForm = { bankName: "", bankAccount: "", bankAccountName: "" };
 
-const ROSE = "#FF9999";
+const ROSE = "#FF8484";
 const GREEN = "#2f9e6f";
 const RED = "#C0392B";
 const INK = "#2a1a14";

@@ -29,7 +29,7 @@ import { fonts, accents } from "@/theme";
 //   booking/checkout flow and every other page keep the existing brand
 //   red untouched while this one card style is trialed.
 // 🕯️ 28t dark-luxury — focus ring is dusty rose; highlight ink is ivory.
-const oceanAccent = "#FF9999";
+const oceanAccent = "#FF8484";
 const oceanHighlight = "#F3E6DB";
 import { enhanceImage } from "@/utils/cloudinary";
 import type { Therapist, Avail } from "@/types/therapist";
@@ -86,7 +86,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
     therapist.image || therapist.gallery?.[0] || "";
   const portrait = enhanceImage(heroImage, { variant: "hero" });
 
-  // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #ff9999 ตอนกด
+  // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #FF8484 ตอนกด
   //   จะเปลี่ยนเป็นชื่อ BOOK NOW สี #13bda6") — press-state feedback on the
   //   CTA button: idle reads AVAILABLE in coral-pink, and flashes to BOOK
   //   NOW in teal while actually pressed (pointerdown -> pointerup/leave),
@@ -157,11 +157,11 @@ const TherapistMinimalCard: React.FC<Props> = ({
     { label: string; bg: string; color: string }
   > = {
     // 🕯️ 28t — founder badge spec: VIP gold+brown · NEW rose+white · HOT
-    //   #FF9999+white · TOP STAR gold+brown.
+    //   #FF8484+white · TOP STAR gold+brown.
     TOP_RATED: { label: "TOP STAR", bg: "#F4C542",     color: "#232B36" },
-    VIP:       { label: "VIP",        bg: "#FF9999",     color: "#FFFFFF" },
-    HOT:       { label: "HOT",        bg: "#FF9999",     color: "#FFFFFF" },
-    NEW:       { label: "NEW",        bg: "#FF9999",     color: "#FFFFFF" },
+    VIP:       { label: "VIP",        bg: "#FF8484",     color: "#FFFFFF" },
+    HOT:       { label: "HOT",        bg: "#FF8484",     color: "#FFFFFF" },
+    NEW:       { label: "NEW",        bg: "#FF8484",     color: "#FFFFFF" },
   };
   const badgeKey =
     (therapist.badgeKey as keyof typeof BADGE_STYLE | null | undefined) ?? null;
@@ -428,7 +428,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
             on-photo status pill (and its STATUS_DOT/statusMeta/statusLabel
             plumbing, 28s138) is removed entirely. Status/availability
             communication now lives on the CTA button below (28x.122's
-            AVAILABLE/#FF9999 idle -> BOOK NOW/#13bda6 press state) instead
+            AVAILABLE/#FF8484 idle -> BOOK NOW/#13bda6 press state) instead
             of a separate badge here. `status` itself is still very much
             in use — isOffDuty gating, opacity/filter dimming, the price
             badge's `!isOnHoliday` guard, and the CTA button. */}
@@ -577,7 +577,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   flexShrink: 0,
                   // 🆕 blush rating chip (Moko) — reads as a finished pill
                   //   instead of floating text. Rose tint works on day + night.
-                  background: "rgba(255,153,153,0.16)",
+                  background: "rgba(255, 132, 132,0.16)",
                   padding: "2px 8px 2px 6px",
                   borderRadius: "999px",
                 }}
@@ -691,7 +691,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   fontWeight: 800,
                   // 🆕 Editorial pass — the fresh rose the founder picked for
                   //   price numerals (สดกว่า ไม่"แก่" — sunred-color-taste).
-                  color: "#D97C95",
+                  color: "#FF8484",
                   lineHeight: 1,
                   whiteSpace: "nowrap",
                 }}
@@ -744,16 +744,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
               // 🆕 28x.258 — same pill as the bottom-nav HOME button
               //   (BottomNavGlass): radius, gradient and glow all match.
               borderRadius: "999px",
-              // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #ff9999
+              // 🆕 28x.122 (founder: "ปุ่มจอง ชื่อ AVAILABLE สีก่อนกด #FF8484
               //   ตอนกด จะเปลี่ยนเป็นชื่อ BOOK NOW สี #13bda6") — idle state
               //   is the 28x.118b coral-pink; pressed state flashes teal.
               //   🆕 28x.125 (founder: "เอาเมาท์วาง ก็เปลี่ยน") — desktop
               //   hover (isHovered) now triggers the same teal/BOOK NOW
               //   state as an actual press, via isBookNowActive.
-              //   Superseded the dusty-rose family (#FF9999→#FF9999→
-              //   #FF9999, 28x.103) and the plain flat swap (28x.118/118b)
+              //   Superseded the dusty-rose family (#FF8484→#FF8484→
+              //   #FF8484, 28x.103) and the plain flat swap (28x.118/118b)
               //   — see those rounds' history if this trial gets reverted.
-              // 🆕 Round 28v.7 — idle state upgraded from flat #FF9999 to a
+              // 🆕 Round 28v.7 — idle state upgraded from flat #FF8484 to a
               //   warm rose gradient for more visual depth on the card.
               // 🆕 Editorial pass — flat solid fills instead of the candy
               //   gradients, and no coloured glow. Quiet-luxury reads flat;
@@ -781,7 +781,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   ? "0 4px 16px rgba(19,189,166,0.45)"
                   : isBusyNow
                     ? "0 4px 16px rgba(232,162,61,0.45)"
-                    : "0 4px 16px rgba(255,153,153,0.55), 0 2px 6px rgba(255,132,132,0.35)",
+                    : "0 4px 16px rgba(255, 132, 132,0.55), 0 2px 6px rgba(255,132,132,0.35)",
               transition: "transform 0.15s ease, background 0.15s ease",
               // 🆕 (founder: "ปุ่มจอง เพิ่มลูกเล่นด้วย") — the same glossy
               //   "แวววาว" glint as the NEW badge/anniversary banner sweeps

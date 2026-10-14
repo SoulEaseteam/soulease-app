@@ -66,8 +66,8 @@ const SANS  = '"Inter", system-ui, sans-serif';
 // 🆕 28x.57 (founder: "เปลี่ยนสีเข้าธีม") — the page was still on the pre-Moko
 //   slate/taupe palette (#1A2B2E hero, #F4F6F5 page, #8F8474 ring). Brand rose +
 //   theme vars from here on, so it matches the rest of the site day and night.
-const ROSE = "#FF9999";
-const ROSE_DEEP = "#FF9999";
+const ROSE = "#FF8484";
+const ROSE_DEEP = "#FF8484";
 const DANGER = "#C0562E";
 
 // ── helpers ─────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger, value }) =
         height: 36,
         borderRadius: "12px",
         // 🆕 28x.57 — themed tiles (was a hardcoded slate tint from the old palette).
-        background: danger ? "rgba(192,86,46,0.12)" : "rgba(217,124,149,0.14)",
+        background: danger ? "rgba(192,86,46,0.12)" : "rgba(255, 132, 132,0.14)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -353,7 +353,7 @@ const ProfilePage: React.FC = () => {
           <Box
             onClick={() => navigate("/login")}
             sx={{
-              background: "linear-gradient(135deg, #FF9999 0%, #FF9999 100%)",
+              background: "linear-gradient(135deg, #FF8484 0%, #FF8484 100%)",
               color: "#fff",
               borderRadius: 999,
               py: 1.6,
@@ -916,9 +916,9 @@ const ProfilePage: React.FC = () => {
                   py: 1.5,
                   borderRadius: 3,
                   cursor: "pointer",
-                  background: on ? "rgba(217,124,149,0.14)" : "transparent",
+                  background: on ? "rgba(255, 132, 132,0.14)" : "transparent",
                   transition: "background 160ms ease",
-                  "&:hover": { background: "rgba(217,124,149,0.10)" },
+                  "&:hover": { background: "rgba(255, 132, 132,0.10)" },
                 }}
               >
                 <Typography

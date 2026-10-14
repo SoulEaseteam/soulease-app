@@ -538,7 +538,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
             alignItems: "center",
           }}
         >
-          <CircularProgress size={28} sx={{ color: "#FF9999" }} />
+          <CircularProgress size={28} sx={{ color: "#FF8484" }} />
         </Box>
       ) : loadError ? (
         // 🆕 Round 28x.7 (audit fix #2) — recoverable error state. Was:
