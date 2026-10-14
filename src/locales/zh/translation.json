@@ -1004,5 +1004,6 @@
   "success.copyCodeV2": "复制预订码 · {{ref}}",
   "success.copied": "已复制 — 请在下方发送",
   "success.willLeaveV2": "将于 {{time}} 出发前往您的位置",
-  "success.trackingSoonV2": "客服会在出发前通知您。"
+  "success.trackingSoonV2": "客服会在出发前通知您。",
+  "success.eyebrow": "预订"
 }

@@ -95,6 +95,15 @@ import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
 
 // 🆕 28x.105 — SERIF alias → readable SANS stack (founder readability pass).
 const SERIF = '"Inter", system-ui, -apple-system, sans-serif';
+// 🆕 28x.255 — DECO is the display register for the two ORNAMENTAL strings on
+//   this page (the eyebrow and the reservation code): Playfair Display in
+//   letterspaced caps. Deliberately NOT applied to running text — 28x.105
+//   moved this page's headings to the Inter stack for readability on the
+//   founder's own call, and that stands.
+//   CLAUDE.md §🎩 names Federo for the deco register, but index.html retired
+//   Federo/Italiana/Cinzel in 28r70 and never loaded them back, so naming it
+//   here would silently fall through to Georgia.
+const DECO = '"Playfair Display", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // 30 min prep buffer — shown as 'Will leave for your location at HH:mm'
@@ -461,37 +470,41 @@ const BookingSuccessPage: React.FC = () => {
             >
               {/* Hero cluster — gridArea 'hero' on desktop */}
               <Box sx={{ minWidth: 0 }}>
-            {/* Pulsing check disc */}
+            {/* 🆕 28x.255 — hairline seal instead of the filled, infinitely
+                pulsing rose disc. A solid disc that throbs is the stock
+                "SUCCESS!" motif every template ships; a thin double ring reads
+                as a stamp on a reservation card, which is the register the rest
+                of the site moved to in 28x.235. */}
             <Box
               sx={{
-                width: 56,
-                height: 56,
+                width: 52,
+                height: 52,
                 borderRadius: "50%",
-                background: "#FF9999",
+                margin: "6px auto 12px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                margin: "6px auto 10px",
-                boxShadow: "0 14px 40px rgba(15, 23, 42, 0.35)",
-                animation: "successPulse 1.6s ease-in-out infinite",
-                "@keyframes successPulse": {
-                  "0%, 100%": {
-                    transform: "scale(1)",
-                    boxShadow:
-                      "0 14px 40px rgba(15, 23, 42, 0.35), 0 0 0 0 rgba(15, 23, 42, 0.45)",
-                  },
-                  "50%": {
-                    transform: "scale(1.06)",
-                    boxShadow:
-                      "0 18px 48px rgba(15, 23, 42, 0.45), 0 0 0 14px rgba(45, 45, 43, 0)",
-                  },
-                },
-                "@media (prefers-reduced-motion: reduce)": {
-                  animation: "none",
-                },
+                border: "1px solid rgba(215, 181, 109, 0.55)",
+                boxShadow: "inset 0 0 0 4px var(--sr-bg), inset 0 0 0 5px rgba(215, 181, 109, 0.28)",
               }}
             >
-              <CheckRoundedIcon sx={{ color: "#fff", fontSize: 32 }} />
+              <CheckRoundedIcon sx={{ color: "var(--sr-cta)", fontSize: 26 }} />
+            </Box>
+
+            {/* Deco eyebrow — — ◆ RESERVATION ◆ — */}
+            <Box
+              className="deco-eyebrow"
+              sx={{
+                fontFamily: DECO,
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.26em",
+                textTransform: "uppercase",
+                color: "rgba(215, 181, 109, 0.95)",
+                marginBottom: "8px",
+              }}
+            >
+              {t("success.eyebrow", "Reservation")}
             </Box>
 
             {/* Title */}
@@ -534,32 +547,25 @@ const BookingSuccessPage: React.FC = () => {
               )}
             </Typography>
 
-            {/* Booking ref pill */}
+            {/* 🆕 28x.255 — the code as a ticket number between hairlines,
+                not a grey metadata chip. It is the one string the guest has to
+                carry into another app, so it gets the page's real typography. */}
             <Box
               sx={{
-                display: "flex",
-                justifyContent: "center",
-                marginTop: "12px",
+                marginTop: "14px",
+                paddingY: "9px",
+                borderTop: "1px solid rgba(215, 181, 109, 0.30)",
+                borderBottom: "1px solid rgba(215, 181, 109, 0.30)",
+                fontFamily: DECO,
+                fontSize: "21px",
+                fontWeight: 500,
+                letterSpacing: "0.20em",
+                textAlign: "center",
+                color: "var(--sr-ink)",
+                fontVariantNumeric: "tabular-nums",
               }}
             >
-              <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "5px 14px",
-                  borderRadius: "999px",
-                  background: "var(--sr-panel-2)",
-                  border: "1px solid var(--sr-hairline)",
-                  fontFamily: SANS,
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "var(--sr-body)",
-                  letterSpacing: "0.06em",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {refCode}
-              </Box>
+              {refCode}
             </Box>
 
             {/* Subtitle */}
@@ -602,6 +608,7 @@ const BookingSuccessPage: React.FC = () => {
                 Round 28s??? (founder) — moved to the TOP of the content,
                 immediately after the hero cluster ("ย้ายไปไว้ด้านบน"). */}
             <Box
+              className="deco-frame"
               sx={{
                 minWidth: 0,
                 // 🆕 28x.105 — the confirm cluster (copy code + channels) is
@@ -609,14 +616,18 @@ const BookingSuccessPage: React.FC = () => {
                 //   exists for reads as a single obvious step instead of
                 //   loose text floating in the void. Channel tiles inside
                 //   stay borderless per 28x.34b.
+                // 🆕 28x.255 — the grand-hotel menu card from 28x.235: inner
+                //   gold hairline (.deco-frame) + squarer corners. The 20px
+                //   radius with a rose outline was the generic rounded-card
+                //   look the rest of the site has already moved off.
                 marginTop: "18px",
                 display: "flex",
                 flexDirection: "column",
                 gap: "10px",
-                padding: "16px 16px 12px",
-                borderRadius: "20px",
+                padding: "20px 18px 15px",
+                borderRadius: "14px",
                 background: "var(--sr-panel)",
-                border: "1px solid rgba(217, 124, 149, 0.35)",
+                border: "1px solid var(--sr-hairline)",
                 boxShadow: "var(--sr-card-shadow)",
               }}
             >
@@ -799,11 +810,15 @@ const BookingSuccessPage: React.FC = () => {
                 banner reads as one cohesive card. */}
             <Box
               sx={{
+                // 🆕 28x.255 — hairline card, not a pastel-filled block: the
+                //   same outline-only move 28x.241 made for status chips. The
+                //   green stays as the signal (dot + name), it just stops
+                //   flooding a panel next to the gold-framed confirm card.
                 marginTop: "20px",
                 padding: "14px 14px 14px 16px",
-                borderRadius: "16px",
-                background: "rgba(22, 163, 74, 0.07)",
-                border: "1px solid rgba(22, 163, 74, 0.20)",
+                borderRadius: "14px",
+                background: "transparent",
+                border: "1px solid rgba(22, 163, 74, 0.28)",
                 display: "flex",
                 alignItems: "flex-start",
                 gap: "12px",
@@ -1287,18 +1302,21 @@ const StepLabel: React.FC<{ n: number; text: string }> = ({ n, text }) => (
     <Box
       aria-hidden
       sx={{
-        width: 20,
-        height: 20,
+        // 🆕 28x.255 — hairline ring + serif numeral, matching the seal and
+        //   the ticket line in the hero. A filled accent disc reads as a
+        //   generic app badge; the ring reads as print.
+        width: 22,
+        height: 22,
         flexShrink: 0,
         borderRadius: "50%",
-        background: "var(--sr-cta)",
-        color: "#fff",
+        border: "1px solid rgba(215, 181, 109, 0.65)",
+        color: "var(--sr-ink)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: SANS,
-        fontSize: "11px",
-        fontWeight: 800,
+        fontFamily: DECO,
+        fontSize: "12px",
+        fontWeight: 600,
         lineHeight: 1,
       }}
     >
@@ -1310,7 +1328,7 @@ const StepLabel: React.FC<{ n: number; text: string }> = ({ n, text }) => (
         fontSize: "12.5px",
         fontWeight: 700,
         color: "var(--sr-ink)",
-        letterSpacing: "0.01em",
+        letterSpacing: "0.03em",
       }}
     >
       {text}
