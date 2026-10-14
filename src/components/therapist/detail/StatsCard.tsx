@@ -168,7 +168,7 @@ const StatsCard: React.FC<Props> = ({
     {
       num: (
         <>
-          <Box component="span" sx={{ color: "#F5A623" }}>★</Box> {rating}
+          <Box component="span" sx={{ color: "#F4C542" }}>★</Box> {rating}
         </>
       ),
       label: t("detail.stats.reviews", "{{count}} reviews", { count: reviewCount }),
@@ -355,7 +355,7 @@ const StatsCard: React.FC<Props> = ({
       {/* 🆕 Round 28s360 — redesigned stats card
           Solid white card (vs. frosted glass) for better legibility
           on any hero photo color. Numbers larger (24/28px serif),
-          labels cleaner (9px SANS caps). ★ is amber (#F5A623) per
+          labels cleaner (9px SANS caps). ★ is amber (#F4C542) per
           CLAUDE.md palette. Cell padding increased for breathing room. */}
       <Box
         sx={{

@@ -81,7 +81,7 @@ function whatsappHrefForBundle(bundle: Bundle): string {
  */
 function categoryTagPalette(tag?: string): { fg: string; bg: string; border: string } {
   const key = (tag ?? "").toLowerCase();
-  if (key === "premium")           return { fg: "#8A5A00", bg: "rgba(245,166,35,0.14)", border: "rgba(245,166,35,0.32)" };  // amber
+  if (key === "premium")           return { fg: "#8A5A00", bg: "rgba(244, 197, 66,0.14)", border: "rgba(244, 197, 66,0.32)" };  // amber
   if (key === "first-time")        return { fg: "#08588A", bg: "rgba(56,169,240,0.14)", border: "rgba(56,169,240,0.30)" };  // sky-blue
   if (key === "weekly ritual")     return { fg: "#2D2D2B", bg: "rgba(45,45,43,0.08)",   border: "rgba(45,45,43,0.20)" };    // brand-red muted
   if (key === "wellness package")  return { fg: "#14532D", bg: "rgba(22,163,74,0.10)",  border: "rgba(22,163,74,0.24)" };   // sage
@@ -341,13 +341,13 @@ const BundleSection: React.FC = () => {
                       padding: "4px 10px",
                       borderRadius: 999,
                       background:
-                        "linear-gradient(135deg, #F5A623 0%, #E8951A 100%)",
+                        "linear-gradient(135deg, #F4C542 0%, #E8951A 100%)",
                       color: "#FFFFFF",
                       fontFamily: SANS,
                       fontSize: 11,
                       fontWeight: 800,
                       letterSpacing: "0.02em",
-                      boxShadow: "0 2px 6px rgba(245, 166, 35, 0.28)",
+                      boxShadow: "0 2px 6px rgba(244, 197, 66, 0.28)",
                     }}
                   >
                     -{b.discountPct}%
@@ -376,13 +376,13 @@ const BundleSection: React.FC = () => {
                     padding: "4px 10px",
                     borderRadius: 999,
                     background:
-                      "linear-gradient(135deg, #F5A623 0%, #E8951A 100%)",
+                      "linear-gradient(135deg, #F4C542 0%, #E8951A 100%)",
                     color: "#FFFFFF",
                     fontFamily: SANS,
                     fontSize: 11,
                     fontWeight: 800,
                     letterSpacing: "0.02em",
-                    boxShadow: "0 2px 6px rgba(245, 166, 35, 0.28)",
+                    boxShadow: "0 2px 6px rgba(244, 197, 66, 0.28)",
                   }}
                 >
                   -{b.discountPct}%

@@ -315,7 +315,7 @@ const AdminMembershipPage: React.FC = () => {
           rate is visible before it is saved. */}
       <Box sx={{ mt: 3.5, pt: 2.5, borderTop: `1px solid ${adminColor.line}` }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-          <Coins size={17} weight="duotone" color="#E3BE55" />
+          <Coins size={17} weight="duotone" color="#D7B56D" />
           <Typography sx={{ fontFamily: SANS, fontSize: 16, fontWeight: 800, color: adminColor.text }}>
             SunPoints
           </Typography>

@@ -582,7 +582,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   borderRadius: "999px",
                 }}
               >
-                <StarRoundedIcon sx={{ fontSize: 14, color: "#ffc31e" }} />
+                <StarRoundedIcon sx={{ fontSize: 14, color: "#F4C542" }} />
                 <Typography
                   sx={{
                     fontFamily: fonts.body,

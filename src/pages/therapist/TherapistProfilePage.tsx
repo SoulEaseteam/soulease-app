@@ -283,8 +283,8 @@ const TherapistProfilePage: React.FC = () => {
               marginTop: 1.5,
               padding: "10px 12px",
               borderRadius: 2,
-              background: therapist.isHoliday ? "linear-gradient(135deg, #F5A623, #B45309)" : "rgba(245,166,35,0.08)",
-              border: therapist.isHoliday ? "1px solid #B45309" : "1px solid rgba(245,166,35,0.28)",
+              background: therapist.isHoliday ? "linear-gradient(135deg, #F4C542, #B45309)" : "rgba(244, 197, 66,0.08)",
+              border: therapist.isHoliday ? "1px solid #B45309" : "1px solid rgba(244, 197, 66,0.28)",
               boxShadow: therapist.isHoliday ? "0 6px 16px rgba(180,83,9,0.35)" : "none",
               display: "flex",
               alignItems: "center",
@@ -293,7 +293,7 @@ const TherapistProfilePage: React.FC = () => {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: therapist.isHoliday ? "rgba(255,255,255,0.22)" : "rgba(245,166,35,0.20)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: therapist.isHoliday ? "rgba(255,255,255,0.22)" : "rgba(244, 197, 66,0.20)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <CalendarX size={15} weight="duotone" color={therapist.isHoliday ? "#fff" : "#B45309"} />
               </Box>
               <Box sx={{ minWidth: 0 }}>

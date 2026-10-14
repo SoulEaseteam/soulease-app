@@ -221,7 +221,7 @@ const MyCodesPage: React.FC = () => {
                       aria-hidden
                       sx={{
                         width: 44, height: 44, borderRadius: "12px", flexShrink: 0,
-                        background: "rgba(227,190,85,0.14)", color: "#E3BE55",
+                        background: "rgba(215, 181, 109,0.14)", color: "#D7B56D",
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}
                     >

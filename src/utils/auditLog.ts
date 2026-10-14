@@ -152,8 +152,8 @@ export async function logAdminAction(
 export const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   // 🆕 28w.96 — campaign + loyalty-rate edits are money changes; label them.
   "promo.anniversary_edit": { label: "แก้แคมเปญครบรอบ", color: "#FF8484" },
-  "membership.sunpoints_edit": { label: "ตั้งค่า SunPoints", color: "#E3BE55" },
-  "therapist.rating_sync": { label: "ซิงก์คะแนนหมอนวด", color: "#F5A623" },
+  "membership.sunpoints_edit": { label: "ตั้งค่า SunPoints", color: "#D7B56D" },
+  "therapist.rating_sync": { label: "ซิงก์คะแนนหมอนวด", color: "#F4C542" },
   "admin.password_change": { label: "แอดมินเปลี่ยนรหัสผ่าน", color: "#DC2626" },
   "user.admin_granted":      { label: "ให้สิทธิ์แอดมิน",        color: "#DC2626" },
   "user.admin_revoked":      { label: "ถอดสิทธิ์แอดมิน",       color: "#DC2626" },

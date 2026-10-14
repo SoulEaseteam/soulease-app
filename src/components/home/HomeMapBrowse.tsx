@@ -674,7 +674,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 gap: "2px",
               }}
             >
-              {/* 🆕 Round 28r81 — accent amber (#F5A623). */}
+              {/* 🆕 Round 28r81 — accent amber (#F4C542). */}
               <StarRoundedIcon sx={{ fontSize: 12, color: accents.amber }} />
               {activeRatingLabel}
               {activeReviewCount > 0 && (

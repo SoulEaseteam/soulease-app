@@ -33,7 +33,7 @@ import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { maskBookingRef } from "@/utils/bookingRef";
 
 const ROSE = "#FF8484";
-const GOLD = "#E3BE55";
+const GOLD = "#D7B56D";
 
 const PRIVILEGES_IMG = "/images/anniversary/privileges.jpg";
 

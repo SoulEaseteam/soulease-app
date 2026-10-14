@@ -33,7 +33,7 @@ const BestsellerRibbon: React.FC<Props> = ({ label }) => (
       zIndex: 2,
       transform: "rotate(45deg)",
       background:
-        "linear-gradient(100deg, #A97913 0%, #E3BE55 28%, #FFF6D2 46%, #E3BE55 62%, #A97913 100%)",
+        "linear-gradient(100deg, #A97913 0%, #D7B56D 28%, #FFF6D2 46%, #D7B56D 62%, #A97913 100%)",
       backgroundSize: "220% 100%",
       animation: "sr-gold-shimmer 3.2s linear infinite",
       "@keyframes sr-gold-shimmer": {

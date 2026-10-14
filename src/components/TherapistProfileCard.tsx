@@ -704,7 +704,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
             >
               <Stack direction="row" alignItems="center" spacing={0.4}>
                 {/* 🆕 Round 28r81 — one true amber for stars sitewide
-                    (accents.amber = #F5A623). */}
+                    (accents.amber = #F4C542). */}
                 <StarRoundedIcon sx={{ fontSize: 12, color: accents.amber }} />
                 <Typography
                   sx={{

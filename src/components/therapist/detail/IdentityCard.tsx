@@ -227,7 +227,7 @@ const IdentityCard: React.FC<Props> = ({
                   color: "var(--sr-ink)",
                 }}
               >
-                <Box component="span" sx={{ color: "#F5A623", fontSize: "12px" }}>★</Box>
+                <Box component="span" sx={{ color: "#F4C542", fontSize: "12px" }}>★</Box>
                 {rating}
                 {reviewCount != null && reviewCount > 0 && (
                   <Box component="span" sx={{ fontWeight: 400, opacity: 0.75 }}>

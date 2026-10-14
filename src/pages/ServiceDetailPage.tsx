@@ -833,7 +833,7 @@ const ServiceDetailPage: React.FC = () => {
                   }}
                 >
                   {/* 🆕 Round 28r81 — star colour anchored on the
-                      accents.amber (#F5A623) token per founder direction:
+                      accents.amber (#F4C542) token per founder direction:
                       one true amber sitewide. */}
                   {Array.from({ length: r.rating }).map((_, i) => (
                     <StarRoundedIcon

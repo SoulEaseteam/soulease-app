@@ -29,7 +29,7 @@ import MaleRoundedIcon from "@mui/icons-material/MaleRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { useTranslation } from "react-i18next";
-// 🆕 Round 28r81 — accent amber (#F5A623) for the star colour.
+// 🆕 Round 28r81 — accent amber (#F4C542) for the star colour.
 import { accents } from "@/theme";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
@@ -46,7 +46,7 @@ const StarRow: React.FC<{ rating: number; size?: number }> = ({
       sx={{
         display: "inline-flex",
         alignItems: "center",
-        // 🆕 Round 28r81 — accent amber (#F5A623) for the star colour.
+        // 🆕 Round 28r81 — accent amber (#F4C542) for the star colour.
         color: accents.amber,
         gap: "1px",
       }}
