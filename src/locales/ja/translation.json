@@ -910,5 +910,7 @@
   "success.step1": "予約番号をコピー",
   "success.step2": "コンシェルジュに送って確定",
   "success.copyCodeV2": "番号をコピー · {{ref}}",
-  "success.copied": "コピーしました — 下から送信してください"
+  "success.copied": "コピーしました — 下から送信してください",
+  "success.willLeaveV2": "{{time}} にお客様の場所へ出発します",
+  "success.trackingSoonV2": "出発前にコンシェルジュからご連絡します。"
 }

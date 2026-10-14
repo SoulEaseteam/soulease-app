@@ -910,5 +910,7 @@
   "success.step1": "예약 코드 복사",
   "success.step2": "컨시어지에게 보내 확정",
   "success.copyCodeV2": "코드 복사 · {{ref}}",
-  "success.copied": "복사됨 — 아래에서 보내주세요"
+  "success.copied": "복사됨 — 아래에서 보내주세요",
+  "success.willLeaveV2": "{{time}}에 고객님의 위치로 출발합니다",
+  "success.trackingSoonV2": "출발 전에 컨시어지가 안내해 드립니다."
 }

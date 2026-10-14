@@ -922,13 +922,13 @@ const BookingSuccessPage: React.FC = () => {
                 >
                   {leaveLabel
                     ? t(
-                        "success.willLeave",
-                        "Will leave for your location at {{time}} · Track in real-time",
+                        "success.willLeaveV2",
+                        "Will leave for your location at {{time}}",
                         { time: leaveLabel }
                       )
                     : t(
-                        "success.trackingSoon",
-                        "We'll send a tracking link before departure."
+                        "success.trackingSoonV2",
+                        "The concierge will message you before departure."
                       )}
                 </Typography>
               </Box>
@@ -958,13 +958,15 @@ const BookingSuccessPage: React.FC = () => {
                 }
                 onClick={() => setChatOpen((v) => !v)}
               />
-              <ActionTile
-                icon={<PinDropRoundedIcon />}
-                label={t("success.action.track", "Track arrival")}
-                sub={t("success.action.trackSub", "Live map")}
-                href={mapHref ?? undefined}
-                disabled={!mapHref}
-              />
+              {SHOW_LIVE_TRACKING && (
+                <ActionTile
+                  icon={<PinDropRoundedIcon />}
+                  label={t("success.action.track", "Track arrival")}
+                  sub={t("success.action.trackSub", "Live map")}
+                  href={mapHref ?? undefined}
+                  disabled={!mapHref}
+                />
+              )}
               <ActionTile
                 icon={<EventRoundedIcon />}
                 label={t("success.action.calendar", "Add to calendar")}
@@ -972,12 +974,21 @@ const BookingSuccessPage: React.FC = () => {
                 onClick={startAt ? handleAddToCalendar : undefined}
                 disabled={!startAt}
               />
-              <ActionTile
-                icon={<AutorenewRoundedIcon />}
-                label={t("success.action.reschedule", "Reschedule")}
-                sub={t("success.action.rescheduleSub", "Free")}
-                href={rescheduleHref}
-              />
+              <Box
+                sx={{
+                  minWidth: 0,
+                  // Odd tile count once tracking is hidden — let the last one
+                  // fill the row instead of leaving a gap beside it.
+                  gridColumn: SHOW_LIVE_TRACKING ? "auto" : "1 / -1",
+                }}
+              >
+                <ActionTile
+                  icon={<AutorenewRoundedIcon />}
+                  label={t("success.action.reschedule", "Reschedule")}
+                  sub={t("success.action.rescheduleSub", "Free")}
+                  href={rescheduleHref}
+                />
+              </Box>
             </Box>
 
             {/* 🆕 28x.140/153 — the real chat thread, revealed by the "Chat
@@ -1467,6 +1478,22 @@ const PrepLine: React.FC<{
 //   local handler (onClick — chat toggle/add to calendar). `disabled` dims
 //   the tile and swaps it from an <a>/<button> to a plain <div> so it isn't
 //   a dead control.
+/**
+ * 🆕 28x.253 (founder, pointing at the action tiles: "ปิดไปก่อน ยังไม่มี")
+ *
+ * "Track arrival · Live map" promised something that does not exist: the
+ * href was only
+ *   google.com/maps/search/?api=1&query=<the guest's OWN address>
+ * i.e. it opened a map of where the guest already is. Nothing tracks the
+ * practitioner. A guest who taps it, sees their own hotel and waits for a
+ * dot that never moves has been told a straight lie by the page.
+ *
+ * Hidden behind a flag rather than deleted — the tile, its copy and its
+ * translations are ready for the day real dispatch tracking ships. Flip
+ * this to true then; nothing else needs to change.
+ */
+const SHOW_LIVE_TRACKING = false;
+
 const ActionTile: React.FC<{
   icon: React.ReactNode;
   label: string;
