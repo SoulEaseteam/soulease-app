@@ -1172,7 +1172,7 @@ const AdminPromotionsPage: React.FC = () => {
         type: addType,
         amount: addAmount,
         ...(addType === "percent" ? { capThb: addCap } : {}),
-        label: addLabel.trim() || `${code} — ${addType === "percent" ? `${addAmount}% off` : `฿${addAmount} off`}`,
+        label: addLabel.trim() || `${code} · ${addType === "percent" ? `${addAmount}% off` : `฿${addAmount} off`}`,
         // startsAt at 00:00, expiresAt at end-of-day so the whole picked day counts.
         startsAt: addStart ? Timestamp.fromDate(new Date(`${addStart}T00:00:00`)) : null,
         expiresAt: addExpiry ? Timestamp.fromDate(new Date(`${addExpiry}T23:59:59`)) : null,
@@ -1298,7 +1298,7 @@ const AdminPromotionsPage: React.FC = () => {
     } catch (err) {
       console.error("[bundle image upload]", err);
       const msg = String((err as { code?: string })?.code ?? err ?? "");
-      toast.error(msg.includes("unauthorized") ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ" : "อัปโหลดรูปไม่สำเร็จ");
+      toast.error(msg.includes("unauthorized") ? "อัปโหลดไม่ได้ · สิทธิ์ไม่พอ" : "อัปโหลดรูปไม่สำเร็จ");
     } finally {
       setBundleImageUploading(false);
       if (bundleImageInputRef.current) bundleImageInputRef.current.value = "";
@@ -1571,7 +1571,7 @@ const AdminPromotionsPage: React.FC = () => {
     const fmt = PRINT_FORMATS[printFormat];
     const cardHtml = printCardRef.current.outerHTML;
     const win = window.open("", "_blank", "width=600,height=800");
-    if (!win) { toast.error("เปิดหน้าปริ้นไม่ได้ — ตรวจสอบ pop-up blocker"); return; }
+    if (!win) { toast.error("เปิดหน้าปริ้นไม่ได้ · ตรวจสอบ pop-up blocker"); return; }
     win.document.write(`<!doctype html>
 <html><head><title>SunRed Promo · ${printCode}</title>
 <style>
@@ -1634,7 +1634,7 @@ const AdminPromotionsPage: React.FC = () => {
         โปรโมชั่น
       </Typography>
       <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 2.5 }}>
-        จัดการราคา/บริการ และโค้ดส่วนลด — บันทึกแล้วมีผลกับการจองใหม่ทันที
+        จัดการราคา/บริการ และโค้ดส่วนลด · บันทึกแล้วมีผลกับการจองใหม่ทันที
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -1727,7 +1727,7 @@ const AdminPromotionsPage: React.FC = () => {
 
         <SectionCard icon={<Storefront size={13} weight="bold" />} title="Pricing & Services · ราคา & บริการ" collapsible defaultCollapsed>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
-            แก้ราคาแต่ละช่วงเวลา · เปลี่ยนชื่อ · เปิด/ปิดบริการ — มีผลกับการจองใหม่เท่านั้น (ออเดอร์เก่าล็อกราคาที่จ่ายไว้แล้ว)
+            แก้ราคาแต่ละช่วงเวลา · เปลี่ยนชื่อ · เปิด/ปิดบริการ · มีผลกับการจองใหม่เท่านั้น (ออเดอร์เก่าล็อกราคาที่จ่ายไว้แล้ว)
           </Typography>
           <Stack spacing={1.5}>
             {orderIds.map((oid, idx) => {
@@ -1841,7 +1841,7 @@ const AdminPromotionsPage: React.FC = () => {
             <Box sx={{ mt: 1, display: "flex", alignItems: "flex-start", gap: "6px", color: adminColor.amber }}>
               <Warning size={14} weight="fill" style={{ marginTop: 2, flexShrink: 0 }} />
               <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
-                ปิดอยู่ตอนนี้ — ลูกค้าจะไม่เห็นช่องใส่โค้ดส่วนลดเลย ต่อให้เปิด/สร้างโค้ดข้างล่างก็ยังไม่มีผลกับลูกค้าจริงจนกว่าจะเปิดสวิตช์นี้
+                ปิดอยู่ตอนนี้ · ลูกค้าจะไม่เห็นช่องใส่โค้ดส่วนลดเลย ต่อให้เปิด/สร้างโค้ดข้างล่างก็ยังไม่มีผลกับลูกค้าจริงจนกว่าจะเปิดสวิตช์นี้
               </Typography>
             </Box>
           )}
@@ -1850,7 +1850,7 @@ const AdminPromotionsPage: React.FC = () => {
         {/* Built-in codes */}
         <SectionCard icon={<Percent size={13} weight="bold" />} title="Built-in Codes · โค้ดมาตรฐาน">
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            แก้ไข/ลบได้ทุกโค้ด — ตัวที่ลบไปเก็บอยู่ล่างสุด (กู้คืนได้)
+            แก้ไข/ลบได้ทุกโค้ด · ตัวที่ลบไปเก็บอยู่ล่างสุด (กู้คืนได้)
           </Typography>
           <Stack spacing={1}>
             {/* 🆕 28x.40 (founder: "ลบแล้วลบ ออกไปเลย") · deleted built-ins no
@@ -2098,7 +2098,7 @@ const AdminPromotionsPage: React.FC = () => {
             Stats since bundles ARE a kind of pricing promo. */}
         <SectionCard icon={<Package size={13} weight="bold" />} title="Bundle Packages · แพ็คเกจ">
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            แพ็คเกจจ่ายล่วงหน้าหลายครั้ง (เช่น จ่าย 3 ครั้ง ลด 10%) — Phase 1: จัดการฝั่ง admin (ลูกค้าจะเห็นในเฟส 2)
+            แพ็คเกจจ่ายล่วงหน้าหลายครั้ง (เช่น จ่าย 3 ครั้ง ลด 10%) · Phase 1: จัดการฝั่ง admin (ลูกค้าจะเห็นในเฟส 2)
           </Typography>
           {Object.keys(bundles).length === 0 ? (
             <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1 }}>ยังไม่มีแพ็คเกจ</Typography>
@@ -2190,7 +2190,7 @@ const AdminPromotionsPage: React.FC = () => {
             line so admin can compare active codes at a glance. */}
         <SectionCard icon={<ChartBar size={13} weight="bold" />} title="Usage Stats · สถิติการใช้งาน">
           <Typography sx={{ fontSize: 11.5, color: adminColor.muted, mb: 1 }}>
-            จากออเดอร์จริงล่าสุด (สูงสุด 1,000 รายการ) — เทียบกับค่าเฉลี่ยทั้งเว็บ
+            จากออเดอร์จริงล่าสุด (สูงสุด 1,000 รายการ) · เทียบกับค่าเฉลี่ยทั้งเว็บ
           </Typography>
           {abStats && (
             <Box sx={{ p: "8px 10px", mb: 1, borderRadius: "8px", background: adminColor.panel2, display: "flex", gap: 3, flexWrap: "wrap" }}>
@@ -2791,7 +2791,7 @@ const AdminPromotionsPage: React.FC = () => {
               )}
               {meta.kind === "freetaxi" && (
                 <Box sx={{ mb: 1.5, p: "10px 12px", borderRadius: "10px", background: `${adminColor.accent}12`, color: adminColor.muted, fontSize: 12 }}>
-                  จำนวนที่ลด = ค่าเดินทางจริงของงานนั้น — แก้ไขไม่ได้
+                  จำนวนที่ลด = ค่าเดินทางจริงของงานนั้น · แก้ไขไม่ได้
                 </Box>
               )}
               <TextField
@@ -3220,7 +3220,7 @@ const AdminPromotionsPage: React.FC = () => {
           <Box sx={{ maxHeight: 200, overflow: "auto", border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: 1, background: adminColor.panel2 }}>
             {bulkPreview.length === 0 ? (
               <Typography sx={{ fontSize: 12, color: adminColor.dim, textAlign: "center", py: 2 }}>
-                ไม่มีการเปลี่ยนแปลง — เลือกบริการก่อน หรือปรับค่าให้ต่างจากปัจจุบัน
+                ไม่มีการเปลี่ยนแปลง · เลือกบริการก่อน หรือปรับค่าให้ต่างจากปัจจุบัน
               </Typography>
             ) : (
               bulkPreview.map((c, i) => (
@@ -3256,7 +3256,7 @@ const AdminPromotionsPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5 }}>
-            สำหรับแจกคนขับแท็กซี่ / ลง Reddit / Stickman ฯลฯ — สแกน QR ปุ่ม promo=CODE เข้าอัตโนมัติ
+            สำหรับแจกคนขับแท็กซี่ / ลง Reddit / Stickman ฯลฯ · สแกน QR ปุ่ม promo=CODE เข้าอัตโนมัติ
           </Typography>
           <TextField
             select fullWidth label="Format · ขนาด"

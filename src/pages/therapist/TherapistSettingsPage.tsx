@@ -180,7 +180,7 @@ const TherapistSettingsPage: React.FC = () => {
             })}
           </Box>
           <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-muted)", mt: 1.25, lineHeight: 1.4 }}>
-            Auto เปลี่ยนตามเวลากรุงเทพ (06:00–18:00 = สว่าง) — เลือก Light/Dark เพื่อล็อกไว้เอง
+            Auto เปลี่ยนตามเวลากรุงเทพ (06:00–18:00 = สว่าง) · เลือก Light/Dark เพื่อล็อกไว้เอง
           </Typography>
         </Box>
       </Box>
@@ -239,7 +239,7 @@ const TherapistSettingsPage: React.FC = () => {
         <DialogContent>
           <Typography sx={{ fontFamily: SANS, fontSize: 13.5, color: "var(--sr-body)", lineHeight: 1.65 }}>
             การลบบัญชีเป็นการถาวรและไม่สามารถย้อนกลับได้ ต้องให้แอดมินเป็นผู้ดำเนินการ
-            กดปุ่มด้านล่างเพื่อส่งคำขอผ่าน WhatsApp — แอดมินจะติดต่อกลับเพื่อยืนยันก่อนลบจริง
+            กดปุ่มด้านล่างเพื่อส่งคำขอผ่าน WhatsApp · แอดมินจะติดต่อกลับเพื่อยืนยันก่อนลบจริง
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>

@@ -405,7 +405,7 @@ const ServiceDetailPage: React.FC = () => {
                         key={img}
                         component="img"
                         src={enhanceImage(img, { variant: "hero" })}
-                        alt={`${svcName(t, service.id, service.name)} — ${i + 1}`}
+                        alt={`${svcName(t, service.id, service.name)} · ${i + 1}`}
                         loading={i === 0 ? "eager" : "lazy"}
                         fetchPriority={i === 0 ? "high" : undefined}
                         draggable={false}

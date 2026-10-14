@@ -808,7 +808,7 @@ const AdminAnalyticsPage: React.FC = () => {
               คนมาจากหน้าไหน
             </Typography>
             <Box sx={{ mb: 1.5, fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, fontStyle: "italic" }}>
-              proxy for search terms — actual Google queries live in Search Console · proxy ของคำค้น
+              proxy for search terms · actual Google queries live in Search Console · proxy ของคำค้น
             </Box>
             <RankedList
               entries={Object.entries(stats.landingAreas)
@@ -861,7 +861,7 @@ const AdminAnalyticsPage: React.FC = () => {
               {stats.hourly.map((count, h) => (
                 <Box
                   key={h}
-                  title={`${String(h).padStart(2, "0")}:00 — ${count} เข้าชม`}
+                  title={`${String(h).padStart(2, "0")}:00 · ${count} เข้าชม`}
                   sx={{
                     height: "100%",
                     display: "flex",

@@ -286,7 +286,7 @@ export function districtContent(d: District, lang: string): DistrictContent {
 type CopyLang = "en" | "zh" | "zh-TW" | "ja" | "ko";
 
 const TITLE: Record<CopyLang, (name: string) => string> = {
-  en: (n) => `Outcall Massage ${n} — Delivered to Your Hotel 24/7 | SunRed`,
+  en: (n) => `Outcall Massage ${n} · Delivered to Your Hotel 24/7 | SunRed`,
   zh: (n) => `${n}上门按摩 24小时 · 送达酒店 | SunRed`,
   "zh-TW": (n) => `${n}到府按摩 24小時 · 送達飯店 | SunRed`,
   ja: (n) => `${n}出張マッサージ 24時間 · ホテルへお届け | SunRed`,
@@ -307,7 +307,7 @@ const DESCRIPTION: Record<CopyLang, (name: string, nearby: string) => string> = 
 };
 
 const H1: Record<CopyLang, (name: string) => string> = {
-  en: (n) => `Outcall Massage in ${n} — Delivered to Your Hotel`,
+  en: (n) => `Outcall Massage in ${n} · Delivered to Your Hotel`,
   zh: (n) => `${n}上门按摩 · 送达您的酒店`,
   "zh-TW": (n) => `${n}到府按摩 · 送達您的飯店`,
   ja: (n) => `${n}出張マッサージ · ホテルへお届け`,

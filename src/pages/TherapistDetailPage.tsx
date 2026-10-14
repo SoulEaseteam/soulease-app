@@ -958,7 +958,7 @@ const TherapistDetailPage: React.FC = () => {
     description: therapist
       ? t(
           "meta.detail.description",
-          "{{name}} — verified massage therapist in Bangkok. {{rating}}★ ({{count}} reviews). Book in seconds.",
+          "{{name}} · verified massage therapist in Bangkok. {{rating}}★ ({{count}} reviews). Book in seconds.",
           {
             name: therapist.name,
             rating: therapist.rating,

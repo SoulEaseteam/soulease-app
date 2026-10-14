@@ -1019,7 +1019,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
           <Box
             component="img"
             src={enhanceImage(resolvedImage, { variant: "hero" })}
-            alt={`${profile.name} — SunRed practitioner in Bangkok`}
+            alt={`${profile.name} · SunRed practitioner in Bangkok`}
             loading="lazy"
             decoding="async"
             sx={{

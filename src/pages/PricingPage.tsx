@@ -586,7 +586,7 @@ const PricingPage: React.FC = () => {
                 component="button"
                 type="button"
                 onClick={() => navigate(`/services/${s.id}`)}
-                aria-label={`${benefitsLabel} — ${s.name}`}
+                aria-label={`${benefitsLabel} · ${s.name}`}
                 sx={{
                   // 🆕 28w.26 (founder: "ขยับไว้ตรงกลางป้าย") — centre the CTA
                   //   in the card (was flex-start / left-aligned).

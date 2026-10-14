@@ -93,7 +93,7 @@ export const TherapistLoyaltyCard: React.FC<{
           Loyalty data coming soon
         </Typography>
         <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)", lineHeight: 1.5, maxWidth: 280, mx: "auto" }}>
-          Rebook rate, customer mix, and timing appear here once this practitioner has at least 5 unique guests — so the numbers are reliable, not a one-off.
+          Rebook rate, customer mix, and timing appear here once this practitioner has at least 5 unique guests · so the numbers are reliable, not a one-off.
         </Typography>
       </Box>
     );
@@ -127,7 +127,7 @@ export const TherapistLoyaltyCard: React.FC<{
             admin override is a deliberate figure, so it's suppressed there. */}
         {!useReal && !hasOverride && (
           <Typography sx={{ fontFamily: SANS, fontSize: 10, color: "var(--sr-dim)", fontStyle: "italic", mt: 0.5 }}>
-            Estimate — accumulates real data as bookings complete.
+            Estimate · accumulates real data as bookings complete.
           </Typography>
         )}
         {isTopTier && (

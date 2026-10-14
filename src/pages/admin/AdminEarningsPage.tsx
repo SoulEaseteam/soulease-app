@@ -754,15 +754,15 @@ const AdminEarningsPage: React.FC = () => {
     <div class="tile"><div class="k">ยกเลิก</div><div class="v">${stats.countCancelled}</div></div>
   </div>
   <h2>แยกตามหมอ</h2>
-  <table><thead><tr><th>หมอ</th><th class="n">งาน</th><th class="n">รายได้รวม</th><th class="n">จ่ายหมอ</th></tr></thead><tbody>${therapistRows || '<tr><td colspan="4">—</td></tr>'}</tbody></table>
+  <table><thead><tr><th>หมอ</th><th class="n">งาน</th><th class="n">รายได้รวม</th><th class="n">จ่ายหมอ</th></tr></thead><tbody>${therapistRows || '<tr><td colspan="4"> · </td></tr>'}</tbody></table>
   <h2>แยกตามบริการ</h2>
-  <table><thead><tr><th>บริการ</th><th class="n">งาน</th><th class="n">รายได้รวม</th></tr></thead><tbody>${serviceRows || '<tr><td colspan="3">—</td></tr>'}</tbody></table>
+  <table><thead><tr><th>บริการ</th><th class="n">งาน</th><th class="n">รายได้รวม</th></tr></thead><tbody>${serviceRows || '<tr><td colspan="3"> · </td></tr>'}</tbody></table>
   <div class="foot">SunRed · สร้างจากข้อมูลการจองจริง · แบ่งหมอตามระดับ · ไม่รวมที่ยกเลิก/คืนเงิน</div>
   <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
 </body></html>`;
     const w = window.open("", "_blank", "width=820,height=1000");
     if (!w) {
-      window.alert("เปิดหน้าต่างพิมพ์ไม่ได้ — อนุญาต popup แล้วลองใหม่");
+      window.alert("เปิดหน้าต่างพิมพ์ไม่ได้ · อนุญาต popup แล้วลองใหม่");
       return;
     }
     w.document.open();
@@ -834,7 +834,7 @@ const AdminEarningsPage: React.FC = () => {
       {/* Header */}
       <Box
         sx={{
-          // 🆕 Round 28r41 — margin dropped so the new hero card's own
+          // 🆕 Round 28r41 · margin dropped so the new hero card's own
           //   mt: 2.25 defines the header→hero gap (matches Dashboard r35/r36).
           mb: 0,
           display: "flex",
@@ -845,7 +845,7 @@ const AdminEarningsPage: React.FC = () => {
         }}
       >
         <Box>
-          {/* 🆕 Round 28r37 — English-primary title + Thai subtitle, r35 pattern. */}
+          {/* 🆕 Round 28r37 · English-primary title + Thai subtitle, r35 pattern. */}
           <Typography
             sx={{
               fontFamily: SERIF,
@@ -906,7 +906,7 @@ const AdminEarningsPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ── 🆕 Round 28r41 (founder 2026-07-08) — TOTAL SHOP NET HERO CARD.
+      {/* ── 🆕 Round 28r41 (founder 2026-07-08) · TOTAL SHOP NET HERO CARD.
            Same visual DNA as AdminDashboardPage's Lifetime Revenue hero
            (r35/r36): gradient bg, dual radial glows, Crown eyebrow, 60px
            accent-gradient Wallet plate, big serif figure, MoM delta chip
@@ -928,7 +928,7 @@ const AdminEarningsPage: React.FC = () => {
           overflow: "hidden",
         }}
       >
-        {/* corner glow — top-right */}
+        {/* corner glow · top-right */}
         <Box
           aria-hidden
           sx={{
@@ -942,7 +942,7 @@ const AdminEarningsPage: React.FC = () => {
             pointerEvents: "none",
           }}
         />
-        {/* corner glow — bottom-left, subtler */}
+        {/* corner glow · bottom-left, subtler */}
         <Box
           aria-hidden
           sx={{
@@ -957,7 +957,7 @@ const AdminEarningsPage: React.FC = () => {
           }}
         />
 
-        {/* eyebrow — bilingual + MoM delta chip on the right */}
+        {/* eyebrow · bilingual + MoM delta chip on the right */}
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 1.5, position: "relative" }}>
           <Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
@@ -971,7 +971,7 @@ const AdminEarningsPage: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* MoM delta chip — hides when no prior baseline to compare. */}
+          {/* MoM delta chip · hides when no prior baseline to compare. */}
           {(() => {
             if (prevStats.shopGross <= 0) return null;
             const pct = Math.round(((stats.shopGross - prevStats.shopGross) / prevStats.shopGross) * 100);
@@ -1019,7 +1019,7 @@ const AdminEarningsPage: React.FC = () => {
               <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.1 }}>
                 รายได้สุทธิ · หักส่วนแบ่งหมอ / ต้นทุน
               </Typography>
-              {/* avg per day sub-line — days derived from the selected range,
+              {/* avg per day sub-line · days derived from the selected range,
                   uncapped (trendDates caps at 60 for chart width, unusable here). */}
               {(() => {
                 const days = range === "custom"
@@ -1088,7 +1088,7 @@ const AdminEarningsPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* 🆕 Round 28s244 — filter bar: range (with custom From/To) +
+      {/* 🆕 Round 28s244 · filter bar: range (with custom From/To) +
           therapist filter + service filter. All narrow `filteredBookings`,
           which feeds stats, the CSV export, and the daily trend chart. */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center", mb: 3 }}>
@@ -1171,14 +1171,14 @@ const AdminEarningsPage: React.FC = () => {
         </Card>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {/* 🆕 Round 28s245 — hero card: Shop net is THE number this page
-              exists to answer, so it gets the headline treatment — big serif
+          {/* 🆕 Round 28s245 · hero card: Shop net is THE number this page
+              exists to answer, so it gets the headline treatment · big serif
               figure + margin donut + a money-flow bar showing where every
               baht collected went. All real values from `stats`. */}
           <Card>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
               <Box sx={{ minWidth: 0 }}>
-                {/* 🆕 Round 28s321 — headline is shop GROSS (before costs) so it
+                {/* 🆕 Round 28s321 · headline is shop GROSS (before costs) so it
                     matches หน้าหลัก / Reports for the same window. Net-after-costs
                     is shown as a secondary line below. */}
                 <Eyebrow en="Shop Earnings · Before Costs" th="รายได้ของร้าน (ก่อนหักต้นทุน) · ช่วงเวลานี้" />
@@ -1199,7 +1199,7 @@ const AdminEarningsPage: React.FC = () => {
                   หักต้นทุน {formatTHB(stats.totalCosts)} → กำไรสุทธิ{" "}
                   <Box component="span" sx={{ fontWeight: 700, color: adminColor.green }}>{formatTHB(stats.shopNet)}</Box>
                 </Typography>
-                {/* 🆕 Round 28s316 — growth vs the previous equal-length period */}
+                {/* 🆕 Round 28s316 · growth vs the previous equal-length period */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.75 }}>
                   <Delta cur={stats.shopGross} prev={prevStats.shopGross} />
                   <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>
@@ -1213,7 +1213,7 @@ const AdminEarningsPage: React.FC = () => {
               />
             </Box>
 
-            {/* money-flow bar — where each collected baht went */}
+            {/* money-flow bar · where each collected baht went */}
             {stats.totalCollected > 0 && (
               <Box sx={{ mt: 2.5 }}>
                 <Box sx={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: adminColor.panel3 }}>
@@ -1252,7 +1252,7 @@ const AdminEarningsPage: React.FC = () => {
             )}
           </Card>
 
-          {/* 🆕 Round 28s317 (D) — monthly revenue goal. Progress = this
+          {/* 🆕 Round 28s317 (D) · monthly revenue goal. Progress = this
               calendar month's Shop net (independent of the range filter). */}
           <Card>
             <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
@@ -1284,13 +1284,13 @@ const AdminEarningsPage: React.FC = () => {
             })()}
           </Card>
 
-          {/* 🆕 Round 28s317 (A + B) — cashflow: therapist pay still owed +
+          {/* 🆕 Round 28s317 (A + B) · cashflow: therapist pay still owed +
               customer money not yet collected, for the selected period. */}
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
             <Box
               onClick={() => navigate("/admin/pay-therapists")}
               sx={{
-                // 🆕 Round 28r41 — 16 → 18 radius bump (Card parity).
+                // 🆕 Round 28r41 · 16 → 18 radius bump (Card parity).
                 cursor: "pointer", padding: "18px 20px", borderRadius: "18px",
                 background: adminColor.panel, border: `1px solid ${adminColor.line}`,
                 boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 2px 10px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
@@ -1314,7 +1314,7 @@ const AdminEarningsPage: React.FC = () => {
 
             <Box
               sx={{
-                // 🆕 Round 28r41 — 16 → 18 radius bump (Card parity).
+                // 🆕 Round 28r41 · 16 → 18 radius bump (Card parity).
                 padding: "18px 20px", borderRadius: "18px",
                 background: adminColor.panel, border: `1px solid ${adminColor.line}`,
                 boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 2px 10px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
@@ -1336,13 +1336,13 @@ const AdminEarningsPage: React.FC = () => {
             </Box>
           </Box>
 
-          {/* 🆕 Round 28s245 — circular-icon stat row, same widget style as
+          {/* 🆕 Round 28s245 · circular-icon stat row, same widget style as
               the Dashboard's period summary (28s241). Absorbs the old
               Cancelled/Average cards so the page loses a row of noise. */}
           <Card>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4,1fr)" }, gap: 2 }}>
               {[
-                // 🆕 Round 28r37 — bilingual stat labels (r35 pattern):
+                // 🆕 Round 28r37 · bilingual stat labels (r35 pattern):
                 //   en → uppercase primary, th → tiny Thai subtitle,
                 //   sub → the contextual data hint underneath.
                 { icon: <ChartBar   size={20} weight="duotone" />, en: "Gross Revenue",     th: "รายได้รวม (เก็บได้)", value: formatTHB(stats.totalGross), sub: `${stats.countCompleted} งาน`, color: adminColor.accent, delta: <Delta cur={stats.totalGross} prev={prevStats.totalCollected} /> },
@@ -1350,7 +1350,7 @@ const AdminEarningsPage: React.FC = () => {
                 { icon: <Receipt    size={20} weight="duotone" />, en: "Avg per Booking",   th: "เฉลี่ยต่องาน",         value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "รายได้รวม / งานสำเร็จ", color: adminColor.highlight, delta: null },
                 { icon: <XCircle    size={20} weight="duotone" />, en: "Cancelled",         th: "ยกเลิก",              value: String(stats.countCancelled), sub: "ไม่รวมในยอด", color: adminColor.red, delta: null },
               ].map((c) => (
-                // 🆕 Round 28r41 — hover lift + subtle color-tinted background
+                // 🆕 Round 28r41 · hover lift + subtle color-tinted background
                 //   so the stat pills feel interactive (Dashboard r35/r36 parity).
                 <Box
                   key={c.en}
@@ -1365,7 +1365,7 @@ const AdminEarningsPage: React.FC = () => {
                     },
                   }}
                 >
-                  {/* 🆕 Round 28r41 — 44 → 46 icon plate + inner top highlight
+                  {/* 🆕 Round 28r41 · 44 → 46 icon plate + inner top highlight
                       and a soft color-tinted micro-shadow (Dashboard hero plates
                       use the same recipe). */}
                   <Box
@@ -1417,7 +1417,7 @@ const AdminEarningsPage: React.FC = () => {
                   Daily Collected · {trendDates.length} days
                 </Typography>
               </Box>
-              {/* 🆕 Round 28s245 — surface the peak day so the tallest bar
+              {/* 🆕 Round 28s245 · surface the peak day so the tallest bar
                   answers "which night was that?" without hovering. */}
               {trendMax > 1 && (
                 <Box sx={{ textAlign: "right" }}>
@@ -1510,7 +1510,7 @@ const AdminEarningsPage: React.FC = () => {
                   .slice(0, 8)
                   .map((r) => ({
                     label: r.name,
-                    // 🆕 Round 28r27 — payout uses the per-row tier
+                    // 🆕 Round 28r27 · payout uses the per-row tier
                     //   accumulated payout (already accounts for
                     //   discount + tier %). Truer than recomputing.
                     sub: `${r.jobs} งาน · จ่ายหมอ ${formatTHB(r.payout)}`,
@@ -1549,7 +1549,7 @@ const AdminEarningsPage: React.FC = () => {
         </Box>
       )}
 
-      {/* 🆕 Round 28s317 (C + D) — editable per-booking costs + monthly goal */}
+      {/* 🆕 Round 28s317 (C + D) · editable per-booking costs + monthly goal */}
       <Dialog
         open={cfgOpen}
         onClose={() => setCfgOpen(false)}
@@ -1626,7 +1626,7 @@ const AdminEarningsPage: React.FC = () => {
 
 // ─── Subcomponents ─────────────────────────────────────────────────────
 
-// 🆕 Round 28s316 — period-over-period delta chip. Green up / red down for
+// 🆕 Round 28s316 · period-over-period delta chip. Green up / red down for
 // "more is better" metrics (revenue); pass neutral for informational ones
 // (e.g. therapist payout) so the arrow shows direction without a value
 // judgment. Renders nothing when there's no prior baseline to compare against.
@@ -1653,14 +1653,14 @@ const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Box
     sx={{
       padding: "20px 22px",
-      // 🆕 Round 28r41 — 16 → 18 borderRadius (Dashboard r35/r36 card parity).
+      // 🆕 Round 28r41 · 16 → 18 borderRadius (Dashboard r35/r36 card parity).
       borderRadius: "18px",
       background: adminColor.panel,
       border: `1px solid ${adminColor.line}`,
-      // 🆕 Round 28s245 — the 0.25-alpha black shadow was tuned for the dark
+      // 🆕 Round 28s245 · the 0.25-alpha black shadow was tuned for the dark
       //   theme; on the light surface it read as a heavy smudge. Soft
       //   ink-tinted elevation instead (31,41,51 = #1F2933).
-      // 🆕 Round 28r41 — added a subtle depth layer (0 2px 10px rgba(31,41,51,0.04))
+      // 🆕 Round 28r41 · added a subtle depth layer (0 2px 10px rgba(31,41,51,0.04))
       //   on top of the existing elevation for the polished Dashboard look.
       boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 2px 10px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
     }}
@@ -1669,7 +1669,7 @@ const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </Box>
 );
 
-// 🆕 Round 28r37 — bilingual eyebrow (r35 dashboard pattern).
+// 🆕 Round 28r37 · bilingual eyebrow (r35 dashboard pattern).
 //   English primary in muted-uppercase, tiny Thai subtitle underneath in dim.
 //   Callers pass en + th; both required so nothing accidentally reverts to a
 //   single-language surface. Legacy children-only usages must migrate before
@@ -1702,7 +1702,7 @@ const Eyebrow: React.FC<{ en: string; th: string }> = ({ en, th }) => (
   </Box>
 );
 
-// (BigStat removed in 28s245 — the headline grid it served was replaced by
+// (BigStat removed in 28s245 · the headline grid it served was replaced by
 //  the hero Shop-net card + icon stat row.)
 
 const RankedRows: React.FC<{
@@ -1734,7 +1734,7 @@ const RankedRows: React.FC<{
               mb: 0.5,
             }}
           >
-            {/* 🆕 Round 28s245 — rank badge, medal on #1 (same treatment as
+            {/* 🆕 Round 28s245 · rank badge, medal on #1 (same treatment as
                 the Dashboard's By Therapist widget). */}
             <Box
               sx={{

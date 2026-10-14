@@ -203,7 +203,7 @@ const AdminAuditLogPage: React.FC = () => {
           บันทึกการกระทำ
         </Typography>
         <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mt: 1.25 }}>
-          ประวัติการทำงานของแอดมิน — ยืนยัน/ยกเลิกออเดอร์ · จ่ายค่าตอบแทน · เปิด-ปิดร้าน · บล็อกเบอร์ ฯลฯ
+          ประวัติการทำงานของแอดมิน · ยืนยัน/ยกเลิกออเดอร์ · จ่ายค่าตอบแทน · เปิด-ปิดร้าน · บล็อกเบอร์ ฯลฯ
           {rows.length === LOG_LIMIT && ` (แสดง ${LOG_LIMIT} รายการล่าสุด อาจมีเก่ากว่านี้ที่ไม่แสดง)`}
         </Typography>
       </Box>
@@ -304,7 +304,7 @@ const AdminAuditLogPage: React.FC = () => {
           }}
         >
           <ClockCounterClockwise size={28} color={adminColor.dim} style={{ marginBottom: 8 }} />
-          <div>ยังไม่มีประวัติ — จะบันทึกอัตโนมัติเมื่อมีการยืนยัน/ยกเลิกออเดอร์, จ่ายค่าตอบแทน หรือเปิด-ปิดร้าน</div>
+          <div>ยังไม่มีประวัติ · จะบันทึกอัตโนมัติเมื่อมีการยืนยัน/ยกเลิกออเดอร์, จ่ายค่าตอบแทน หรือเปิด-ปิดร้าน</div>
         </Box>
       ) : filteredRows.length === 0 ? (
         <Box sx={{ textAlign: "center", mt: 4, p: 3, borderRadius: 2, background: adminColor.panel, border: `1px solid ${adminColor.line}`, color: adminColor.muted, fontSize: 13 }}>

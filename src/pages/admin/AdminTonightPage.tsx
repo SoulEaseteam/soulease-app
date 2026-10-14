@@ -224,7 +224,7 @@ const AdminTonightPage: React.FC = () => {
         <Box sx={{ textAlign: "center", mt: 6, color: adminColor.muted, fontFamily: SANS }}>
           <Box sx={{ fontWeight: 600, mb: 0.5 }}>No confirmed jobs in queue</Box>
           <Box sx={{ fontSize: 12.5, color: adminColor.dim }}>
-            ยังไม่มีงานที่ยืนยันแล้ว — งานที่กด Confirm จะมาโผล่ที่นี่
+            ยังไม่มีงานที่ยืนยันแล้ว · งานที่กด Confirm จะมาโผล่ที่นี่
           </Box>
         </Box>
       ) : (
@@ -324,7 +324,7 @@ const AdminTonightPage: React.FC = () => {
                 )}
                 {b.therapistResponse === "declined" && (
                   <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: adminColor.red, mt: 0.5 }}>
-                    ❌ หมอนวดกดไม่รับงาน — ต้องจ่ายให้คนอื่น{b.therapistRespondedAt ? ` · ${dayjs(b.therapistRespondedAt.toDate()).format("HH:mm")}` : ""}
+                    ❌ หมอนวดกดไม่รับงาน · ต้องจ่ายให้คนอื่น{b.therapistRespondedAt ? ` · ${dayjs(b.therapistRespondedAt.toDate()).format("HH:mm")}` : ""}
                   </Typography>
                 )}
                 {/* 🆕 28x.64 — assigned to someone on the pilot, no answer yet. */}
@@ -336,7 +336,7 @@ const AdminTonightPage: React.FC = () => {
 
                 {b.needsAdminReview && (
                   <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.red, mt: 0.5 }}>
-                    ⚠️ Review first · เช็คก่อน — หมอนวดอาจไม่ว่าง{b.reviewReason ? ` · ${b.reviewReason}` : ""}
+                    ⚠️ Review first · เช็คก่อน · หมอนวดอาจไม่ว่าง{b.reviewReason ? ` · ${b.reviewReason}` : ""}
                   </Typography>
                 )}
 

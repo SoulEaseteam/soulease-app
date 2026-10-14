@@ -234,7 +234,7 @@ export const LocationPicker: React.FC<{
         />
       </Box>
       <Box ref={mapElRef} sx={{ width: "100%", height: 220, borderRadius: "12px", overflow: "hidden", border: `1px solid ${adminColor.line}`, background: adminColor.panel3 }} />
-      <Typography sx={{ fontSize: 11, color: adminColor.dim }}>ค้นหาด้านบน หรือแตะบนแผนที่เพื่อปักหมุด — ระบบจะเติมพื้นที่/ที่อยู่/พิกัดให้อัตโนมัติ</Typography>
+      <Typography sx={{ fontSize: 11, color: adminColor.dim }}>ค้นหาด้านบน หรือแตะบนแผนที่เพื่อปักหมุด · ระบบจะเติมพื้นที่/ที่อยู่/พิกัดให้อัตโนมัติ</Typography>
     </Box>
   );
 };
@@ -346,7 +346,7 @@ export const GalleryEditor: React.FC<{ value: string[]; onChange: (next: string[
       const msg = String((err as { code?: string }).code ?? err ?? "");
       setUploadError(
         msg.includes("unauthorized") || msg.includes("unauthenticated")
-          ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ (ยังไม่ได้ล็อกอิน หรือ storage.rules ยังไม่อัปเดต)"
+          ? "อัปโหลดไม่ได้ · สิทธิ์ไม่พอ (ยังไม่ได้ล็อกอิน หรือ storage.rules ยังไม่อัปเดต)"
           : msg.includes("storage/unknown") || msg.includes("app/no-app")
             ? "ยังเปิด Firebase Storage ไม่ได้ในโปรเจกต์"
             : "อัปโหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง (หรือใส่ลิงก์รูปด้านล่างแทน)"
@@ -418,7 +418,7 @@ export const AvatarUploader: React.FC<{
     } catch (e) {
       console.error("[avatar upload] failed", e);
       const msg = String((e as { code?: string }).code ?? e ?? "");
-      setErr(msg.includes("unauthorized") ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ" : "อัปโหลดรูปไม่สำเร็จ ลองใหม่");
+      setErr(msg.includes("unauthorized") ? "อัปโหลดไม่ได้ · สิทธิ์ไม่พอ" : "อัปโหลดรูปไม่สำเร็จ ลองใหม่");
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

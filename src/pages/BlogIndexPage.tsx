@@ -120,7 +120,7 @@ const BlogIndexPage: React.FC = () => {
             maxWidth: 560,
           }}
         >
-          Straight, useful guides to outcall massage in Bangkok — for travellers
+          Straight, useful guides to outcall massage in Bangkok · for travellers
           who’d rather book right the first time.
         </Box>
       </Box>

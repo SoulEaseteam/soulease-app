@@ -191,7 +191,7 @@ const TherapistLocationPage: React.FC = () => {
       () =>
         setSnackbar({
           open: true,
-          msg: "เข้าถึงตำแหน่งของเครื่องไม่ได้ — เปิดสิทธิ์ Location ให้เบราว์เซอร์ก่อน",
+          msg: "เข้าถึงตำแหน่งของเครื่องไม่ได้ · เปิดสิทธิ์ Location ให้เบราว์เซอร์ก่อน",
           severity: "error",
         })
     );
@@ -404,7 +404,7 @@ const TherapistLocationPage: React.FC = () => {
             {homeCoords ? "ตั้งจุดนี้เป็นจุดสแตนด์บายใหม่" : "ตั้งจุดนี้เป็นจุดสแตนด์บาย"}
           </Button>
           <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", lineHeight: 1.5, mt: 0.5, px: 0.5 }}>
-            จุดสแตนด์บายคือจุดประจำที่คุณรอรับงาน — ระบบใช้คำนวณค่าเดินทางให้ลูกค้า
+            จุดสแตนด์บายคือจุดประจำที่คุณรอรับงาน · ระบบใช้คำนวณค่าเดินทางให้ลูกค้า
             และจะพาคุณกลับมาที่จุดนี้ให้เองทุกวัน
           </Typography>
         </Box>

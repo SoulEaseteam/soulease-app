@@ -283,7 +283,7 @@ const TherapistServicesPage: React.FC = () => {
               ตารางราคา · แบ่งรายได้ต่อเมนู
             </Typography>
             <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-muted)", lineHeight: 1.5, mb: 1.5 }}>
-              ราคาที่ลูกค้าจ่าย เทียบกับส่วนที่คุณได้ต่องาน — ตัวเลขเดียวกับที่ใช้จ่ายจริงในหน้ารีพอต
+              ราคาที่ลูกค้าจ่าย เทียบกับส่วนที่คุณได้ต่องาน · ตัวเลขเดียวกับที่ใช้จ่ายจริงในหน้ารีพอต
               (ไม่รวมค่าแท็กซี่ · ดูตารางค่าเดินทางแยกด้านล่าง)
             </Typography>
             <ServiceSplitTable />
@@ -295,7 +295,7 @@ const TherapistServicesPage: React.FC = () => {
                 where therapistShare is this fixed number, not a % of the
                 discounted base). */}
             <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", lineHeight: 1.5, mt: 1.5 }}>
-              ถ้าลูกค้าได้ส่วนลดหรือโค้ดโปรโมชัน ส่วนของคุณตามตารางนี้ไม่ถูกหักลดค่ะ —
+              ถ้าลูกค้าได้ส่วนลดหรือโค้ดโปรโมชัน ส่วนของคุณตามตารางนี้ไม่ถูกหักลดค่ะ ·
               ทางร้านรับผลต่างของส่วนลดเต็มจำนวน
             </Typography>
           </Box>
@@ -314,11 +314,11 @@ const TherapistServicesPage: React.FC = () => {
               ค่าเดินทาง · Taxi fare
             </Typography>
             <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-muted)", lineHeight: 1.5, mb: 1.5 }}>
-              ราคารอบไป-กลับ มอเตอร์ไซค์ (ค่าเริ่มต้น) — ถ้าฝนตกจะเปลี่ยนเป็นรถยนต์ ราคาอาจสูงกว่านี้
+              ราคารอบไป-กลับ มอเตอร์ไซค์ (ค่าเริ่มต้น) · ถ้าฝนตกจะเปลี่ยนเป็นรถยนต์ ราคาอาจสูงกว่านี้
             </Typography>
             <TaxiFareTable />
             <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", lineHeight: 1.5, mt: 1.5 }}>
-              ช่วงเร่งด่วน (7–9, 17–20 น.) +{RUSH_SURGE_PCT}% · ช่วงดึก (21–02 น.) +{PEAK_SURGE_PCT}% —
+              ช่วงเร่งด่วน (7–9, 17–20 น.) +{RUSH_SURGE_PCT}% · ช่วงดึก (21–02 น.) +{PEAK_SURGE_PCT}% ·
               บวกเพิ่มจากราคาฐานด้านบน
             </Typography>
           </Box>

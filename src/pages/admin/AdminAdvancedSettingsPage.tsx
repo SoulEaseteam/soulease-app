@@ -208,7 +208,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         ตั้งค่าขั้นสูง
       </Typography>
       <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 2.5 }}>
-        ตั้งค่าระดับระบบ — บันทึกแล้วมีผลทันที ไม่ต้องรอ deploy
+        ตั้งค่าระดับระบบ · บันทึกแล้วมีผลทันที ไม่ต้องรอ deploy
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -216,7 +216,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         <SectionCard icon={<MoonStars size={13} weight="bold" />} title="Maintenance Mode · โหมดปิดปรับปรุง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า &ldquo;ปิดปรับปรุงชั่วคราว&rdquo; ทันที (ไม่ต้องรีเฟรช) — แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
+            เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า &ldquo;ปิดปรับปรุงชั่วคราว&rdquo; ทันที (ไม่ต้องรีเฟรช) · แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
           </Typography>
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable maintenance mode · เปิดโหมดปิดปรับปรุง</Typography>
@@ -228,7 +228,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           </Row>
           {rules.maintenanceMode && (
             <Typography sx={{ fontSize: 12, color: adminColor.red, fontWeight: 700, mt: 0.5 }}>
-              ⚠️ กำลังปิดรับจองอยู่ตอนนี้ — อย่าลืมปิดสวิตช์นี้เมื่อเสร็จ
+              ⚠️ กำลังปิดรับจองอยู่ตอนนี้ · อย่าลืมปิดสวิตช์นี้เมื่อเสร็จ
             </Typography>
           )}
         </SectionCard>
@@ -334,7 +334,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
               );
             })}
             <br />
-            <i>(ตัวอย่างนี้ใช้ค่าที่บันทึกแล้ว — กดบันทึกก่อนถึงจะอัปเดต)</i>
+            <i>(ตัวอย่างนี้ใช้ค่าที่บันทึกแล้ว · กดบันทึกก่อนถึงจะอัปเดต)</i>
           </Typography>
 
           <TextField label="ระยะทางสูงสุดก่อนต้องยืนยันกับแอดมิน (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
@@ -378,7 +378,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         <SectionCard icon={<Wallet size={13} weight="bold" />} title="Payment Methods · ช่องทางชำระเงิน">
           <Box sx={{ mb: 1 }}><NotConnectedBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            PromptPay เป็นตัวเลือกที่เปิดใช้อยู่แล้วในหน้าชำระเงินจริง (ล็อกไว้ในโค้ด) Stripe ยังไม่มีระบบเลย — สวิตช์นี้ยังไม่ได้คุมว่าลูกค้าจะเห็นช่องทางไหนบ้าง
+            PromptPay เป็นตัวเลือกที่เปิดใช้อยู่แล้วในหน้าชำระเงินจริง (ล็อกไว้ในโค้ด) Stripe ยังไม่มีระบบเลย · สวิตช์นี้ยังไม่ได้คุมว่าลูกค้าจะเห็นช่องทางไหนบ้าง
           </Typography>
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable PromptPay QR</Typography>

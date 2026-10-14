@@ -840,7 +840,7 @@ const DispatchStepper: React.FC<{
       </Box>
       {needsPhoto && (
         <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-muted)", mt: 0.75, lineHeight: 1.5 }}>
-          ถ่ายรูปจุดที่รอลูกค้าเพื่อส่งให้แอดมิน — ไม่ต้องโทรแจ้ง
+          ถ่ายรูปจุดที่รอลูกค้าเพื่อส่งให้แอดมิน · ไม่ต้องโทรแจ้ง
         </Typography>
       )}
     </Box>

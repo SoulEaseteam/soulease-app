@@ -695,7 +695,7 @@ const AdminDashboardPage: React.FC = () => {
                 <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: adminColor.accent, boxShadow: `0 0 0 3px ${adminColor.accent}33` }} />
                 <Box>
                   <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.12em", textTransform: "uppercase", lineHeight: 1 }}>
-                    Pending Confirmations — {pendingBookings.length}
+                    Pending Confirmations · {pendingBookings.length}
                   </Typography>
                   <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
                     รอยืนยัน
@@ -758,7 +758,7 @@ const AdminDashboardPage: React.FC = () => {
                         </Typography>
                         {b.needsAdminReview && (
                           <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.accent, mt: 0.2 }}>
-                            ⚠️ เช็คก่อนยืนยัน — หมอนวดอาจไม่ว่าง
+                            ⚠️ เช็คก่อนยืนยัน · หมอนวดอาจไม่ว่าง
                           </Typography>
                         )}
                       </Box>
@@ -855,7 +855,7 @@ const AdminDashboardPage: React.FC = () => {
         <motion.div {...fadeUp(0.10)}>
           <Box sx={{ mb: 1.25 }}>
             <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
-              Period Summary — {startDate.format("D MMM")} → {endDate.format("D MMM YYYY")}
+              Period Summary · {startDate.format("D MMM")} → {endDate.format("D MMM YYYY")}
             </Typography>
             <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
               สรุปช่วงเวลา

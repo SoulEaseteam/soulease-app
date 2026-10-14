@@ -183,7 +183,7 @@ const StatusPill: React.FC<Props> = ({
       component={clickable ? "button" : "div"}
       type={clickable ? "button" : undefined}
       onClick={onClick}
-      aria-label={clickable ? `${titleText} — see services` : undefined}
+      aria-label={clickable ? `${titleText} · see services` : undefined}
       sx={{
         all: clickable ? "unset" : undefined,
         boxSizing: "border-box",

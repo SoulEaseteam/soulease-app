@@ -271,7 +271,7 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
         )}
         {anyInvalid && (
           <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "#FF8484", fontWeight: 600 }}>
-            มีช่องที่ค่าจ้างเกินราคา — แก้ก่อนบันทึก
+            มีช่องที่ค่าจ้างเกินราคา · แก้ก่อนบันทึก
           </Typography>
         )}
       </Box>

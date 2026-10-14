@@ -398,7 +398,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           {i18n.t("maintenance.body", "Reservations are paused for brief maintenance. We'll be back very shortly.")}
         </div>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
-          Booking temporarily paused — back shortly.
+          Booking temporarily paused · back shortly.
         </div>
       </div>
     );

@@ -230,7 +230,7 @@ export const HoldCountdown: React.FC<HoldCountdownProps> = ({
               ? "Tap the LINE button to message admin."
               : tier === "urgent"
                 ? "Tap LINE to confirm before time runs out."
-                : `${dayjs(holdExpiresAt).format("HH:mm A")} — admin will confirm via LINE.`}
+                : `${dayjs(holdExpiresAt).format("HH:mm A")} · admin will confirm via LINE.`}
         </Typography>
       </Box>
 

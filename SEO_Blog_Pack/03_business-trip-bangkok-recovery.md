@@ -16,7 +16,7 @@ A typical Bangkok business trip for a Singapore-based executive looks something 
 
 There's nothing glamorous about this. There's also nothing optional about doing it well.
 
-This post is a practical recovery protocol — built around mobile massage as the anchor — that lets executives operate at full capacity through a 3-4 day Bangkok trip and arrive home Saturday actually rested, not wrecked.
+This post is a practical recovery protocol, built around mobile massage as the anchor, that lets executives operate at full capacity through a 3-4 day Bangkok trip and arrive home Saturday actually rested, not wrecked.
 
 ## The Real Problem: Performance, Not Comfort
 
@@ -25,7 +25,7 @@ Most "self-care while traveling" content treats massage as a comfort indulgence.
 - **Sleep quality** drops 30-40% on travel days unless you intervene.
 - **Cognitive bandwidth** for negotiation, complex reading, and decision-making degrades measurably after 48 hours of disrupted sleep.
 - **Lower back tightness** from extended sitting (flight + meetings) becomes a chronic issue for people who travel monthly.
-- **Recovery debt** compounds — a missed reset trip 1 makes trip 2 worse, makes trip 3 worse still.
+- **Recovery debt** compounds: a missed reset trip 1 makes trip 2 worse, makes trip 3 worse still.
 
 The executives I've worked with who fly Singapore-Bangkok 12+ times a year and *don't* break down treat bodywork as part of the work, not as a reward at the end of it.
 
@@ -37,9 +37,9 @@ The executives I've worked with who fly Singapore-Bangkok 12+ times a year and *
 
 **Recovery action:** 90-minute in-room massage starting at 11:30pm or 12am.
 
-**Why:** This is the recovery window. Sleep that follows a 90-minute aroma session is measurably deeper — REM cycles extend, you wake fewer times, and the cortisol spike from travel resolves overnight instead of bleeding into Thursday morning.
+**Why:** This is the recovery window. Sleep that follows a 90-minute aroma session is measurably deeper: REM cycles extend, you wake fewer times, and the cortisol spike from travel resolves overnight instead of bleeding into Thursday morning.
 
-**What to book:** Aroma or Swedish, medium pressure. Avoid deep tissue the first night — your fascia is too tight from the flight to benefit from heavy work.
+**What to book:** Aroma or Swedish, medium pressure. Avoid deep tissue the first night. Your fascia is too tight from the flight to benefit from heavy work.
 
 **Cost:** 2,500 - 3,000 THB.
 
@@ -49,7 +49,7 @@ The executives I've worked with who fly Singapore-Bangkok 12+ times a year and *
 
 **Recovery action:** 10-minute morning mobility (no equipment needed) before breakfast. No massage today.
 
-**Why:** Massage two nights in a row is overkill — your body actually needs the off-day to consolidate the previous night's work. The morning mobility is what keeps your back from locking up between meetings.
+**Why:** Massage two nights in a row is overkill. Your body actually needs the off-day to consolidate the previous night's work. The morning mobility is what keeps your back from locking up between meetings.
 
 **Mobility routine (10 min):**
 - World's greatest stretch (90 sec each side)
@@ -64,11 +64,11 @@ That's it. No mat, no equipment, can be done in pajamas in your hotel room.
 
 **Schedule:** 9am meetings to 6pm. Final partner dinner or solo dinner.
 
-**Recovery action:** 60-minute deep tissue or Thai massage, scheduled before dinner — typically 5:30 or 6pm if your last meeting ends at 5.
+**Recovery action:** 60-minute deep tissue or Thai massage, scheduled before dinner, typically 5:30 or 6pm if your last meeting ends at 5.
 
 **Why:** By Day 3 your shoulders, neck, and lower back have accumulated a full week of working tension. A focused 60-minute session at this point clears it before the flight home, where it would otherwise calcify.
 
-**What to book:** Deep tissue (if you tolerate firm pressure) or traditional Thai (more stretch-based, no oil). Both work. Avoid aroma here — you're not trying to relax to sleep, you're trying to undo physical damage.
+**What to book:** Deep tissue (if you tolerate firm pressure) or traditional Thai (more stretch-based, no oil). Both work. Avoid aroma here. You're not trying to relax to sleep, you're trying to undo physical damage.
 
 **Cost:** 1,500 - 2,200 THB.
 
@@ -78,7 +78,7 @@ That's it. No mat, no equipment, can be done in pajamas in your hotel room.
 
 **Recovery action:** No massage. Just hydration, breakfast, and a 5-minute walk before checkout.
 
-**Why:** Pre-flight massage is counterproductive — your body is already going into a 3-hour seated immobile state. The reset has been done.
+**Why:** Pre-flight massage is counterproductive: your body is already going into a 3-hour seated immobile state. The reset has been done.
 
 ## Total Investment
 
@@ -90,7 +90,7 @@ For a 4-day trip:
 
 **Total: 4,500 - 6,200 THB (~SGD 170-235)**
 
-This is roughly the cost of one massage at a Singapore hotel spa. The performance return — sharper meetings Days 2-3, no recovery hangover Sunday-Monday in Singapore — is asymmetric.
+This is roughly the cost of one massage at a Singapore hotel spa. The performance return (sharper meetings Days 2-3, no recovery hangover Sunday-Monday in Singapore) is asymmetric.
 
 ## Why Mobile (Not Spa) for This Protocol
 
@@ -103,7 +103,7 @@ Mobile massage solves both. The therapist comes to your room at the exact time y
 
 ## The "Same Therapist" Compounding Effect
 
-If you fly Bangkok regularly — say, every 4-6 weeks — and you find a therapist whose pressure, technique, and personality work for you, *keep them*.
+If you fly Bangkok regularly (say, every 4-6 weeks) and you find a therapist whose pressure, technique, and personality work for you, *keep them*.
 
 The reason isn't sentimental. It's practical. A therapist who has worked on you 4-5 times knows your specific tension patterns: the right shoulder that always seizes, the calf that never quite releases, the spot under your scapula that holds your laptop hours. They go straight to those zones in the first 10 minutes. The session you get from a familiar therapist on your fifth visit is functionally a different session than the one you get from a new one.
 
@@ -115,7 +115,7 @@ To be honest about the limits:
 
 - It doesn't fix bad sleep hygiene (room too warm, drinking late, screens in bed).
 - It doesn't fix the underlying issue if you're flying 6+ times a month with no rest weeks.
-- It doesn't substitute for actual fitness — strength and conditioning at home is still the foundation.
+- It doesn't substitute for actual fitness. Strength and conditioning at home is still the foundation.
 
 What it does is keep the *travel-specific* damage from accumulating, which for executives who fly Bangkok 8-15 times a year is already a substantial structural improvement.
 
@@ -125,9 +125,9 @@ If you're flying in this week and want the Day 1 reset booked before you land, y
 
 1. A mobile service that takes bookings 12-24 hours in advance via WhatsApp or Telegram.
 2. A therapist who can arrive between 11pm and 12:30am.
-3. A hotel that permits mobile therapists (Marriott, Hyatt, JW, Anantara, Banyan Tree, St Regis — all standard yes).
+3. A hotel that permits mobile therapists (Marriott, Hyatt, JW, Anantara, Banyan Tree, St Regis: all standard yes).
 
-Most reputable Bangkok mobile services hit those criteria. The differentiator at this tier is therapist quality and consistency — the small operators who hire 10-15 vetted therapists and remember repeat customers tend to outperform the larger anonymous services.
+Most reputable Bangkok mobile services hit those criteria. The differentiator at this tier is therapist quality and consistency: the small operators who hire 10-15 vetted therapists and remember repeat customers tend to outperform the larger anonymous services.
 
 ---
 

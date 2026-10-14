@@ -553,7 +553,7 @@ const AdminMembersPage: React.FC = () => {
             {saving ? <CircularProgress size={14} /> : `ซิงก์ประวัติสมาชิก (${Object.keys(members).length})`}
           </Button>
           <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, flex: 1, minWidth: 180 }}>
-            ส่งประวัติไปที่บัญชีลูกค้า — จำนวนครั้งที่ใช้บริการ (แยก “ลูกค้าเก่า / ใหม่”) และ
+            ส่งประวัติไปที่บัญชีลูกค้า · จำนวนครั้งที่ใช้บริการ (แยก “ลูกค้าเก่า / ใหม่”) และ
             <b> เครดิตคะแนนย้อนหลังจากยอดใช้จ่ายเดิม</b> (ทุก {thb(sunPointEarnPerTHB())} = 1 คะแนน ·
             นับเฉพาะออเดอร์ที่สำเร็จจริง) · <b>สมาชิกที่สมัครไว้ก่อนหน้านี้ ต้องกดครั้งหนึ่ง</b>
           </Typography>

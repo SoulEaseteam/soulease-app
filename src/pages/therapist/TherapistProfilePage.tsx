@@ -405,7 +405,7 @@ const TherapistProfilePage: React.FC = () => {
           {canEditHoursToday ? (
             <>
               <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", color: "var(--sr-body)", lineHeight: 1.45, marginBottom: 1.25 }}>
-                วันนี้เป็น{DAY_NAMES_TH[todayBKK.day()]} — แก้ไขเวลาทำงานได้
+                วันนี้เป็น{DAY_NAMES_TH[todayBKK.day()]} · แก้ไขเวลาทำงานได้
               </Typography>
               <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, mb: 1.25 }}>
                 <TextField

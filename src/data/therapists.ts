@@ -925,7 +925,7 @@ export const therapists: Therapist[] = [
     name: "Nicky",
     bios: {
       en: "NEW · our only Silom corridor practitioner. The most direct choice for guests staying in Silom, Sathorn, or along Rama 4. English and Korean conversational. Full menu.",
-      th: "ใหม่ — นักบำบัดคนเดียวประจำสีลม · เหมาะที่สุดสำหรับแขกพักสีลม สาทร พระราม 4 · อังกฤษและเกาหลีได้ · ครบทุกเมนู",
+      th: "ใหม่ · นักบำบัดคนเดียวประจำสีลม · เหมาะที่สุดสำหรับแขกพักสีลม สาทร พระราม 4 · อังกฤษและเกาหลีได้ · ครบทุกเมนู",
       zh: "新 · 唯一是隆走廊治疗师 · 是隆、沙吞、拉玛四世入住客人最直接选项 · 英语韩语可沟通 · 全菜单",
       ja: "新 · シーロム走廊唯一のセラピスト。シーロム・サートーン・ラマ4世沿いに滞在のゲストに最も直接的な選択肢。英語と韓国語、全メニュー対応。",
       ko: "신규 · 실롬 회랑 유일 치료사. 실롬·사톤·라마4세 인근 고객에 최적. 영어와 한국어, 전 메뉴.",
@@ -1013,7 +1013,7 @@ export const therapists: Therapist[] = [
     name: "Richie",
     bios: {
       en: "NEW · the most petite practitioner on our roster (155cm) and our only Rama 9 option. Basic Chinese and English · suited for concise sessions with mainland Chinese guests visiting Bangkok's eastern business district. Midday to midnight.",
-      th: "ใหม่ — ตัวเล็กที่สุดในทีม (155cm) ประจำพระราม 9 · จีนและอังกฤษพื้นฐาน · เหมาะกับเซสชั่นกระชับกับแขกจีนแผ่นดินใหญ่ในย่านศูนย์ราชการ · เที่ยงถึงเที่ยงคืน",
+      th: "ใหม่ · ตัวเล็กที่สุดในทีม (155cm) ประจำพระราม 9 · จีนและอังกฤษพื้นฐาน · เหมาะกับเซสชั่นกระชับกับแขกจีนแผ่นดินใหญ่ในย่านศูนย์ราชการ · เที่ยงถึงเที่ยงคืน",
       zh: "新 · 队中最娇小 (155cm) 唯一拉玛九选项 · 中英文基础 · 适合与拉玛九商务区中国大陆访客简明会话 · 正午至午夜",
       ja: "新 · ロスター最小柄(155cm)、ラマ9世唯一の選択肢。中国語と英語基本 · バンコク東部ビジネス地区を訪れる中国本土ゲストとの簡潔なセッションに最適。正午〜深夜。",
       ko: "신규 · 로스터 최소형(155cm), 라마9 유일 옵션. 중국어와 영어 기초 · 방콕 동부 비즈니스 지구를 방문하는 중국 본토 고객과의 간결한 세션에 적합. 정오-자정.",

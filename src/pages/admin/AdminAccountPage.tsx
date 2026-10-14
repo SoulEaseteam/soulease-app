@@ -268,7 +268,7 @@ const AdminAccountPage: React.FC = () => {
         </Box>
 
         <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 1.25, lineHeight: 1.5 }}>
-          <Clock size={11} style={{ verticalAlign: -1 }} /> สิทธิ์แอดมินมาจากรายการใน <code>admins/</code> ของฐานข้อมูล —
+          <Clock size={11} style={{ verticalAlign: -1 }} /> สิทธิ์แอดมินมาจากรายการใน <code>admins/</code> ของฐานข้อมูล ·
           แก้ที่นี่ไม่ได้โดยตั้งใจ (กันตัวเองถอดสิทธิ์ตัวเองพลาด) · เวลาปัจจุบัน{" "}
           {new Date(now).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}
         </Typography>
@@ -344,7 +344,7 @@ const AdminAccountPage: React.FC = () => {
           </Button>
           {!phone && (
             <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.amber }}>
-              ⚠️ ยังไม่ได้ตั้งเบอร์ — ออเดอร์ที่เปิดจะไม่มีเบอร์ติดไป
+              ⚠️ ยังไม่ได้ตั้งเบอร์ · ออเดอร์ที่เปิดจะไม่มีเบอร์ติดไป
             </Typography>
           )}
         </Box>
@@ -419,7 +419,7 @@ const AdminAccountPage: React.FC = () => {
           </Typography>
         </Box>
         <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mb: 1.5, lineHeight: 1.65 }}>
-          บัญชีแอดมินต้อง<b>แยกจากบัญชีสมาชิกลูกค้า</b> — บัญชีสมาชิกใช้รหัส SRD- เป็นยูสเซอร์
+          บัญชีแอดมินต้อง<b>แยกจากบัญชีสมาชิกลูกค้า</b> · บัญชีสมาชิกใช้รหัส SRD- เป็นยูสเซอร์
           และเบอร์โทรเป็นรหัสผ่าน ซึ่งเป็นข้อมูลที่คนนอกหาได้ ถ้าเอาบัญชีแบบนั้นมาเป็นแอดมิน
           เท่ากับเปิดหลังบ้านทิ้งไว้ · ยูสเซอร์ที่นี่ตั้งเองได้ (ห้ามขึ้นต้น srd) รหัสผ่านอย่างน้อย 10 ตัว ห้ามเป็นตัวเลขล้วน
         </Typography>
@@ -459,7 +459,7 @@ const AdminAccountPage: React.FC = () => {
               สร้างแล้ว · ยูสเซอร์ {naDone}
             </Typography>
             <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.25 }}>
-              รหัสผ่านไม่ถูกเก็บไว้ที่ไหนเลย — จดไว้เองตอนนี้ ถ้าลืมต้องรีเซตใหม่
+              รหัสผ่านไม่ถูกเก็บไว้ที่ไหนเลย · จดไว้เองตอนนี้ ถ้าลืมต้องรีเซตใหม่
             </Typography>
           </Box>
         )}

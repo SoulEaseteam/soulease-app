@@ -85,7 +85,7 @@ const AdminUserDetailPage: React.FC = () => {
       return;
     }
     const ok = window.confirm(
-      `รีเซตรหัสผ่านของ ${user.name || user.username || user.phone || user.email}?\n\nรหัสใหม่จะเป็น "เบอร์โทรของลูกค้าเอง" — ลูกค้าเข้าระบบด้วย username/เบอร์ + เบอร์เป็นรหัสผ่าน`
+      `รีเซตรหัสผ่านของ ${user.name || user.username || user.phone || user.email}?\n\nรหัสใหม่จะเป็น "เบอร์โทรของลูกค้าเอง" · ลูกค้าเข้าระบบด้วย username/เบอร์ + เบอร์เป็นรหัสผ่าน`
     );
     if (!ok) return;
     setResetting(true);

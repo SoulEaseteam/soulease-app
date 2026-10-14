@@ -544,7 +544,7 @@ const AdminReportPage: React.FC = () => {
         {/* ── per-therapist pay cards ─────────────────────────────────── */}
         <Box>
           <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
-            Pay per Therapist — {visible.length} Staff
+            Pay per Therapist · {visible.length} Staff
           </Typography>
           <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
             ค่าแรงหมอนวด · {visible.length} คน
@@ -741,7 +741,7 @@ const AdminReportPage: React.FC = () => {
                               <XCircle size={11} color={adminColor.red} />
                               <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.red }}>{s.cancelled}</Typography>
                             </Box>
-                          : <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim }}>—</Typography>}
+                          : <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim }}> · </Typography>}
                       </td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>
                         <Typography sx={{ ...adminFigureSx, fontWeight: 600, fontSize: 13, color: adminColor.text }}>{thb(s.serviceTotal)}</Typography>

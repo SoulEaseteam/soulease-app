@@ -467,7 +467,7 @@ const ProfileTab: React.FC<{
               fontStyle: "italic",
             }}
           >
-            New therapist — profile details coming soon.
+            New therapist · profile details coming soon.
           </Box>
         )}
     </Box>
@@ -644,7 +644,7 @@ const ReviewsTab: React.FC<{
             fontStyle: "italic",
           }}
         >
-          No reviews yet — be the first to book!
+          No reviews yet · be the first to book!
         </Typography>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>

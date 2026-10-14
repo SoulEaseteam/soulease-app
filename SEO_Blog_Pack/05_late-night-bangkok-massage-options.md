@@ -12,9 +12,9 @@ estimated_word_count: 1000
 
 Bangkok runs late.
 
-Restaurants serve until 1am, bars are still busy at 2, and the city's secondary nightlife — the post-event crowd, the late-flight arrivals, the executives finally free of dinners — keeps its own quieter hours from 11pm to 4am.
+Restaurants serve until 1am, bars are still busy at 2, and the city's secondary nightlife (the post-event crowd, the late-flight arrivals, the executives finally free of dinners) keeps its own quieter hours from 11pm to 4am.
 
-If you're in Bangkok at midnight and your back is screaming after 14 hours of travel and meetings, the conventional advice — "just sleep on it" — is the wrong answer. The better answer is the one most travelers don't realize exists: Bangkok has a mature, professional mobile massage market that operates exactly in the hours when nothing else is open.
+If you're in Bangkok at midnight and your back is screaming after 14 hours of travel and meetings, the conventional advice ("just sleep on it") is the wrong answer. The better answer is the one most travelers don't realize exists: Bangkok has a mature, professional mobile massage market that operates exactly in the hours when nothing else is open.
 
 This post is a practical breakdown of your late-night options.
 
@@ -45,7 +45,7 @@ This post is a practical breakdown of your late-night options.
 ### Option 3: Mobile Massage to Your Room
 **Open until:** Reputable services run until 2am routinely; some until 4am.
 
-**Late-night realistic?** Yes — this is the structural fit.
+**Late-night realistic?** Yes, this is the structural fit.
 
 **Quality:** Strongly correlated with the operator. Top-tier mobile services match or exceed mid-tier hotel spas.
 
@@ -103,8 +103,8 @@ Total time from "they knock" to "they leave" for a 90-minute session: about 2 ho
 
 Most 4-5 star hotels in Bangkok are explicitly fine with mobile massage at any hour. The reasons:
 
-1. The therapists from reputable services arrive in plain clothes with a roller bag — they look like flight crew or business travelers.
-2. The session is private and silent — no hotel impact.
+1. The therapists from reputable services arrive in plain clothes with a roller bag. They look like flight crew or business travelers.
+2. The session is private and silent, with no hotel impact.
 3. Hotels know it's a normal service their guests use.
 
 Hotels that are friction-free for late-night mobile:
@@ -133,7 +133,7 @@ If the silent walk-up matters to you, ask explicitly when you book: "Does the th
 
 ## Pricing at Late Hours
 
-A few services charge a small late-hour surcharge — typically 200-500 THB for sessions starting after 1am. This is reasonable and consistent with how taxis, food delivery, and most service businesses work.
+A few services charge a small late-hour surcharge, typically 200-500 THB for sessions starting after 1am. This is reasonable and consistent with how taxis, food delivery, and most service businesses work.
 
 What's not reasonable: services that double the price after midnight, or services that quote one price and ask for another at the door. These are signals of an unprofessional operator.
 
@@ -147,7 +147,7 @@ If you're reading this from your hotel room at 11pm and want a session by 12:30a
 4. Pay cash on arrival.
 5. Be asleep by 2:15am.
 
-For Singapore travelers specifically, services that primarily work the international business traveler market — late hours, English-speaking therapists, named profiles, transparent pricing — are the right fit. There are several. SunRed (the publisher of this post) is one. The criteria in our other guides apply identically.
+For Singapore travelers specifically, services that primarily work the international business traveler market (late hours, English-speaking therapists, named profiles, transparent pricing) are the right fit. There are several. SunRed (the publisher of this post) is one. The criteria in our other guides apply identically.
 
 The bigger point: at midnight in Bangkok, "the spa is closed" doesn't mean "you can't get a good massage." It means you book the right kind of service.
 

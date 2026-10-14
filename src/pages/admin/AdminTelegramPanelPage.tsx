@@ -528,7 +528,7 @@ const AdminTelegramPanelPage: React.FC = () => {
         <SectionCard icon={<BellRinging size={13} weight="bold" />} title="Notifications · การแจ้งเตือน">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            Token เก็บใน Firebase Secret Manager (แก้ตรงนี้ไม่ได้และไม่ควรเก็บใน Firestore เพื่อความปลอดภัย) — สวิตช์นี้แค่หยุด/เปิดการส่งข้อความจริง (ออเดอร์ใหม่ / เซสชันเกินเวลา / ตะกร้าค้าง)
+            Token เก็บใน Firebase Secret Manager (แก้ตรงนี้ไม่ได้และไม่ควรเก็บใน Firestore เพื่อความปลอดภัย) · สวิตช์นี้แค่หยุด/เปิดการส่งข้อความจริง (ออเดอร์ใหม่ / เซสชันเกินเวลา / ตะกร้าค้าง)
           </Typography>
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable Telegram Notifications</Typography>
@@ -546,7 +546,7 @@ const AdminTelegramPanelPage: React.FC = () => {
             build outbound messages — never a hand-copied mirror. */}
         <SectionCard icon={<BookOpen size={13} weight="bold" />} title="Bot Copy · ข้อความบอททั้งหมด" collapsible defaultCollapsed>
           <Typography sx={{ fontSize: 11, color: adminColor.muted, mb: 1 }}>
-            แก้แล้วกด &ldquo;บันทึก&rdquo; มีผลทันที ไม่ต้องรอ deploy — ถ้าไม่เคยแก้ ใช้ค่าเดิมในโค้ด
+            แก้แล้วกด &ldquo;บันทึก&rdquo; มีผลทันที ไม่ต้องรอ deploy · ถ้าไม่เคยแก้ ใช้ค่าเดิมในโค้ด
           </Typography>
 
           <ToggleButtonGroup
@@ -617,7 +617,7 @@ const AdminTelegramPanelPage: React.FC = () => {
               <Box>
                 <Typography sx={subheaderSx}>Promo Bot · หมุนเวียน 7 วัน</Typography>
                 <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mb: "6px" }}>
-                  หัวข้อ/ท้ายข้อความคำนวณแยก ไม่ต้องพิมพ์ซ้ำ — กด &ldquo;ตัวอย่างเต็ม&rdquo; ดูรูปแบบจริง
+                  หัวข้อ/ท้ายข้อความคำนวณแยก ไม่ต้องพิมพ์ซ้ำ · กด &ldquo;ตัวอย่างเต็ม&rdquo; ดูรูปแบบจริง
                 </Typography>
                 {botCopy.promo.days.map((d) => (
                   <Box key={d.day} sx={{ mb: "10px" }}>
@@ -655,7 +655,7 @@ const AdminTelegramPanelPage: React.FC = () => {
         <SectionCard icon={<ChatCircleText size={13} weight="bold" />} title="Daily Digest · รายงานประจำวัน">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.25 }}>
-            ส่งอัตโนมัติทุกวัน 10:00 น. เข้ากลุ่ม SunRed Report (Funnel Analytics + Bookings ย้อนหลัง 24 ชม.) —
+            ส่งอัตโนมัติทุกวัน 10:00 น. เข้ากลุ่ม SunRed Report (Funnel Analytics + Bookings ย้อนหลัง 24 ชม.) ·
             ตัวเลขคำนวณจากระบบ แก้เองไม่ได้ แต่หัวข้อ/ท้ายข้อความแก้ได้ตรงนี้
           </Typography>
           <TextField
@@ -688,7 +688,7 @@ const AdminTelegramPanelPage: React.FC = () => {
         <SectionCard icon={<Newspaper size={13} weight="bold" />} title="Report Channel · SunRed Report">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.25 }}>
-            ปลายทางของรายงานประจำวัน / แจ้งรีวิวคะแนนต่ำ / เซสชันเกินเวลา / ตะกร้าค้าง / สถานะรับ-ไม่รับงาน — ทุกอย่างยกเว้นข้อความแจ้งออเดอร์ใหม่ (ยังเข้า SunRed Booking เหมือนเดิม)
+            ปลายทางของรายงานประจำวัน / แจ้งรีวิวคะแนนต่ำ / เซสชันเกินเวลา / ตะกร้าค้าง / สถานะรับ-ไม่รับงาน · ทุกอย่างยกเว้นข้อความแจ้งออเดอร์ใหม่ (ยังเข้า SunRed Booking เหมือนเดิม)
           </Typography>
 
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
@@ -723,7 +723,7 @@ const AdminTelegramPanelPage: React.FC = () => {
         <SectionCard icon={<Broadcast size={13} weight="bold" />} title="Dispatch Bot · @SunRed24hBot">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.25 }}>
-            แจ้งงานใหม่ / รับ-ไม่รับงาน / แกะออเดอร์จากแชทลูกค้า — ที่เชื่อม Telegram Chat ID รายคนของหมอนวด ยังทำที่หน้าโปรไฟล์หมอนวดแต่ละคนตามเดิม (เป็นข้อมูลของหมอนวด ไม่ใช่การตั้งค่าบอท)
+            แจ้งงานใหม่ / รับ-ไม่รับงาน / แกะออเดอร์จากแชทลูกค้า · ที่เชื่อม Telegram Chat ID รายคนของหมอนวด ยังทำที่หน้าโปรไฟล์หมอนวดแต่ละคนตามเดิม (เป็นข้อมูลของหมอนวด ไม่ใช่การตั้งค่าบอท)
           </Typography>
 
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
@@ -774,7 +774,7 @@ const AdminTelegramPanelPage: React.FC = () => {
             </Typography>
             {adminChatIds.length === 0 ? (
               <Typography sx={{ fontSize: 12.5, color: adminColor.amber, fontWeight: 700 }}>
-                ยังไม่มีใครเชื่อม — กด &ldquo;รหัสเชื่อมแอดมิน&rdquo; ด้านบนแล้วส่งรหัสให้ @SunRed24hBot
+                ยังไม่มีใครเชื่อม · กด &ldquo;รหัสเชื่อมแอดมิน&rdquo; ด้านบนแล้วส่งรหัสให้ @SunRed24hBot
               </Typography>
             ) : (
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>

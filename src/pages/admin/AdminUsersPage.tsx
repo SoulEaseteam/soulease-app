@@ -647,7 +647,7 @@ const AdminUsersPage: React.FC = () => {
           <span style={{ fontSize: 15 }}>{p.row.country.flag}</span>
           <span>{p.row.country.code}</span>
         </Box>
-      ) : <span style={{ color: adminColor.dim }}>—</span>,
+      ) : <span style={{ color: adminColor.dim }}> · </span>,
     },
     {
       field: "served", headerName: "Visits", flex: 0.6, type: "number",
@@ -1176,7 +1176,7 @@ const AdminUsersPage: React.FC = () => {
               {blockFlow && (
                 <Box sx={{ mt: 2, p: "12px 13px", background: adminColor.panel, border: `1px solid ${adminColor.red}55`, borderRadius: "12px" }}>
                   <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: adminColor.red, mb: "6px" }}>
-                    Block {selectedGuest.phone} · บล็อกเบอร์นี้ — will no longer be able to book · จะจองผ่านเว็บไม่ได้อีก
+                    Block {selectedGuest.phone} · บล็อกเบอร์นี้ · will no longer be able to book · จะจองผ่านเว็บไม่ได้อีก
                   </Typography>
                   <TextField
                     fullWidth size="small" placeholder="Reason · เหตุผล (e.g. เบี้ยวนัดหลายครั้ง)"

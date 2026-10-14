@@ -1338,7 +1338,7 @@ const AdminTherapistDetailPage: React.FC = () => {
                       {creatingAccount ? <CircularProgress size={15} /> : "สร้างบัญชีเข้าใช้งาน"}
                     </Button>
                     <Typography sx={{ fontFamily: adminFont.sans, fontSize: 10.5, color: adminColor.dim, mt: 0.5 }}>
-                      ยังไม่มีบัญชีล็อกอิน — พนักงานยังเข้าแอปไม่ได้แม้เปิดใช้งานด้านบนแล้ว
+                      ยังไม่มีบัญชีล็อกอิน · พนักงานยังเข้าแอปไม่ได้แม้เปิดใช้งานด้านบนแล้ว
                     </Typography>
                   </>
                 )}

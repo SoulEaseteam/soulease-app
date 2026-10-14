@@ -665,7 +665,7 @@ const AdminReviewListPage: React.FC = () => {
             รีวิว
           </Typography>
           <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mt: 1 }}>
-            รีวิวทุกอันในระบบ ดึงจาก booking ที่มี reviewText — แก้ไข/ซ่อนได้ที่นี่
+            รีวิวทุกอันในระบบ ดึงจาก booking ที่มี reviewText · แก้ไข/ซ่อนได้ที่นี่
           </Typography>
 
           {/* 🆕 28x.1 (founder: "รีวิวไม่ตรงกันสักที่") · the browse cards read
@@ -997,7 +997,7 @@ const AdminReviewListPage: React.FC = () => {
         <DialogContent>
           <Typography sx={{ fontSize: 13.5, lineHeight: 1.6, color: adminColor.text }}>
             ลบฟิลด์ <code>rating</code> + <code>reviewText</code> ออกจาก
-            booking — booking doc ยังอยู่ · session history + payment record
+            booking · booking doc ยังอยู่ · session history + payment record
             ไม่หาย · รีวิวจะหายจากหน้า{" "}
             <strong>{hideRow?.therapistName}</strong> ทันที
           </Typography>

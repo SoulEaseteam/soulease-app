@@ -744,7 +744,7 @@ const AdminBookingAddPage: React.FC = () => {
               </FormControl>
             </Field>
 
-            <Field label={`Taxi (฿)${taxiAuto > 0 ? ` — auto ${formatTHB(taxiAuto)}` : ""}`}
+            <Field label={`Taxi (฿)${taxiAuto > 0 ? ` · auto ${formatTHB(taxiAuto)}` : ""}`}
               icon={<Taxi size={14} />}>
               <TextField
                 type="number" size="small"

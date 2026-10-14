@@ -709,7 +709,7 @@ const AdminTherapistsPage: React.FC = () => {
     }
     const warning =
       bookingCount > 0
-        ? `ลบ "${row.name || row.id}" ทิ้งถาวร?\n\nมีประวัติการจอง ${bookingCount} รายการผูกกับหมอนวดคนนี้ — รายงาน/ยอดเก่ายังอยู่ แต่จะเปิดดูโปรไฟล์หมอนวดคนนี้ไม่ได้อีก`
+        ? `ลบ "${row.name || row.id}" ทิ้งถาวร?\n\nมีประวัติการจอง ${bookingCount} รายการผูกกับหมอนวดคนนี้ · รายงาน/ยอดเก่ายังอยู่ แต่จะเปิดดูโปรไฟล์หมอนวดคนนี้ไม่ได้อีก`
         : `ลบ "${row.name || row.id}" ทิ้งถาวร? (ไม่มีประวัติการจองผูกอยู่)`;
     if (!window.confirm(warning)) return;
 

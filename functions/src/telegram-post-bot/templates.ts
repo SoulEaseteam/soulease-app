@@ -102,11 +102,11 @@ const DAILY_BODIES: Record<DayKey, Record<Lang, string>> = {
   mon: {
     en:
       `Quiet start to the week. Restorative outcall therapies for unwinding ` +
-      `after the Monday reset — slow pressure, premium oils, and discreet ` +
+      `after the Monday reset · slow pressure, premium oils, and discreet ` +
       `concierge handling from arrival to close.`,
     th:
       `เปิดสัปดาห์อย่างเงียบสงบ บริการนวดถึงที่แนวฟื้นฟู คลายความเหนื่อย ` +
-      `จากต้นสัปดาห์ — แรงนวดนุ่ม น้ำมันพรีเมียม concierge ดูแลแบบส่วนตัว ` +
+      `จากต้นสัปดาห์ · แรงนวดนุ่ม น้ำมันพรีเมียม concierge ดูแลแบบส่วนตัว ` +
       `ตั้งแต่มาถึงจนเสร็จงาน`,
     zh:
       `周一静谧开启 · 周末后恢复身心的外送按摩 · 力度舒缓 · 精油优质 · ` +
@@ -121,7 +121,7 @@ const DAILY_BODIES: Record<DayKey, Record<Lang, string>> = {
   tue: {
     en:
       `Mid-week respite. A practiced hour of full-body work to take you ` +
-      `out of the inbox and into something better — verified practitioners, ` +
+      `out of the inbox and into something better · verified practitioners, ` +
       `delivered to your hotel suite or residence.`,
     th:
       `กลางสัปดาห์ผ่อนคลาย · นวดทั่วตัวหนึ่งชั่วโมงพาคุณออกจากหน้าจอ ` +
@@ -139,7 +139,7 @@ const DAILY_BODIES: Record<DayKey, Record<Lang, string>> = {
   wed: {
     en:
       `Half-way relief. A late-Wednesday hour eases the second half of ` +
-      `the week — premium outcall therapies across central Bangkok, ` +
+      `the week · premium outcall therapies across central Bangkok, ` +
       `discreet from concierge to checkout.`,
     th:
       `กลางสัปดาห์ใกล้ผ่าน · นวดดึกพุธคลายความเหนื่อยให้พร้อมรับครึ่ง ` +
@@ -157,7 +157,7 @@ const DAILY_BODIES: Record<DayKey, Record<Lang, string>> = {
   },
   thu: {
     en:
-      `Approaching the weekend. Tonight begins the slow tilt toward Friday — ` +
+      `Approaching the weekend. Tonight begins the slow tilt toward Friday · ` +
       `outcall practitioners on standby for Sukhumvit, Silom, Asok, Sathorn, ` +
       `Thonglor.`,
     th:
@@ -174,7 +174,7 @@ const DAILY_BODIES: Record<DayKey, Record<Lang, string>> = {
   },
   fri: {
     en:
-      `Weekend opens. Premium outcall therapies welcome the Friday crowd — ` +
+      `Weekend opens. Premium outcall therapies welcome the Friday crowd · ` +
       `arrival anywhere central, discreet from first hello to final pour.`,
     th:
       `เปิดสุดสัปดาห์ · บริการนวดถึงที่ระดับพรีเมียมต้อนรับชาวศุกร์ · ` +
@@ -191,7 +191,7 @@ const DAILY_BODIES: Record<DayKey, Record<Lang, string>> = {
   },
   sat: {
     en:
-      `Saturday night premium. Bangkok's longest concierge hours are open — ` +
+      `Saturday night premium. Bangkok's longest concierge hours are open · ` +
       `book ahead to lock in your preferred practitioner and hour, late ` +
       `arrivals welcomed.`,
     th:
@@ -209,7 +209,7 @@ const DAILY_BODIES: Record<DayKey, Record<Lang, string>> = {
   },
   sun: {
     en:
-      `Sunday wind-down. The week closes quietly — slow oil ceremonies, ` +
+      `Sunday wind-down. The week closes quietly · slow oil ceremonies, ` +
       `gentle pressure work, and concierge handling that keeps the night ` +
       `discreet.`,
     th:
@@ -237,7 +237,7 @@ const HOLIDAY_BODIES: Record<Holiday, Record<Lang, string>> = {
       `💝 <b>Valentine's at Sunred</b>\n` +
       `\n` +
       `Outcall therapies arranged for the most intimate evening of ` +
-      `the year — couples-friendly options, candle-lit oil rituals, and ` +
+      `the year · couples-friendly options, candle-lit oil rituals, and ` +
       `concierge handling that keeps the night entirely yours.`,
     th:
       `💝 <b>วาเลนไทน์กับ SunRed</b>\n` +
@@ -266,7 +266,7 @@ const HOLIDAY_BODIES: Record<Holiday, Record<Lang, string>> = {
     en:
       `🌊 <b>Songkran in Bangkok</b>\n` +
       `\n` +
-      `Long-weekend therapies for the festival crowd — recover from the ` +
+      `Long-weekend therapies for the festival crowd · recover from the ` +
       `streets with a cool-room oil session, premium aromatherapy, and ` +
       `late-night concierge through the holiday week.`,
     th:
@@ -294,7 +294,7 @@ const HOLIDAY_BODIES: Record<Holiday, Record<Lang, string>> = {
     en:
       `🎃 <b>Halloween in Bangkok</b>\n` +
       `\n` +
-      `Discreet wind-down after the party — premium outcall therapies for ` +
+      `Discreet wind-down after the party · premium outcall therapies for ` +
       `the costume-night crowd, late-hour concierge keeping it private ` +
       `through the small hours.`,
     th:
@@ -322,7 +322,7 @@ const HOLIDAY_BODIES: Record<Holiday, Record<Lang, string>> = {
     en:
       `🎄 <b>Christmas in Bangkok</b>\n` +
       `\n` +
-      `Warm winter therapies for the holiday traveller — slow pressure ` +
+      `Warm winter therapies for the holiday traveller · slow pressure ` +
       `work, premium oils, late-arrival welcomed. Concierge open through ` +
       `the season.`,
     th:
@@ -350,7 +350,7 @@ const HOLIDAY_BODIES: Record<Holiday, Record<Lang, string>> = {
     en:
       `✨ <b>New Year in Bangkok</b>\n` +
       `\n` +
-      `Outcall therapies through the countdown and beyond — restore after ` +
+      `Outcall therapies through the countdown and beyond · restore after ` +
       `the rooftops, premium oil rituals, late-night concierge keeping the ` +
       `holiday entirely yours.`,
     th:
@@ -381,11 +381,11 @@ const HOLIDAY_BODIES: Record<Holiday, Record<Lang, string>> = {
 // ─────────────────────────────────────────────────────────────
 
 const FOOTER: Record<Lang, string> = {
-  en: `Sukhumvit · Silom · Asok · Sathorn · Thonglor — from ฿1,200`,
-  th: `สุขุมวิท · สีลม · อโศก · สาทร · ทองหล่อ — จาก ฿1,200`,
-  zh: `苏坤蔚 · 是隆 · 阿索 · 沙吞 · 通罗 — ฿1,200 起`,
-  ja: `スクンビット · シーロム · アソーク · サートーン · トンロー — ฿1,200〜`,
-  ko: `수쿰빗 · 실롬 · 아속 · 사톤 · 통러 — ฿1,200부터`,
+  en: `Sukhumvit · Silom · Asok · Sathorn · Thonglor · from ฿1,200`,
+  th: `สุขุมวิท · สีลม · อโศก · สาทร · ทองหล่อ · จาก ฿1,200`,
+  zh: `苏坤蔚 · 是隆 · 阿索 · 沙吞 · 通罗 · ฿1,200 起`,
+  ja: `スクンビット · シーロム · アソーク · サートーン · トンロー · ฿1,200〜`,
+  ko: `수쿰빗 · 실롬 · 아속 · 사톤 · 통러 · ฿1,200부터`,
 };
 
 // ─────────────────────────────────────────────────────────────

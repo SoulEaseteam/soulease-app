@@ -1373,7 +1373,7 @@ async function customerHistoryLine(
   }
 
   if (served === 0) {
-    return `👤 Customer history\n🆕 New customer — first booking with SunRed`;
+    return `👤 Customer history\n🆕 New customer · first booking with SunRed`;
   }
 
   const tier = HISTORY_TIER_THRESHOLDS.find((t) => served >= t.visits || totalSpent >= t.spend);
@@ -2095,7 +2095,7 @@ export const alertOverdueSessions = onSchedule(
         `👤 ${b.contactName ?? b.customerName ?? "—"}  📞 ${b.phone ?? "—"}`,
         `📍 ${b.address ?? "—"}`,
         ``,
-        `เริ่มนวดแล้วและเลยเวลาคาดจบเกิน 20 นาที — ยังไม่กด "จบงาน".`,
+        `เริ่มนวดแล้วและเลยเวลาคาดจบเกิน 20 นาที · ยังไม่กด "จบงาน".`,
         `โทรเช็กความปลอดภัยหมอนวด 🙏`,
       ].join("\n");
 
@@ -2732,7 +2732,7 @@ async function parseOrderText(
               "'yuri book 12.00 am' means therapist Yuri, booked for 12:00 AM).",
               "",
               "Return ONLY a JSON object with these exact keys:",
-              "looksLikeOrder (boolean — true only if this text contains an actual",
+              "looksLikeOrder (boolean · true only if this text contains an actual",
               "booking request), customerName (string|null), hotelText (string|null —",
               "hotel/address exactly as given), serviceGuess (string|null — the",
               "massage/service type as given, e.g. 'thai massage'), durationMinutes",
@@ -2895,11 +2895,11 @@ async function handleOrderPaste(
     therapist
       ? `พนักงาน: ${therapist.name}`
       : parsed.therapistNameGuess
-        ? `พนักงาน: ⚠️ ไม่พบ "${parsed.therapistNameGuess}" — จะปล่อยเป็นงานเปิดให้ทีมแย่งรับแทน`
-        : `พนักงาน: (ไม่ระบุ — จะปล่อยเป็นงานเปิด)`,
+        ? `พนักงาน: ⚠️ ไม่พบ "${parsed.therapistNameGuess}" · จะปล่อยเป็นงานเปิดให้ทีมแย่งรับแทน`
+        : `พนักงาน: (ไม่ระบุ · จะปล่อยเป็นงานเปิด)`,
     parsed.notes ? `หมายเหตุ: ${parsed.notes}` : "",
     "",
-    "⚠️ ราคาอ้างอิงตารางในระบบ ไม่รวมค่าแท็กซี่ — ใส่เพิ่มทีหลังได้ที่หน้ารายการจอง",
+    "⚠️ ราคาอ้างอิงตารางในระบบ ไม่รวมค่าแท็กซี่ · ใส่เพิ่มทีหลังได้ที่หน้ารายการจอง",
   ].filter((l) => l.length > 0);
 
   if (missing.length > 0) {
@@ -3871,7 +3871,7 @@ export const createCustomerAccount = onCall(
     if (phone.length < 6) {
       throw new HttpsError(
         "invalid-argument",
-        "A valid phone number is required — it becomes the password."
+        "A valid phone number is required · it becomes the password."
       );
     }
     // The code doubles as the username, so it must satisfy the client's
@@ -3993,7 +3993,7 @@ export const setMemberAdmin = onCall(
     if (found.empty) {
       throw new HttpsError(
         "not-found",
-        "This member has no account yet — create one first."
+        "This member has no account yet · create one first."
       );
     }
     const targetUid = found.docs[0].id;
@@ -4297,7 +4297,7 @@ export const resetTherapistPassword = onCall(
     if (!t?.uid) {
       throw new HttpsError(
         "failed-precondition",
-        "This therapist has no login yet — use Create account instead."
+        "This therapist has no login yet · use Create account instead."
       );
     }
 
@@ -5231,7 +5231,7 @@ export const createAdminAccount = onCall(
     if (/^\d+$/.test(password)) {
       throw new HttpsError(
         "invalid-argument",
-        "Password must not be digits only — a phone number is guessable."
+        "Password must not be digits only · a phone number is guessable."
       );
     }
     if (password.toLowerCase().includes(handle)) {
@@ -5592,7 +5592,7 @@ export const onBookingDispatchChange = onDocumentUpdated(
         const token = TELEGRAM_BOT_TOKEN.value();
         if (!token) {
           logger.error(
-            "[onBookingDispatchChange] TELEGRAM_BOT_TOKEN missing — schedule-change notice skipped"
+            "[onBookingDispatchChange] TELEGRAM_BOT_TOKEN missing · schedule-change notice skipped"
           );
         } else {
           const bookingId = event.params.bookingId;

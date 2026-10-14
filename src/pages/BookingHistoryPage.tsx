@@ -837,7 +837,7 @@ const BookingCard: React.FC<{
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)", mb: 1.5, lineHeight: 1.5 }}>
-            บอกเราว่าเกิดอะไรขึ้นกับการจองนี้ ({dateLabel}) — ข้อความจะส่งตรงถึงพนักงานที่เกี่ยวข้อง
+            บอกเราว่าเกิดอะไรขึ้นกับการจองนี้ ({dateLabel}) · ข้อความจะส่งตรงถึงพนักงานที่เกี่ยวข้อง
           </Typography>
           <TextField
             multiline

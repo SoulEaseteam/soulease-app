@@ -1415,7 +1415,7 @@ const BookingCard: React.FC<{
             }}
           >
             <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.red }}>
-              ⚠️ ต้องเช็คก่อนยืนยัน{b.reviewReason ? ` · ${b.reviewReason}` : " — หมอนวดอาจไม่ว่าง"}
+              ⚠️ ต้องเช็คก่อนยืนยัน{b.reviewReason ? ` · ${b.reviewReason}` : " · หมอนวดอาจไม่ว่าง"}
             </Typography>
           </Box>
         )}
@@ -2460,7 +2460,7 @@ const DetailPanel: React.FC<{
                       </Typography>
                     ) : (
                       <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.6 }}>
-                        โค้ดนี้ไม่ลดบิลนี้ (ขั้นต่ำ / เงื่อนไข / หมดอายุ) — แต่ยัง<b>บันทึกว่าลูกค้าใช้โค้ดนี้</b>เมื่อกด Save
+                        โค้ดนี้ไม่ลดบิลนี้ (ขั้นต่ำ / เงื่อนไข / หมดอายุ) · แต่ยัง<b>บันทึกว่าลูกค้าใช้โค้ดนี้</b>เมื่อกด Save
                       </Typography>
                     )
                   )}
@@ -2537,7 +2537,7 @@ const DetailPanel: React.FC<{
                       )}
                       {pointsRedeemRaw > maxRedeemablePoints && (
                         <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.amber, mt: 0.4 }}>
-                          ปรับลงเหลือ {maxRedeemablePoints} แต้ม — {sp.availableForThis < pointsRedeemRaw ? "แต้มคงเหลือไม่พอ" : "เกินยอดบิลนี้ (แต้มที่เหลือเก็บไว้ครั้งหน้า)"}
+                          ปรับลงเหลือ {maxRedeemablePoints} แต้ม · {sp.availableForThis < pointsRedeemRaw ? "แต้มคงเหลือไม่พอ" : "เกินยอดบิลนี้ (แต้มที่เหลือเก็บไว้ครั้งหน้า)"}
                         </Typography>
                       )}
                     </>

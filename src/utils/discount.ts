@@ -535,7 +535,7 @@ export function validateDiscount(
       valid: true,
       code,
       amount,
-      label: ov?.label?.trim() || `First booking — ${percent}% off`,
+      label: ov?.label?.trim() || `First booking · ${percent}% off`,
       type: "percent",
     };
   }
@@ -556,7 +556,7 @@ export function validateDiscount(
       valid: true,
       code,
       amount,
-      label: ov?.label?.trim() || `Welcome — ${percent}% off`,
+      label: ov?.label?.trim() || `Welcome · ${percent}% off`,
       type: "percent",
     };
   }

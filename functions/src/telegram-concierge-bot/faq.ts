@@ -173,10 +173,10 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `✓ 24/7 concierge\n` +
       `\n` +
       `<b>4 therapy options:</b>\n` +
-      `🌿 Thai Massage — deep muscle tension work\n` +
-      `🌸 Aromatherapy — relaxing aromatic oil\n` +
-      `💎 Gentleman's Signature — focused aromatic ritual for men\n` +
-      `✨ SunRed Therapeutic — signature flowing oil ceremony\n` +
+      `🌿 Thai Massage · deep muscle tension work\n` +
+      `🌸 Aromatherapy · relaxing aromatic oil\n` +
+      `💎 Gentleman's Signature · focused aromatic ritual for men\n` +
+      `✨ SunRed Therapeutic · signature flowing oil ceremony\n` +
       `\n` +
       `Browse all therapists at <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
@@ -192,10 +192,10 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `✓ Concierge 24/7\n` +
       `\n` +
       `<b>4 บริการ:</b>\n` +
-      `🌿 นวดไทย — แก้เมื่อยกล้ามเนื้อลึก\n` +
-      `🌸 อโรมา — น้ำมันหอมระเหยผ่อนคลาย\n` +
-      `💎 Gentleman's Signature — บริการเฉพาะสุภาพบุรุษ\n` +
-      `✨ SunRed Therapeutic — ทรีตเมนต์ระดับสูง\n` +
+      `🌿 นวดไทย · แก้เมื่อยกล้ามเนื้อลึก\n` +
+      `🌸 อโรมา · น้ำมันหอมระเหยผ่อนคลาย\n` +
+      `💎 Gentleman's Signature · บริการเฉพาะสุภาพบุรุษ\n` +
+      `✨ SunRed Therapeutic · ทรีตเมนต์ระดับสูง\n` +
       `\n` +
       `ดูนักบำบัดทั้งหมด: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
@@ -211,10 +211,10 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `✓ 24/7 管家服务\n` +
       `\n` +
       `<b>4 项疗法:</b>\n` +
-      `🌿 泰式按摩 — 深层肌肉舒缓\n` +
-      `🌸 芳香疗法 — 放松精油\n` +
-      `💎 绅士尊享 — 男士专属芳香仪式\n` +
-      `✨ SunRed Therapeutic — 招牌全身精油仪式\n` +
+      `🌿 泰式按摩 · 深层肌肉舒缓\n` +
+      `🌸 芳香疗法 · 放松精油\n` +
+      `💎 绅士尊享 · 男士专属芳香仪式\n` +
+      `✨ SunRed Therapeutic · 招牌全身精油仪式\n` +
       `\n` +
       `查看所有治疗师: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
@@ -230,10 +230,10 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `✓ 24/7 管家服務\n` +
       `\n` +
       `<b>4 項療法:</b>\n` +
-      `🌿 泰式按摩 — 深層肌肉舒緩\n` +
-      `🌸 芳香療法 — 放鬆精油\n` +
-      `💎 紳士尊享 — 男士專屬芳香儀式\n` +
-      `✨ SunRed Therapeutic — 招牌全身精油儀式\n` +
+      `🌿 泰式按摩 · 深層肌肉舒緩\n` +
+      `🌸 芳香療法 · 放鬆精油\n` +
+      `💎 紳士尊享 · 男士專屬芳香儀式\n` +
+      `✨ SunRed Therapeutic · 招牌全身精油儀式\n` +
       `\n` +
       `查看所有治療師: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
@@ -249,10 +249,10 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `✓ 24時間コンシェルジュ\n` +
       `\n` +
       `<b>4 つのセラピー:</b>\n` +
-      `🌿 タイマッサージ — 深層筋肉ケア\n` +
-      `🌸 アロマセラピー — リラックスアロマオイル\n` +
-      `💎 ジェントルマンズ — 男性向け専門ケア\n` +
-      `✨ SunRed セラピューティック — 究極のオイル儀式\n` +
+      `🌿 タイマッサージ · 深層筋肉ケア\n` +
+      `🌸 アロマセラピー · リラックスアロマオイル\n` +
+      `💎 ジェントルマンズ · 男性向け専門ケア\n` +
+      `✨ SunRed セラピューティック · 究極のオイル儀式\n` +
       `\n` +
       `全セラピストを見る: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
@@ -268,10 +268,10 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `✓ 24/7 컨시어지\n` +
       `\n` +
       `<b>4가지 테라피:</b>\n` +
-      `🌿 타이 마사지 — 깊은 근육 이완\n` +
-      `🌸 아로마테라피 — 편안한 아로마 오일\n` +
-      `💎 젠틀맨즈 — 남성 전용 아로마 의식\n` +
-      `✨ SunRed 테라퓨틱 — 시그니처 전신 오일 의식\n` +
+      `🌿 타이 마사지 · 깊은 근육 이완\n` +
+      `🌸 아로마테라피 · 편안한 아로마 오일\n` +
+      `💎 젠틀맨즈 · 남성 전용 아로마 의식\n` +
+      `✨ SunRed 테라퓨틱 · 시그니처 전신 오일 의식\n` +
       `\n` +
       `전체 치료사 보기: <a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   },
@@ -502,12 +502,12 @@ const MEMBERSHIP: Record<Lang, FaqEntry> = {
       `<b>SunRed Membership</b>\n` +
       `\n` +
       `Your tier is automatic, based on visits + spend on an account\n` +
-      `(not guest checkout) — no separate sign-up needed.\n` +
+      `(not guest checkout) · no separate sign-up needed.\n` +
       `\n` +
-      `🥉 Bronze — 5% off · from 1 visit or ฿1,000\n` +
-      `🥈 Silver — 10% off · from 3 visits or ฿6,000\n` +
-      `🥇 Gold — 15% off · from 6 visits or ฿15,000\n` +
-      `⚫ Black VIP — 20% off · from 12 visits or ฿40,000\n` +
+      `🥉 Bronze · 5% off · from 1 visit or ฿1,000\n` +
+      `🥈 Silver · 10% off · from 3 visits or ฿6,000\n` +
+      `🥇 Gold · 15% off · from 6 visits or ฿15,000\n` +
+      `⚫ Black VIP · 20% off · from 12 visits or ฿40,000\n` +
       `\n` +
       `<i>Priority booking · points toward rewards.\n` +
       `Your concierge applies your tier discount at reservation.</i>`,
@@ -520,10 +520,10 @@ const MEMBERSHIP: Record<Lang, FaqEntry> = {
       `ระดับสมาชิกคำนวณอัตโนมัติ จากจำนวนครั้ง + ยอดใช้จ่ายของบัญชี\n` +
       `(ต้องมีบัญชี ไม่ใช่จองแบบ guest) ไม่ต้องสมัครแยก\n` +
       `\n` +
-      `🥉 บรอนซ์ — ลด 5% · ตั้งแต่ 1 ครั้ง หรือ ฿1,000\n` +
-      `🥈 ซิลเวอร์ — ลด 10% · ตั้งแต่ 3 ครั้ง หรือ ฿6,000\n` +
-      `🥇 โกลด์ — ลด 15% · ตั้งแต่ 6 ครั้ง หรือ ฿15,000\n` +
-      `⚫ แบล็ค VIP — ลด 20% · ตั้งแต่ 12 ครั้ง หรือ ฿40,000\n` +
+      `🥉 บรอนซ์ · ลด 5% · ตั้งแต่ 1 ครั้ง หรือ ฿1,000\n` +
+      `🥈 ซิลเวอร์ · ลด 10% · ตั้งแต่ 3 ครั้ง หรือ ฿6,000\n` +
+      `🥇 โกลด์ · ลด 15% · ตั้งแต่ 6 ครั้ง หรือ ฿15,000\n` +
+      `⚫ แบล็ค VIP · ลด 20% · ตั้งแต่ 12 ครั้ง หรือ ฿40,000\n` +
       `\n` +
       `<i>จองก่อนใคร · สะสมแต้มแลกรางวัล\n` +
       `Concierge จะใส่ส่วนลดให้ตอนยืนยันการจอง</i>`,
@@ -536,10 +536,10 @@ const MEMBERSHIP: Record<Lang, FaqEntry> = {
       `会员等级根据账户的到访次数+消费金额自动计算\n` +
       `(需要账户，非访客预约) 无需另外申请\n` +
       `\n` +
-      `🥉 青铜 — 优惠5% · 1次或฿1,000起\n` +
-      `🥈 白银 — 优惠10% · 3次或฿6,000起\n` +
-      `🥇 黄金 — 优惠15% · 6次或฿15,000起\n` +
-      `⚫ 黑金VIP — 优惠20% · 12次或฿40,000起\n` +
+      `🥉 青铜 · 优惠5% · 1次或฿1,000起\n` +
+      `🥈 白银 · 优惠10% · 3次或฿6,000起\n` +
+      `🥇 黄金 · 优惠15% · 6次或฿15,000起\n` +
+      `⚫ 黑金VIP · 优惠20% · 12次或฿40,000起\n` +
       `\n` +
       `<i>优先预约 · 积分兑换礼品\n` +
       `礼宾会在确认预约时为您使用等级折扣</i>`,
@@ -552,10 +552,10 @@ const MEMBERSHIP: Record<Lang, FaqEntry> = {
       `會員等級根據帳戶的到訪次數+消費金額自動計算\n` +
       `(需要帳戶，非訪客預約) 無需另外申請\n` +
       `\n` +
-      `🥉 青銅 — 優惠5% · 1次或฿1,000起\n` +
-      `🥈 白銀 — 優惠10% · 3次或฿6,000起\n` +
-      `🥇 黃金 — 優惠15% · 6次或฿15,000起\n` +
-      `⚫ 黑金VIP — 優惠20% · 12次或฿40,000起\n` +
+      `🥉 青銅 · 優惠5% · 1次或฿1,000起\n` +
+      `🥈 白銀 · 優惠10% · 3次或฿6,000起\n` +
+      `🥇 黃金 · 優惠15% · 6次或฿15,000起\n` +
+      `⚫ 黑金VIP · 優惠20% · 12次或฿40,000起\n` +
       `\n` +
       `<i>優先預約 · 積分兌換禮品\n` +
       `禮賓會在確認預約時為您使用等級折扣</i>`,
@@ -568,10 +568,10 @@ const MEMBERSHIP: Record<Lang, FaqEntry> = {
       `会員ランクはアカウントの来店回数+利用金額で自動計算されます\n` +
       `(ゲスト予約ではなくアカウントが必要) 別途申込不要\n` +
       `\n` +
-      `🥉 ブロンズ — 5%オフ · 1回または฿1,000から\n` +
-      `🥈 シルバー — 10%オフ · 3回または฿6,000から\n` +
-      `🥇 ゴールド — 15%オフ · 6回または฿15,000から\n` +
-      `⚫ ブラックVIP — 20%オフ · 12回または฿40,000から\n` +
+      `🥉 ブロンズ · 5%オフ · 1回または฿1,000から\n` +
+      `🥈 シルバー · 10%オフ · 3回または฿6,000から\n` +
+      `🥇 ゴールド · 15%オフ · 6回または฿15,000から\n` +
+      `⚫ ブラックVIP · 20%オフ · 12回または฿40,000から\n` +
       `\n` +
       `<i>優先予約 · ポイント還元\n` +
       `予約確定時にコンシェルジュが割引を適用します</i>`,
@@ -584,10 +584,10 @@ const MEMBERSHIP: Record<Lang, FaqEntry> = {
       `등급은 계정의 방문 횟수+이용 금액으로 자동 계산됩니다\n` +
       `(게스트 예약이 아닌 계정 필요) 별도 가입 불필요\n` +
       `\n` +
-      `🥉 브론즈 — 5% 할인 · 1회 또는 ฿1,000부터\n` +
-      `🥈 실버 — 10% 할인 · 3회 또는 ฿6,000부터\n` +
-      `🥇 골드 — 15% 할인 · 6회 또는 ฿15,000부터\n` +
-      `⚫ 블랙 VIP — 20% 할인 · 12회 또는 ฿40,000부터\n` +
+      `🥉 브론즈 · 5% 할인 · 1회 또는 ฿1,000부터\n` +
+      `🥈 실버 · 10% 할인 · 3회 또는 ฿6,000부터\n` +
+      `🥇 골드 · 15% 할인 · 6회 또는 ฿15,000부터\n` +
+      `⚫ 블랙 VIP · 20% 할인 · 12회 또는 ฿40,000부터\n` +
       `\n` +
       `<i>우선 예약 · 포인트 적립\n` +
       `예약 확정 시 컨시어지가 등급 할인을 적용합니다</i>`,

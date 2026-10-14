@@ -15,13 +15,13 @@ If you've spent any time in the Singapore expat or business travel community, yo
 1. The food is better than Singapore.
 2. Massage is something you book *on arrival*, not something you "try to fit in" later in the trip.
 
-The second point is the one nobody back home talks about openly, but it's universal. Bangkok has more therapists per square kilometer than almost any city on earth, the price-to-quality ratio is unmatched in Asia, and the hotel-delivery model — mobile massage — has matured into something genuinely world-class.
+The second point is the one nobody back home talks about openly, but it's universal. Bangkok has more therapists per square kilometer than almost any city on earth, the price-to-quality ratio is unmatched in Asia, and the hotel-delivery model (mobile massage) has matured into something genuinely world-class.
 
-This guide is for Singapore residents who visit Bangkok regularly and want a clear, practical understanding of how mobile massage works here in 2026 — what it costs, how to book, which areas to stay in, what to look for, and (just as important) what to avoid.
+This guide is for Singapore residents who visit Bangkok regularly and want a clear, practical understanding of how mobile massage works here in 2026: what it costs, how to book, which areas to stay in, what to look for, and (just as important) what to avoid.
 
 ## Why Mobile, Not Spa?
 
-If you've stayed at a Singapore hotel — Raffles, the Capitol Kempinski, the Mandarin Oriental — you've experienced spa-grade massage. The price is around SGD 200-350 per hour, the booking window is usually 5-7 days out, and the experience happens within the spa's operating hours.
+If you've stayed at a Singapore hotel (Raffles, the Capitol Kempinski, the Mandarin Oriental), you've experienced spa-grade massage. The price is around SGD 200-350 per hour, the booking window is usually 5-7 days out, and the experience happens within the spa's operating hours.
 
 Bangkok's mobile massage flips this:
 
@@ -30,7 +30,7 @@ Bangkok's mobile massage flips this:
 - **Hours**: Many services run until 2-4am. The therapist comes to your room, on your schedule.
 - **Quality**: Variable. The top-tier mobile services in Bangkok are competitive with mid-tier hotel spas in Singapore.
 
-For Singapore travelers — who tend to land late, work full days, and value time over almost any other resource — mobile is structurally the better fit.
+For Singapore travelers, who tend to land late, work full days, and value time over almost any other resource, mobile is structurally the better fit.
 
 ## Where to Stay (And Why It Matters for Massage)
 
@@ -39,12 +39,12 @@ Mobile massage availability and quality varies sharply by Bangkok district. The 
 **Sukhumvit (Soi 1 to Soi 39).** The default zone. Highest density of 4- and 5-star hotels, easiest dispatch, most English-speaking therapists. Stay here if it's your first or second Bangkok trip.
 
 - Hotels: Marriott Marquis, JW Marriott, Park Hyatt, Hyatt Regency, Sukhothai, Anantara Sathorn (technically Sathorn but close).
-- Most mobile services treat Sukhumvit as their home zone — no travel surcharge, fastest arrival.
+- Most mobile services treat Sukhumvit as their home zone: no travel surcharge, fastest arrival.
 
 **Silom / Sathorn.** Business district. Slightly fewer hotels but excellent ones. Expect 10-15 minute longer dispatch from Sukhumvit-based services.
 
 - Hotels: Banyan Tree, St Regis, COMO Metropolitan, W Bangkok.
-- Slightly more discreet vibe — fewer tourists, more bankers.
+- Slightly more discreet vibe: fewer tourists, more bankers.
 
 **Riverside.** Best for stays of 3+ nights when you want a slower pace.
 
@@ -69,7 +69,7 @@ Here's the actual market in Bangkok as of early 2026, for in-room mobile massage
 | Premium mobile | Specialized therapist, fluent English/Mandarin, 5+ years experience | 2,500-3,500 | 95-130 |
 | Hotel spa | In-spa session, fixed hours | 4,500-7,000 | 170-260 |
 
-**The honest take:** the standard tier is what most repeat Singapore travelers use. The premium tier is worth it for important nights — heavy meetings the next day, post-marathon recovery, or simply because you want it. The budget tier is where the horror stories come from. Don't.
+**The honest take:** the standard tier is what most repeat Singapore travelers use. The premium tier is worth it for important nights: heavy meetings the next day, post-marathon recovery, or simply because you want it. The budget tier is where the horror stories come from. Don't.
 
 ## How Booking Actually Works (Step by Step)
 
@@ -88,9 +88,9 @@ The process is genuinely simple once you've done it once:
 
 **4. The therapist arrives at your room.** Plain clothes, roller bag, 5-10 minutes to set up the table and oils.
 
-**5. The session.** You'll be asked about pressure preference and any injuries. Communicate clearly — Bangkok therapists generally err softer than Singaporeans expect, so if you want firm pressure, say "stronger please" and they will.
+**5. The session.** You'll be asked about pressure preference and any injuries. Communicate clearly. Bangkok therapists generally err softer than Singaporeans expect, so if you want firm pressure, say "stronger please" and they will.
 
-**6. Payment.** Cash is most common. Some services accept QR PromptPay or international card. Tipping is standard — 200-500 THB is the normal range for a good 60-90 min session.
+**6. Payment.** Cash is most common. Some services accept QR PromptPay or international card. Tipping is standard: 200-500 THB is the normal range for a good 60-90 min session.
 
 ## What "Discreet" Actually Means in Bangkok
 
@@ -100,9 +100,9 @@ Singaporeans tend to ask about discretion before booking. It's a fair question. 
 - They check in via the regular hotel reception only if required (most 4-5 star hotels in Bangkok don't require it for known mobile services).
 - The session itself is private and closed-door.
 - No follow-up calls or messages unless you initiate them.
-- Your booking history is private to the operator — not shared.
+- Your booking history is private to the operator, not shared.
 
-If you ask explicitly when booking — *"Can the therapist arrive in plain clothes and check in privately?"* — the answer should be an immediate yes. Anything else is a flag.
+If you ask explicitly when booking (*"Can the therapist arrive in plain clothes and check in privately?"*), the answer should be an immediate yes. Anything else is a flag.
 
 ## The Singapore-Bangkok Customer Profile (Why Services Cater to You)
 

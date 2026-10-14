@@ -406,7 +406,7 @@ function serviceRoutes() {
         <ul>
 ${SERVICES.map(
   (s) =>
-    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> — ${L.fromPrice(
+    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> · ${L.fromPrice(
       s.price
     )} (${L.durations}). ${s[lang].blurb}</li>`
 ).join("\n")}
@@ -442,7 +442,7 @@ ${SERVICES.map(
           ]),
         ],
         noscript: `
-        <h1>${c.name} — ${L.htmlLang === "en" ? "Outcall Massage in Bangkok" : L.servicesH1}</h1>
+        <h1>${c.name} · ${L.htmlLang === "en" ? "Outcall Massage in Bangkok" : L.servicesH1}</h1>
         <p>${c.blurb}</p>
         <p><strong>${L.deliveredLine(s.price)}</strong></p>
         <h2>${L.reserveHeading}</h2>
@@ -643,7 +643,7 @@ function homeRoutes() {
         <ul>
 ${SERVICES.map(
   (s) =>
-    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> — ${L.fromPrice(
+    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> · ${L.fromPrice(
       s.price
     )} (${L.durations})</li>`
 ).join("\n")}
@@ -1032,7 +1032,7 @@ function districtRoutes() {
         <ul>
 ${SERVICES.map(
   (s) =>
-    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> — ${C.fromLabel(
+    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> · ${C.fromLabel(
       s.price
     )} (60 / 90 / 120 ${C.minutesLabel})</li>`
 ).join("\n")}
@@ -1200,7 +1200,7 @@ function pricingRoutes() {
         <ul>
 ${SERVICES.map(
   (s) =>
-    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> — ${L.fromPrice(
+    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> · ${L.fromPrice(
       s.price
     )} (${L.durations})</li>`
 ).join("\n")}
@@ -1245,7 +1245,7 @@ function staticPageRoutes() {
       ogLocale: "en_US",
       title:
         "Our Practitioners · Verified Outcall Massage Therapists in Bangkok | SunRed",
-      description: `Meet SunRed's verified female outcall massage practitioners in Bangkok — ${THERAPISTS.length} specialised therapists across ${AREAS_EN}. Live availability, discreet arrival to your hotel or residence, 24/7 concierge in EN/中文/日本語/한국어.`,
+      description: `Meet SunRed's verified female outcall massage practitioners in Bangkok · ${THERAPISTS.length} specialised therapists across ${AREAS_EN}. Live availability, discreet arrival to your hotel or residence, 24/7 concierge in EN/中文/日本語/한국어.`,
       ogTitle: "Our Practitioners · Verified Outcall Massage Therapists, Bangkok",
       ogDescription:
         "Verified SunRed practitioners across central Bangkok. Live availability, discreet arrival to your hotel, 24/7 concierge.",
@@ -1276,7 +1276,7 @@ function staticPageRoutes() {
         <ul>
 ${THERAPISTS.map(
   (t) =>
-    `          <li><a href="${ORIGIN}/therapists/${t.id}">${t.name}</a> — serving ${t.area} &amp; central Bangkok</li>`
+    `          <li><a href="${ORIGIN}/therapists/${t.id}">${t.name}</a> · serving ${t.area} &amp; central Bangkok</li>`
 ).join("\n")}
         </ul>
         <h2>Reserve or ask the concierge</h2>
@@ -1386,7 +1386,7 @@ function blogRoutes() {
         <ul>
 ${BLOG_POSTS.map(
   (p) =>
-    `          <li><a href="${p.url}">${p.title}</a> — ${p.readingMinutes} min read. ${p.metaDescription}</li>`
+    `          <li><a href="${p.url}">${p.title}</a> · ${p.readingMinutes} min read. ${p.metaDescription}</li>`
 ).join("\n")}
         </ul>
         <p><a href="${ORIGIN}/">Home · live availability</a></p>`,

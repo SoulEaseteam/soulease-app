@@ -62,7 +62,7 @@ const WELCOME: Record<Lang, string> = {
     `\n` +
     `Premium outcall massage in Bangkok · 24/7 concierge.\n` +
     `\n` +
-    `For booking, pricing, or availability — tap the button below ` +
+    `For booking, pricing, or availability · tap the button below ` +
     `to chat with our concierge directly.\n` +
     `\n` +
     `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
@@ -71,7 +71,7 @@ const WELCOME: Record<Lang, string> = {
     `\n` +
     `บริการนวดถึงที่ระดับพรีเมียม กรุงเทพฯ · concierge 24/7\n` +
     `\n` +
-    `จอง · ราคา · เวลาว่าง — แตะปุ่มด้านล่างเพื่อคุยกับ concierge ` +
+    `จอง · ราคา · เวลาว่าง · แตะปุ่มด้านล่างเพื่อคุยกับ concierge ` +
     `โดยตรง\n` +
     `\n` +
     `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
@@ -80,7 +80,7 @@ const WELCOME: Record<Lang, string> = {
     `\n` +
     `曼谷高端外送按摩 · 24/7 管家服务\n` +
     `\n` +
-    `预约 · 价格 · 今夜可预约 — 点击下方按钮直接联系管家\n` +
+    `预约 · 价格 · 今夜可预约 · 点击下方按钮直接联系管家\n` +
     `\n` +
     `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   "zh-TW":
@@ -88,7 +88,7 @@ const WELCOME: Record<Lang, string> = {
     `\n` +
     `曼谷高端到府按摩 · 24/7 管家服務\n` +
     `\n` +
-    `預約 · 價格 · 今夜可訂 — 點擊下方按鈕直接聯繫管家\n` +
+    `預約 · 價格 · 今夜可訂 · 點擊下方按鈕直接聯繫管家\n` +
     `\n` +
     `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
   ja:
@@ -96,7 +96,7 @@ const WELCOME: Record<Lang, string> = {
     `\n` +
     `バンコク プレミアム出張マッサージ · 24時間コンシェルジュ\n` +
     `\n` +
-    `ご予約・料金・本日のご対応 — 下のボタンをタップして` +
+    `ご予約・料金・本日のご対応 · 下のボタンをタップして` +
     `コンシェルジュと直接お話しください\n` +
     `\n` +
     `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,
@@ -105,7 +105,7 @@ const WELCOME: Record<Lang, string> = {
     `\n` +
     `방콕 프리미엄 출장 마사지 · 24/7 컨시어지\n` +
     `\n` +
-    `예약 · 가격 · 오늘 밤 가능 여부 — 아래 버튼을 눌러 컨시어지와 ` +
+    `예약 · 가격 · 오늘 밤 가능 여부 · 아래 버튼을 눌러 컨시어지와 ` +
     `직접 채팅하세요\n` +
     `\n` +
     `<a href="https://sunred.vip/?src=tg-greeter">sunred.vip</a>`,

@@ -205,7 +205,7 @@ const AddTherapistPage: React.FC = () => {
               <TextField
                 label="ID (สำหรับ URL · ห้ามซ้ำ · เช่น BarbieSunRed)" fullWidth size="small" sx={fieldSx}
                 value={form.id} onChange={(e) => set("id", e.target.value)}
-                helperText="ใช้เป็นลิงก์ /therapists/<ID> — ตั้งครั้งเดียว เปลี่ยนภายหลังไม่ได้ · ต้องใส่ก่อนถึงจะอัปรูปได้"
+                helperText="ใช้เป็นลิงก์ /therapists/<ID> · ตั้งครั้งเดียว เปลี่ยนภายหลังไม่ได้ · ต้องใส่ก่อนถึงจะอัปรูปได้"
               />
               <TextField label="ชื่อ" fullWidth size="small" sx={fieldSx} value={form.name} onChange={(e) => set("name", e.target.value)} />
               <TextField label="Specialty (ความถนัด)" fullWidth size="small" sx={fieldSx} value={form.specialty} onChange={(e) => set("specialty", e.target.value)} />
